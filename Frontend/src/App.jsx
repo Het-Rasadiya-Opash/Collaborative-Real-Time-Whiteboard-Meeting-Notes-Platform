@@ -32,7 +32,7 @@ const App = () => {
   }, [dispatch]);
   return (
     <div>
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster position="top-center" reverseOrder={false} />
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />

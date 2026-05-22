@@ -1,13 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import apiRequest from "../utils/apiRequest";
 import { logout } from "../features/usersSlice";
+import { Search, X, Plus, Bell, User, LogOut } from "lucide-react";
 
 const Header = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const { currentUser } = useSelector((state) => state.users);
   const dispatch = useDispatch();
@@ -27,9 +47,7 @@ const Header = () => {
     <header className="fixed top-0 right-0 left-[280px] h-toolbar-height flex justify-between items-center px-gutter z-30 bg-surface border-b border-outline-variant shadow-sm">
       <div className="flex items-center flex-1 max-w-xl">
         <div className="relative w-full">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">
-            search
-          </span>
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
           <input
             type="text"
             value={searchQuery}
@@ -42,9 +60,7 @@ const Header = () => {
               onClick={() => setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                close
-              </span>
+              <X size={18} />
             </button>
           )}
         </div>
@@ -55,24 +71,26 @@ const Header = () => {
           onClick={() => setIsNewCanvasModalOpen(true)}
           className="px-4 py-2 bg-primary-container text-on-primary-container font-label-md text-sm font-semibold rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
         >
-          <span className="material-symbols-outlined">add</span>
+          <Plus size={18} />
           New Canvas
         </button>
 
-        <button
-          onClick={() => {
-            setIsNotificationsOpen(!isNotificationsOpen);
-            setIsProfileOpen(false);
-          }}
-          className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors rounded-full relative cursor-pointer"
-        >
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-error rounded-full"></span>
-        </button>
+        <div ref={notificationRef} className="relative">
+          <button
+            onClick={() => {
+              setIsNotificationsOpen(!isNotificationsOpen);
+              setIsProfileOpen(false);
+            }}
+            className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors rounded-full relative cursor-pointer"
+          >
+            <Bell size={20} />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-error rounded-full"></span>
+          </button>
+        </div>
 
         <div className="h-8 w-[1px] bg-outline-variant mx-1"></div>
 
-        <div className="relative">
+        <div ref={profileRef} className="relative">
           <img
             onClick={() => {
               setIsProfileOpen(!isProfileOpen);
@@ -103,18 +121,14 @@ const Header = () => {
                   }}
                   className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-surface-container transition-colors text-on-surface flex items-center gap-2 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    manage_accounts
-                  </span>
+                  <User size={18} />
                   Profile Settings
                 </button>
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-error-container/20 text-error hover:text-error transition-colors flex items-center gap-2 cursor-pointer font-semibold"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    logout
-                  </span>
+                  <LogOut size={18} />
                   Sign Out
                 </button>
               </div>

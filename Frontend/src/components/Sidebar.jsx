@@ -1,5 +1,20 @@
 import React from "react";
 import { useState } from "react";
+import {
+  Network,
+  LayoutDashboard,
+  Briefcase,
+  Palette,
+  FileText,
+  Users,
+  Settings,
+  ListFilter,
+  User,
+  Share2,
+  UserPlus,
+  HelpCircle,
+} from "lucide-react";
+
 const Sidebar = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [activeNav, setActiveNav] = useState("dashboard");
@@ -10,9 +25,7 @@ const Sidebar = () => {
     <aside className="fixed left-0 top-0 h-screen w-sidebar-width flex flex-col p-4 border-r border-outline-variant z-40 bg-surface-container-low">
       <div className="flex items-center gap-3 mb-8 px-2">
         <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container shadow-sm">
-          <span className="material-symbols-outlined font-semibold text-2xl">
-            hub
-          </span>
+          <Network className="w-6 h-6 font-semibold" />
         </div>
         <div>
           <h2 className="font-headline-sm text-headline-sm font-black text-on-surface">
@@ -33,8 +46,19 @@ const Sidebar = () => {
               : "text-on-surface-variant hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined">dashboard</span>
+          <LayoutDashboard size={20} />
           <span className="font-label-md text-sm">Dashboard</span>
+        </button>
+        <button
+          onClick={() => setActiveNav("workspace")}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+            activeNav === "workspace"
+              ? "text-primary font-bold bg-primary-container/20"
+              : "text-on-surface-variant hover:bg-surface-container-high"
+          }`}
+        >
+          <Briefcase size={20} />
+          <span className="font-label-md text-sm">Workspace</span>
         </button>
         <button
           onClick={() => setActiveNav("boards")}
@@ -44,9 +68,10 @@ const Sidebar = () => {
               : "text-on-surface-variant hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined">draw</span>
+          <Palette size={20} />
           <span className="font-label-md text-sm">Boards</span>
         </button>
+
         <button
           onClick={() => setActiveNav("notes")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
@@ -55,7 +80,7 @@ const Sidebar = () => {
               : "text-on-surface-variant hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined">description</span>
+          <FileText size={20} />
           <span className="font-label-md text-sm">Notes</span>
         </button>
         <button
@@ -66,7 +91,7 @@ const Sidebar = () => {
               : "text-on-surface-variant hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined">groups</span>
+          <Users size={20} />
           <span className="font-label-md text-sm">Members</span>
         </button>
         <button
@@ -77,7 +102,7 @@ const Sidebar = () => {
               : "text-on-surface-variant hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined">settings</span>
+          <Settings size={20} />
           <span className="font-label-md text-sm">Settings</span>
         </button>
       </nav>
@@ -96,10 +121,8 @@ const Sidebar = () => {
             }`}
           >
             <span className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[18px]">
-                filter_list
-              </span>
-              <span className="font-label-md text-sm">All Boards</span>
+              <ListFilter size={18} />
+              <span className="font-label-md text-sm">Boards</span>
             </span>
           </button>
           <button
@@ -111,9 +134,7 @@ const Sidebar = () => {
             }`}
           >
             <span className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[18px]">
-                person
-              </span>
+              <User size={18} />
               <span className="font-label-md text-sm">Owned by me</span>
             </span>
           </button>
@@ -126,9 +147,7 @@ const Sidebar = () => {
             }`}
           >
             <span className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[18px]">
-                share
-              </span>
+              <Share2 size={18} />
               <span className="font-label-md text-sm">Shared with me</span>
             </span>
           </button>
@@ -140,21 +159,21 @@ const Sidebar = () => {
           onClick={() => setIsInviteModalOpen(true)}
           className="w-full flex items-center gap-3 px-3 py-2 text-primary font-bold hover:bg-primary/5 rounded-lg transition-all duration-200 cursor-pointer"
         >
-          <span className="material-symbols-outlined">person_add</span>
+          <UserPlus size={20} />
           <span className="font-label-md text-sm">Invite Member</span>
         </button>
         <a
           className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200"
           href="#"
         >
-          <span className="material-symbols-outlined">support</span>
+          <HelpCircle size={20} />
           <span className="font-label-md text-sm">Help Center</span>
         </a>
         <button
           onClick={() => setIsProfileOpen(!isProfileOpen)}
           className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 cursor-pointer"
         >
-          <span className="material-symbols-outlined">account_circle</span>
+          <User size={20} />
           <span className="font-label-md text-sm">Account</span>
         </button>
       </div>
