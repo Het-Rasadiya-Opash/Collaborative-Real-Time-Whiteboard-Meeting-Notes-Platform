@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
+import apiRequest from "../utils/apiRequest";
+import { logout } from "../features/usersSlice";
 
 const Header = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);

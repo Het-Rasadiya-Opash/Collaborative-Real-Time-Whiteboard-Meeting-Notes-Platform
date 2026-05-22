@@ -5,6 +5,7 @@ import errorHandler from "./middlewares/error.middleware.js";
 export const app = express();
 
 import userRoutes from "./routes/users.route.js";
+import workspaceRoutes from "./routes/workspace.route.js";
 
 app.use(
   cors({
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use(express.static("public"));
 
 app.use("/api/users", userRoutes);
+app.use("/api/workspaces", workspaceRoutes);
 
 //error handler
 app.use(errorHandler);
