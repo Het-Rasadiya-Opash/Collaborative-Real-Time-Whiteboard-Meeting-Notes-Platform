@@ -15,7 +15,10 @@ const Header = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setIsNotificationsOpen(false);
       }
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -47,7 +50,10 @@ const Header = () => {
     <header className="fixed top-0 right-0 left-[280px] h-toolbar-height flex justify-between items-center px-gutter z-30 bg-surface border-b border-outline-variant shadow-sm">
       <div className="flex items-center flex-1 max-w-xl">
         <div className="relative w-full">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-outline"
+          />
           <input
             type="text"
             value={searchQuery}

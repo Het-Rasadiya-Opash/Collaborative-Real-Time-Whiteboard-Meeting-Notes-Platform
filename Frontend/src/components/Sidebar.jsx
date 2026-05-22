@@ -15,9 +15,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-const Sidebar = () => {
+const Sidebar = ({ activeNav, setActiveNav }) => {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [activeNav, setActiveNav] = useState("dashboard");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -49,17 +48,7 @@ const Sidebar = () => {
           <LayoutDashboard size={20} />
           <span className="font-label-md text-sm">Dashboard</span>
         </button>
-        <button
-          onClick={() => setActiveNav("workspace")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-            activeNav === "workspace"
-              ? "text-primary font-bold bg-primary-container/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
-          }`}
-        >
-          <Briefcase size={20} />
-          <span className="font-label-md text-sm">Workspace</span>
-        </button>
+
         <button
           onClick={() => setActiveNav("boards")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
