@@ -4,6 +4,7 @@ import { authorizeRole } from "../middlewares/authRole.middleware.js";
 import {
   addMember,
   createWorkSpace,
+  getWorkspaceById,
   listWorkspace,
   removeMember,
 } from "../controllers/workspace.controller.js";
@@ -13,6 +14,7 @@ const router = express.Router();
 router.post("/create", authMiddleware, authorizeRole("OWNER"), createWorkSpace);
 
 router.get("/", authMiddleware, listWorkspace);
+router.get("/:id", authMiddleware, getWorkspaceById);
 
 router.post("/:id/add", authMiddleware, authorizeRole("OWNER"), addMember);
 

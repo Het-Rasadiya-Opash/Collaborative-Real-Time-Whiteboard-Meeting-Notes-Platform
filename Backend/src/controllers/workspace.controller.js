@@ -156,3 +156,34 @@ export const removeMember = asyncHandler(async (req, res) => {
       ),
     );
 });
+
+export const getWorkspaceById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError(400, "Workspace ID is required");
+  }
+
+  const workspace = await workSpaceModel
+    .findById(id)
+    .populate("owner", "username email role")
+    .populate("members.user", "username role email");
+
+  if (!workspace) {
+    throw new ApiError(404, "Workspace not found");
+  }
+
+  const isOwner = workspace.owner._id.toString() === req.user._id.toString();
+  const isMember = workspace.members.some(
+    (member) => member.user && member.user._id.toString() === req.user._id.toString()
+  );
+
+  if (!isOwner && !isMember) {
+    throw new ApiError(403, "You are not authorized to access this workspace");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, workspace, "Workspace retrieved successfully"));
+});
+
