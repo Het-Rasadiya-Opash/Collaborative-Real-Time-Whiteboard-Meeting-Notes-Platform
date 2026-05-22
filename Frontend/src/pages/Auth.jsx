@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 import {
@@ -93,8 +93,6 @@ const Auth = ({ defaultMode = "login" }) => {
   return (
     <div className="bg-background text-on-background font-body-md min-h-screen flex items-center justify-center p-gutter relative overflow-hidden selection:bg-primary/20 selection:text-primary">
       <div className="fixed inset-0 canvas-grid opacity-40 pointer-events-none"></div>
-      <div className="fixed top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-tertiary/5 rounded-full blur-[100px] pointer-events-none"></div>
 
       <main className="relative z-10 w-full max-w-[1100px] flex flex-col md:flex-row bg-surface rounded-xl shadow-lg border border-outline-variant overflow-hidden">
         <div className="hidden md:flex flex-1 bg-surface-container-low p-12 flex-col justify-between relative overflow-hidden border-r border-outline-variant/30">
@@ -122,7 +120,7 @@ const Auth = ({ defaultMode = "login" }) => {
           </div>
 
           <div className="relative mt-8 group">
-            <div className="absolute -inset-4 bg-primary/5 rounded-2xl scale-95 group-hover:scale-100 transition-transform duration-500"></div>
+            <div className="absolute -inset-4 bg-brand-50 rounded-xl scale-95 group-hover:scale-100 transition-transform duration-500"></div>
             <img
               ref={cardRef}
               alt="Collaborative Whiteboard"
@@ -132,9 +130,9 @@ const Auth = ({ defaultMode = "login" }) => {
             />
             <div className="absolute -bottom-6 -right-6 glass-panel p-4 rounded-lg shadow-xl border border-outline-variant z-20 flex items-center gap-3 animate-bounce-slow">
               <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-400"></div>
-                <div className="w-8 h-8 rounded-full border-2 border-white bg-teal-400"></div>
-                <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-400"></div>
+                <div className="w-8 h-8 rounded-full border-2 border-surface bg-status-online"></div>
+                <div className="w-8 h-8 rounded-full border-2 border-surface bg-status-away"></div>
+                <div className="w-8 h-8 rounded-full border-2 border-surface bg-status-offline"></div>
               </div>
               <span className="font-label-md text-sm text-on-surface font-semibold">
                 3 Active Editors
@@ -263,7 +261,7 @@ const Auth = ({ defaultMode = "login" }) => {
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="********"
                     required
                     value={formData.password}
                     onChange={handleChange}
@@ -295,7 +293,7 @@ const Auth = ({ defaultMode = "login" }) => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary text-on-primary py-3 px-6 rounded-lg font-label-md text-sm font-bold shadow-md hover:bg-primary/95 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full bg-primary text-on-primary py-3 px-6 rounded-lg font-label-md text-sm font-bold shadow-md hover:bg-brand-700 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <span className="material-symbols-outlined animate-spin text-xl">
@@ -336,7 +334,7 @@ const Auth = ({ defaultMode = "login" }) => {
                   onClick={() =>
                     window.open("https://mail.google.com", "_blank")
                   }
-                  className="w-full bg-primary text-on-primary py-3 px-6 rounded-lg font-label-md text-sm font-bold hover:bg-primary/90 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+                  className="w-full bg-primary text-on-primary py-3 px-6 rounded-lg font-label-md text-sm font-bold hover:bg-brand-700 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
                 >
                   Open Mail App
                 </button>

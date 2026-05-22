@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import apiRequest from "../utils/apiRequest";
 import { logout } from "../features/usersSlice";
 import { Search, X, Plus, Bell, User, LogOut } from "lucide-react";
+import toast from "react-hot-toast";
 
 const Header = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -41,7 +42,7 @@ const Header = () => {
       await apiRequest.post("/users/logout");
       dispatch(logout());
       navigate("/login");
-    } catch (err) {
+    } catch {
       dispatch(logout());
       navigate("/login");
     }
@@ -74,8 +75,8 @@ const Header = () => {
 
       <div className="flex items-center gap-4 relative">
         <button
-          onClick={() => setIsNewCanvasModalOpen(true)}
-          className="px-4 py-2 bg-primary-container text-on-primary-container font-label-md text-sm font-semibold rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+          onClick={() => toast("Canvas creation is coming soon")}
+          className="px-4 py-2 bg-primary text-on-primary font-label-md text-sm font-semibold rounded-lg hover:bg-brand-700 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
         >
           <Plus size={18} />
           New Canvas
@@ -116,7 +117,7 @@ const Header = () => {
                 <p className="text-xs text-on-surface-variant/80 mt-0.5">
                   {currentUser.email}
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-semibold bg-primary-container text-on-primary-container px-2 py-0.5 rounded uppercase">
+                <span className="inline-block mt-2 text-[10px] font-semibold badge-info px-2 py-0.5 rounded uppercase">
                   {currentUser.role}
                 </span>
               </div>

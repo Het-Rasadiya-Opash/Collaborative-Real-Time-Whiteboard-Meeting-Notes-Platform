@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Toaster } from "react-hot-toast";
-import { Route, Routes, useLocation } from "react-router";
+import { Route, Routes } from "react-router";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import { useDispatch } from "react-redux";
@@ -9,8 +9,6 @@ import { setCheckingAuth, setCurrentUser } from "./features/usersSlice";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => {
-  const location = useLocation();
-
   const dispatch = useDispatch();
 
   const hasCheckedAuth = useRef(false);
@@ -24,7 +22,7 @@ const App = () => {
         const response = await apiRequest.get("/users/me", { skipToast: true });
         const user = response.data.data;
         dispatch(setCurrentUser(user));
-      } catch (err) {
+      } catch {
         dispatch(setCheckingAuth(false));
       }
     };
@@ -32,7 +30,17 @@ const App = () => {
   }, [dispatch]);
   return (
     <div>
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-subtle)",
+            color: "var(--text-primary)",
+          },
+        }}
+      />
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />

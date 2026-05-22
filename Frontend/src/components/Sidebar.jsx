@@ -1,9 +1,8 @@
-import React from "react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import {
   Network,
   LayoutDashboard,
-  Briefcase,
   Palette,
   FileText,
   Users,
@@ -17,13 +16,12 @@ import {
 
 const Sidebar = ({ activeNav, setActiveNav }) => {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-sidebar-width flex flex-col p-4 border-r border-outline-variant z-40 bg-surface-container-low">
+    <aside className="fixed left-0 top-0 h-screen w-sidebar-width flex flex-col p-4 border-r border-outline-variant z-40 bg-surface">
       <div className="flex items-center gap-3 mb-8 px-2">
-        <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container shadow-sm">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-on-primary shadow-sm">
           <Network className="w-6 h-6 font-semibold" />
         </div>
         <div>
@@ -41,8 +39,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
           onClick={() => setActiveNav("dashboard")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
             activeNav === "dashboard"
-              ? "text-primary font-bold bg-primary-container/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
+              ? "text-primary font-bold bg-brand-50"
+              : "text-on-surface-variant hover:bg-surface-container"
           }`}
         >
           <LayoutDashboard size={20} />
@@ -53,8 +51,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
           onClick={() => setActiveNav("boards")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
             activeNav === "boards"
-              ? "text-primary font-bold bg-primary-container/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
+              ? "text-primary font-bold bg-brand-50"
+              : "text-on-surface-variant hover:bg-surface-container"
           }`}
         >
           <Palette size={20} />
@@ -65,8 +63,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
           onClick={() => setActiveNav("notes")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
             activeNav === "notes"
-              ? "text-primary font-bold bg-primary-container/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
+              ? "text-primary font-bold bg-brand-50"
+              : "text-on-surface-variant hover:bg-surface-container"
           }`}
         >
           <FileText size={20} />
@@ -76,8 +74,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
           onClick={() => setActiveNav("members")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
             activeNav === "members"
-              ? "text-primary font-bold bg-primary-container/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
+              ? "text-primary font-bold bg-brand-50"
+              : "text-on-surface-variant hover:bg-surface-container"
           }`}
         >
           <Users size={20} />
@@ -87,8 +85,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
           onClick={() => setActiveNav("settings")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
             activeNav === "settings"
-              ? "text-primary font-bold bg-primary-container/20"
-              : "text-on-surface-variant hover:bg-surface-container-high"
+              ? "text-primary font-bold bg-brand-50"
+              : "text-on-surface-variant hover:bg-surface-container"
           }`}
         >
           <Settings size={20} />
@@ -105,8 +103,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
             onClick={() => setActiveFilter("all")}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
               activeFilter === "all"
-                ? "bg-surface-container-high text-primary font-semibold"
-                : "text-on-surface-variant hover:bg-surface-container-high"
+                ? "bg-brand-50 text-primary font-semibold"
+                : "text-on-surface-variant hover:bg-surface-container"
             }`}
           >
             <span className="flex items-center gap-3">
@@ -118,8 +116,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
             onClick={() => setActiveFilter("owned")}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
               activeFilter === "owned"
-                ? "bg-surface-container-high text-primary font-semibold"
-                : "text-on-surface-variant hover:bg-surface-container-high"
+                ? "bg-brand-50 text-primary font-semibold"
+                : "text-on-surface-variant hover:bg-surface-container"
             }`}
           >
             <span className="flex items-center gap-3">
@@ -131,8 +129,8 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
             onClick={() => setActiveFilter("shared")}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
               activeFilter === "shared"
-                ? "bg-surface-container-high text-primary font-semibold"
-                : "text-on-surface-variant hover:bg-surface-container-high"
+                ? "bg-brand-50 text-primary font-semibold"
+                : "text-on-surface-variant hover:bg-surface-container"
             }`}
           >
             <span className="flex items-center gap-3">
@@ -145,14 +143,14 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
 
       <div className="mt-auto pt-6 border-t border-outline-variant space-y-1">
         <button
-          onClick={() => setIsInviteModalOpen(true)}
-          className="w-full flex items-center gap-3 px-3 py-2 text-primary font-bold hover:bg-primary/5 rounded-lg transition-all duration-200 cursor-pointer"
+          onClick={() => toast("Member invites are coming soon")}
+          className="w-full flex items-center gap-3 px-3 py-2 text-primary font-bold hover:bg-brand-50 rounded-lg transition-all duration-200 cursor-pointer"
         >
           <UserPlus size={20} />
           <span className="font-label-md text-sm">Invite Member</span>
         </button>
         <a
-          className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200"
+          className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all duration-200"
           href="#"
         >
           <HelpCircle size={20} />
@@ -160,7 +158,7 @@ const Sidebar = ({ activeNav, setActiveNav }) => {
         </a>
         <button
           onClick={() => setIsProfileOpen(!isProfileOpen)}
-          className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all duration-200 cursor-pointer"
         >
           <User size={20} />
           <span className="font-label-md text-sm">Account</span>

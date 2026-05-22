@@ -9,6 +9,7 @@ const Workspace = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [workspaceRefreshKey, setWorkspaceRefreshKey] = useState(0);
 
   const { currentUser } = useSelector((state) => state.users);
   const isOwner = currentUser?.role === "OWNER";
@@ -28,7 +29,7 @@ const Workspace = () => {
       toast.success("Workspace created successfully");
       setNewWorkspaceName("");
       setIsModalOpen(false);
-      fetchWorkspaces();
+      setWorkspaceRefreshKey((key) => key + 1);
     } catch (err) {
       const errMsg =
         err.response?.data?.message || "Failed to create workspace";
@@ -53,7 +54,7 @@ const Workspace = () => {
         {isOwner ? (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="self-start sm:self-center px-5 py-2.5 bg-primary-container text-on-primary font-bold rounded-xl hover:brightness-110 active:scale-98 transition-all flex items-center gap-2 shadow-md cursor-pointer text-sm"
+            className="self-start sm:self-center px-5 py-2.5 bg-primary text-on-primary font-bold rounded-xl hover:bg-brand-700 active:scale-98 transition-all flex items-center gap-2 shadow-md cursor-pointer text-sm"
           >
             <Plus size={18} />
             Create Workspace
@@ -66,11 +67,14 @@ const Workspace = () => {
         )}
       </div>
 
-      <GetWorkSpace />
+      <GetWorkSpace
+        onCreateWorkspace={() => setIsModalOpen(true)}
+        refreshKey={workspaceRefreshKey}
+      />
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-outline-variant/60 rounded-2xl w-full max-w-md shadow-2xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-surface border border-outline-variant/60 rounded-xl w-full max-w-md shadow-2xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center pb-4 border-b border-outline-variant/60">
               <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
                 <Briefcase size={20} className="text-primary" />
@@ -121,7 +125,7 @@ const Workspace = () => {
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="px-4 py-2 bg-primary-container text-on-primary text-sm font-semibold rounded-xl hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                  className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:bg-brand-700 active:scale-95 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                 >
                   {isCreating ? (
                     <>

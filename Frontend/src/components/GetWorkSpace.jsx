@@ -12,28 +12,43 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 
-const GetWorkSpace = () => {
+const roleBadgeClass = {
+  OWNER: "badge-owner",
+  EDITOR: "badge-editor",
+  VIEWER: "badge-viewer",
+  MEMBER: "badge-viewer",
+};
+
+const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
   const { currentUser } = useSelector((state) => state.users);
   const isOwner = currentUser?.role === "OWNER";
   const [workspaces, setWorkspaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchWorkspaces = async () => {
-    setIsLoading(true);
-    try {
-      const response = await apiRequest.get("/workspaces");
-      const data = response.data?.data || [];
-      setWorkspaces(data);
-    } catch (err) {
-      toast.error("Failed to load workspaces");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchWorkspaces();
-  }, []);
+    let isMounted = true;
+
+    apiRequest
+      .get("/workspaces")
+      .then((response) => {
+        if (!isMounted) return;
+        setWorkspaces(response.data?.data || []);
+      })
+      .catch(() => {
+        if (isMounted) {
+          toast.error("Failed to load workspaces");
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshKey]);
 
   return (
     <>
@@ -57,29 +72,25 @@ const GetWorkSpace = () => {
               return (
                 <div
                   key={workspace._id}
-                  onClick={() =>
-                    toast.success(`Entering workspace: ${workspace.name}`)
-                  }
-                  className="group relative bg-white border border-outline-variant/70 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 flex flex-col justify-between min-h-[220px] cursor-pointer"
+                  // onClick={() =>
+                  //   toast.success(`Entering workspace: ${workspace.name}`)
+                  // }
+                  className="group relative bg-surface border border-outline-variant/70 rounded-xl p-6 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 flex flex-col justify-between min-h-[220px] cursor-pointer"
                 >
                   <div>
                     <div className="flex items-start justify-between mb-4">
                       {isOwnerCard ? (
-                        <div className="w-12 h-12 bg-blue-50/60 border border-blue-100 text-primary rounded-xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
+                        <div className="w-12 h-12 bg-brand-50 border border-brand-100 text-primary rounded-xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
                           <Briefcase size={22} className="stroke-[2px]" />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 bg-sky-50/60 border border-sky-100 text-[#0053db] rounded-xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
+                        <div className="w-12 h-12 bg-info-bg border border-info-border text-info-text rounded-xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
                           <Rocket size={22} className="stroke-[2px]" />
                         </div>
                       )}
 
                       <span
-                        className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                          isOwnerCard
-                            ? "bg-primary-container text-on-primary shadow-sm"
-                            : "bg-secondary-container text-on-surface-variant/90 border border-outline-variant/40"
-                        }`}
+                        className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${roleBadgeClass[userRoleInWorkspace] || "badge-viewer"}`}
                       >
                         {userRoleInWorkspace}
                       </span>
@@ -133,14 +144,14 @@ const GetWorkSpace = () => {
             <div
               onClick={() => {
                 if (isOwner) {
-                  setIsModalOpen(true);
+                  onCreateWorkspace?.();
                 } else {
                   toast.error("Only Owners can create new workspaces");
                 }
               }}
-              className="group border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center p-6 bg-transparent hover:bg-surface-container/10 hover:border-primary/40 transition-all duration-300 min-h-[220px] cursor-pointer text-center"
+              className="group border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-6 bg-transparent hover:bg-brand-50 hover:border-primary/40 transition-all duration-300 min-h-[220px] cursor-pointer text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-blue-50/50 border border-blue-100/80 flex items-center justify-center text-outline/80 mb-3 group-hover:scale-105 group-hover:bg-blue-50 group-hover:text-primary transition-all duration-300">
+              <div className="w-12 h-12 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-outline/80 mb-3 group-hover:scale-105 group-hover:text-primary transition-all duration-300">
                 <Plus size={20} className="stroke-[2.5px]" />
               </div>
               <h4 className="text-base font-bold text-on-surface group-hover:text-primary transition-colors">
