@@ -21,11 +21,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
-const cookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "none",
-};
 
 export const register = asyncHandler(async (req, res) => {
   const { username, email, password, role } = req.body;
@@ -124,8 +119,8 @@ export const login = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken)
+    .cookie("refreshToken", refreshToken)
     .json(new ApiResponse(200, loggedInUser, "User logged in successfully"));
 });
 
@@ -157,8 +152,8 @@ export const logout = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .clearCookie("accessToken", cookieOptions)
-    .clearCookie("refreshToken", cookieOptions)
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
