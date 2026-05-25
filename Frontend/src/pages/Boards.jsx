@@ -16,6 +16,8 @@ import {
   MoreVertical,
   PlusCircle,
   X,
+  Clock,
+  Grid,
 } from "lucide-react";
 
 const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
@@ -27,8 +29,19 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sortBy, setSortBy] = useState("updatedAt");
+  const [activeTab, setActiveTab] = useState("all"); // "all" | "recent" | "starred"
 
   const { currentUser } = useSelector((state) => state.users);
+
+  const myMember = workspace?.members?.find(
+    (m) => (m.user?._id || m.user) === currentUser?._id,
+  );
+  const myRole =
+    workspace?.owner?._id === currentUser?._id ||
+    workspace?.owner === currentUser?._id
+      ? "OWNER"
+      : myMember?.role || "VIEWER";
+  const canModify = myRole === "OWNER" || myRole === "EDITOR";
 
   useEffect(() => {
     if (!workspace) return;
@@ -100,11 +113,11 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           ),
         );
       }
-    } catch {
-    }
+    } catch {}
   };
 
   const formatTimeAgo = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -117,7 +130,10 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   if (!workspace) {
@@ -146,18 +162,32 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     );
   }
 
-  const filteredBoards = boards.filter((board) =>
-    board.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredBoards = boards.filter((board) => {
+    const titleMatch = board.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const ownerMatch =
+      board.owner?.username &&
+      board.owner.username.toLowerCase().includes(searchQuery.toLowerCase());
+    return titleMatch || ownerMatch;
+  });
 
-  const sortedBoards = [...filteredBoards].sort((a, b) => {
+  let tabBoards = [...filteredBoards];
+  if (activeTab === "starred") {
+    tabBoards = tabBoards.filter((board) => board.isStarred);
+  } else if (activeTab === "recent") {
+    tabBoards = tabBoards.filter((board) => board.myLastOpenedAt);
+  }
+
+  const sortedBoards = [...tabBoards].sort((a, b) => {
+    if (activeTab === "recent") {
+      return new Date(b.myLastOpenedAt) - new Date(a.myLastOpenedAt);
+    }
     if (sortBy === "title") {
       return a.title.localeCompare(b.title);
     }
     return new Date(b.updatedAt) - new Date(a.updatedAt);
   });
-
-  const starredBoards = sortedBoards.filter((board) => board.isStarred);
 
   const getBoardVisual = (title, index) => {
     const visuals = [
@@ -165,77 +195,146 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
         gradient: "from-blue-500/10 to-indigo-500/10",
         textGradient: "from-blue-600 to-indigo-600",
         icon: PenTool,
-        accent: "text-blue-500"
+        accent: "text-blue-500",
       },
       {
         gradient: "from-emerald-500/10 to-teal-500/10",
         textGradient: "from-emerald-600 to-teal-600",
         icon: Brush,
-        accent: "text-emerald-500"
+        accent: "text-emerald-500",
       },
       {
         gradient: "from-purple-500/10 to-pink-500/10",
         textGradient: "from-purple-600 to-pink-600",
         icon: Workflow,
-        accent: "text-purple-500"
+        accent: "text-purple-500",
       },
       {
         gradient: "from-amber-500/10 to-orange-500/10",
         textGradient: "from-amber-600 to-orange-600",
         icon: LayoutDashboard,
-        accent: "text-amber-500"
-      }
+        accent: "text-amber-500",
+      },
     ];
     return visuals[index % visuals.length];
   };
 
-  const getInitials = (name) => {
-    if (!name) return "WM";
-    const parts = name.split(" ");
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+  const getInitials = (username) => {
+    if (!username) return "M";
+    return username.slice(0, 2).toUpperCase();
+  };
+
+  const getAvatarBg = (username) => {
+    if (!username) return "bg-primary text-on-primary";
+    const charCodeSum = username
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const colors = [
+      "bg-brand-600 text-white shadow-sm shadow-brand-100",
+      "bg-emerald-600 text-white shadow-sm shadow-emerald-100",
+      "bg-amber-600 text-white shadow-sm shadow-amber-100",
+      "bg-purple-600 text-white shadow-sm shadow-purple-100",
+      "bg-cyan-600 text-white shadow-sm shadow-cyan-100",
+    ];
+    return colors[charCodeSum % colors.length];
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 animate-in fade-in duration-300">
-      <div className="flex justify-between items-end mb-8">
+    <div className="max-w-6xl mx-auto py-6 md:py-8 animate-in fade-in duration-300">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-on-surface mb-2">{workspace.name} Boards</h2>
-          <p className="text-base text-on-surface-variant">Visualize your ideas and collaborate in real-time.</p>
+          <h2 className="text-3xl font-black tracking-tight text-on-surface mb-2">
+            {workspace.name} Boards
+          </h2>
+          <p className="text-base text-on-surface-variant">
+            Visualize your ideas and collaborate in real-time.
+          </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => setSortBy((prev) => (prev === "updatedAt" ? "title" : "updatedAt"))}
-            className="px-4 py-2 bg-surface border border-outline-variant rounded-lg font-semibold text-sm hover:bg-surface-container-low transition-colors flex items-center gap-2 cursor-pointer text-on-surface"
+            onClick={() =>
+              setSortBy((prev) =>
+                prev === "updatedAt" ? "title" : "updatedAt",
+              )
+            }
+            className="px-4 py-2.5 bg-surface border border-outline-variant rounded-lg font-semibold text-sm hover:bg-surface-container-low active:scale-98 transition-all flex items-center gap-2 cursor-pointer text-on-surface shadow-sm"
           >
-            <Filter size={16} className="select-none" />
+            <Filter size={15} className="select-none" />
             Sort: {sortBy === "updatedAt" ? "Recent" : "Alphabetical"}
           </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm shadow-md hover:brightness-110 transition-colors flex items-center gap-2 cursor-pointer"
-          >
-            <Plus size={16} className="select-none" />
-            Create New Board
-          </button>
+          {canModify ? (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2.5 bg-primary text-white rounded-lg font-bold text-sm shadow-md hover:brightness-105 active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Plus size={16} className="select-none" />
+              Create New Board
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 text-xs bg-surface-container-high border border-outline-variant text-on-surface-variant px-4 py-2.5 rounded-lg shadow-sm">
+              <Lock size={14} className="text-outline" />
+              <span className="font-bold">Viewer Mode (Read-Only)</span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mb-8">
+      {/* Search Input */}
+      <div className="mb-6">
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="text-outline select-none" size={18} />
           </span>
           <input
             type="text"
-            placeholder="Search boards..."
+            placeholder="Search boards by title or owner..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-11 pr-4 py-3 bg-surface border border-outline-variant/60 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all text-on-surface shadow-sm"
           />
         </div>
+      </div>
+
+      {/* Tab Navigation Controls */}
+      <div className="flex border-b border-outline-variant/60 mb-8 gap-6 overflow-x-auto select-none">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+            activeTab === "all"
+              ? "text-primary border-b-2 border-primary"
+              : "text-on-surface-variant/75 hover:text-on-surface"
+          }`}
+        >
+          <Grid size={15} />
+          All Boards
+        </button>
+        <button
+          onClick={() => setActiveTab("recent")}
+          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+            activeTab === "recent"
+              ? "text-primary border-b-2 border-primary"
+              : "text-on-surface-variant/75 hover:text-on-surface"
+          }`}
+        >
+          <Clock size={15} />
+          Last Opened
+        </button>
+        <button
+          onClick={() => setActiveTab("starred")}
+          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
+            activeTab === "starred"
+              ? "text-primary border-b-2 border-primary"
+              : "text-on-surface-variant/75 hover:text-on-surface"
+          }`}
+        >
+          <Star size={15} />
+          Starred
+          {boards.filter((b) => b.isStarred).length > 0 && (
+            <span className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">
+              {boards.filter((b) => b.isStarred).length}
+            </span>
+          )}
+        </button>
       </div>
 
       {isLoading ? (
@@ -246,17 +345,34 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           </p>
         </div>
       ) : sortedBoards.length === 0 ? (
-        <div className="bg-surface/30 border border-outline-variant/50 rounded-2xl py-20 text-center flex flex-col items-center justify-center space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-primary/80 mb-1 shadow-inner animate-bounce-slow">
-            <Palette className="select-none" size={20} />
+        /* Empty State */
+        <div className="bg-surface/30 border border-outline-variant/50 rounded-2xl py-20 text-center flex flex-col items-center justify-center space-y-4 shadow-sm animate-in fade-in duration-300">
+          <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-primary/80 mb-1 shadow-inner">
+            {activeTab === "starred" ? (
+              <Star className="text-amber-500 fill-amber-500/20" size={24} />
+            ) : activeTab === "recent" ? (
+              <Clock className="text-primary/70" size={24} />
+            ) : (
+              <Palette size={24} />
+            )}
           </div>
-          <h3 className="text-lg font-bold text-on-surface">No Boards Found</h3>
+          <h3 className="text-lg font-bold text-on-surface">
+            {activeTab === "starred"
+              ? "No Starred Boards"
+              : activeTab === "recent"
+                ? "No Recently Opened Boards"
+                : "No Boards Found"}
+          </h3>
           <p className="text-xs text-on-surface-variant max-w-[280px] leading-relaxed">
             {searchQuery
               ? "Try refining your search query."
-              : "Establish a new whiteboard space to start visual notes collaborative drafting."}
+              : activeTab === "starred"
+                ? "Star your favorite boards to access them quickly here."
+                : activeTab === "recent"
+                  ? "Open a board to see it in your recently viewed list."
+                  : "Establish a new whiteboard space to start visual notes collaborative drafting."}
           </p>
-          {!searchQuery && (
+          {activeTab === "all" && !searchQuery && (
             <button
               onClick={() => setIsModalOpen(true)}
               className="px-4 py-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-xs font-bold rounded-lg transition-all cursor-pointer"
@@ -266,160 +382,110 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           )}
         </div>
       ) : (
-        <>
-          {starredBoards.length > 0 && (
-            <section className="mb-12">
-              <div className="flex items-center gap-2 mb-6">
-                <Star className="fill-amber-500 text-amber-500 select-none" size={20} />
-                <h3 className="text-xl font-bold text-on-surface">Starred Boards</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {starredBoards.map((board, index) => {
-                  const visual = getBoardVisual(board.title, index);
-                  const VisualIcon = visual.icon;
-                  return (
-                    <div
-                      key={board._id}
-                      onClick={() => onOpenBoard(board)}
-                      className="glass-card rounded-xl overflow-hidden group cursor-pointer flex flex-col justify-between h-full"
+        /* Board Card Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 animate-in fade-in duration-300">
+          {sortedBoards.map((board, index) => {
+            const visual = getBoardVisual(board.title, index);
+            const VisualIcon = visual.icon;
+            return (
+              <div
+                key={board._id}
+                onClick={() => onOpenBoard(board)}
+                className="glass-card bg-surface/50 border border-outline-variant/60 rounded-xl overflow-hidden group cursor-pointer flex flex-col justify-between h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative min-h-[260px]"
+              >
+                {/* Visual Header */}
+                <div
+                  className={`h-32 bg-gradient-to-br ${visual.gradient} flex items-center justify-center relative overflow-hidden border-b border-outline-variant/40`}
+                >
+                  <VisualIcon
+                    className={`w-16 h-16 ${visual.accent} select-none transition-transform duration-500 group-hover:scale-110`}
+                    size={64}
+                  />
+                  <div className="absolute top-3 right-3">
+                    <button
+                      onClick={(e) => handleToggleStar(e, board._id)}
+                      className="p-1.5 rounded-full bg-white/95 hover:bg-white shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer text-outline hover:text-amber-500"
                     >
-                      <div className={`h-40 bg-gradient-to-br ${visual.gradient} flex items-center justify-center relative overflow-hidden`}>
-                        <VisualIcon className={`w-16 h-16 ${visual.accent} select-none transition-transform duration-500 group-hover:scale-110`} size={64} />
-                        <div className="absolute top-3 right-3">
-                          <button
-                            onClick={(e) => handleToggleStar(e, board._id)}
-                            className="p-1.5 rounded-full bg-white/80 hover:bg-white shadow-sm transition-colors cursor-pointer text-amber-500"
-                          >
-                            <Star className="fill-amber-500 text-amber-500 select-none" size={18} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                          <h4 className="font-bold text-base text-on-surface mb-2 truncate group-hover:text-primary transition-colors">{board.title}</h4>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold uppercase">
-                              {getInitials(currentUser?.username)}
-                            </div>
-                            <span className="text-xs text-on-surface-variant font-medium">{currentUser?.username || "Workspace Member"}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-outline text-xs border-t border-outline-variant/30 pt-3">
-                          <span>Edited {formatTimeAgo(board.updatedAt)}</span>
-                          <MoreVertical className="select-none text-outline-variant" size={18} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+                      <Star
+                        className={
+                          board.isStarred
+                            ? "fill-amber-500 text-amber-500 select-none"
+                            : "select-none text-outline"
+                        }
+                        size={16}
+                      />
+                    </button>
+                  </div>
+                </div>
 
-          <section>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-on-surface">Recent Boards</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sortedBoards.map((board, index) => {
-                const visual = getBoardVisual(board.title, index);
-                const VisualIcon = visual.icon;
-                if (index === 0) {
-                  return (
-                    <div
-                      key={board._id}
-                      onClick={() => onOpenBoard(board)}
-                      className="md:col-span-2 glass-card rounded-xl overflow-hidden group cursor-pointer flex flex-col sm:flex-row h-full min-h-[220px]"
-                    >
-                      <div className={`w-full sm:w-1/2 h-48 sm:h-auto bg-gradient-to-br ${visual.gradient} flex items-center justify-center relative overflow-hidden`}>
-                        <VisualIcon className={`w-24 h-24 ${visual.accent} select-none transition-transform duration-500 group-hover:scale-110`} size={96} />
+                {/* Content body */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <h4 className="font-bold text-base text-on-surface mb-2.5 truncate group-hover:text-primary transition-colors">
+                      {board.title}
+                    </h4>
+                    {/* Owner Badge */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black uppercase ${getAvatarBg(board.owner?.username)}`}
+                      >
+                        {getInitials(board.owner?.username)}
                       </div>
-                      <div className="w-full sm:w-1/2 p-6 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-bold text-xl text-on-surface group-hover:text-primary transition-colors line-clamp-2">{board.title}</h4>
-                            <button
-                              onClick={(e) => handleToggleStar(e, board._id)}
-                              className="p-1 rounded-full hover:bg-surface-container transition-colors cursor-pointer text-outline hover:text-amber-500"
-                            >
-                              <Star
-                                className={board.isStarred ? "fill-amber-500 text-amber-500 select-none" : "select-none text-outline"}
-                                size={18}
-                              />
-                            </button>
-                          </div>
-                          <p className="text-xs text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">
-                            Collaboratively work on digital brainstorming, mapping architectures, and designing solutions in real-time.
-                          </p>
-                          <div className="flex -space-x-1.5 items-center">
-                            <div className="w-8 h-8 rounded-full bg-primary text-white border-2 border-surface flex items-center justify-center text-xs font-bold uppercase shadow-sm">
-                              {getInitials(currentUser?.username)}
-                            </div>
-                            <div className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] text-primary font-bold shadow-sm">
-                              +1
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-outline text-xs border-t border-outline-variant pt-4 mt-6">
-                          <span>Last edited by {currentUser?.username || "Workspace Member"}</span>
-                          <span>{formatTimeAgo(board.updatedAt)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={board._id}
-                    onClick={() => onOpenBoard(board)}
-                    className="glass-card rounded-xl overflow-hidden group cursor-pointer flex flex-col justify-between h-full"
-                  >
-                    <div className={`h-40 bg-gradient-to-br ${visual.gradient} flex items-center justify-center relative overflow-hidden`}>
-                      <VisualIcon className={`w-16 h-16 ${visual.accent} select-none transition-transform duration-500 group-hover:scale-110`} size={64} />
-                      <div className="absolute top-3 right-3">
-                        <button
-                          onClick={(e) => handleToggleStar(e, board._id)}
-                          className="p-1 rounded-full bg-white/80 hover:bg-white shadow-sm transition-colors cursor-pointer text-outline hover:text-amber-500"
-                        >
-                          <Star
-                            className={board.isStarred ? "fill-amber-500 text-amber-500 select-none" : "select-none text-outline"}
-                            size={18}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h4 className="font-bold text-base text-on-surface mb-2 truncate group-hover:text-primary transition-colors">{board.title}</h4>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold uppercase">
-                            {getInitials(currentUser?.username)}
-                          </div>
-                          <span className="text-xs text-on-surface-variant font-medium">{currentUser?.username || "Workspace Member"}</span>
-                        </div>
-                      </div>
-                      <p className="text-outline text-xs font-semibold">Last opened {formatTimeAgo(board.updatedAt)}</p>
+                      <span className="text-xs text-on-surface-variant font-semibold truncate max-w-[150px]">
+                        {board.owner?.username || "Workspace Member"}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
 
-              <div
-                onClick={() => setIsModalOpen(true)}
-                className="border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-8 hover:bg-surface-container-low transition-colors cursor-pointer group min-h-[220px]"
-              >
-                <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-4">
-                  <PlusCircle size={32} className="select-none" />
+                  {/* Timestamps footer */}
+                  <div className="flex justify-between items-center text-outline text-[11px] font-medium border-t border-outline-variant/35 pt-3">
+                    <span className="truncate max-w-[200px]">
+                      {board.lastOpenedAt ? (
+                        <span className="flex items-center gap-1 text-primary font-semibold truncate">
+                          <Clock size={11} className="flex-shrink-0" />
+                          <span className="truncate">
+                            {board.lastOpenedUser?._id === currentUser?._id ||
+                            board.lastOpenedUser?.username ===
+                              currentUser?.username
+                              ? `Opened by you ${formatTimeAgo(board.lastOpenedAt)}`
+                              : `Opened by ${board.lastOpenedUser?.username || "Member"} ${formatTimeAgo(board.lastOpenedAt)}`}
+                          </span>
+                        </span>
+                      ) : (
+                        `Edited ${formatTimeAgo(board.updatedAt)}`
+                      )}
+                    </span>
+                    <MoreVertical
+                      className="select-none text-outline-variant opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                      size={16}
+                    />
+                  </div>
                 </div>
-                <p className="font-bold text-on-surface-variant text-base">New Board</p>
-                <p className="text-xs text-outline text-center mt-1">Start a blank canvas or choose a template</p>
               </div>
+            );
+          })}
+
+          {/* New Board Card inside 'All Boards' Tab */}
+          {activeTab === "all" && canModify && (
+            <div
+              onClick={() => setIsModalOpen(true)}
+              className="border-2 border-dashed border-outline-variant/80 rounded-xl flex flex-col items-center justify-center p-8 hover:bg-surface-container-low hover:border-primary/50 transition-all cursor-pointer group min-h-[260px] animate-in fade-in duration-300"
+            >
+              <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-4 shadow-sm border border-outline-variant/30">
+                <PlusCircle size={28} className="select-none" />
+              </div>
+              <p className="font-bold text-on-surface-variant text-base">
+                New Board
+              </p>
+              <p className="text-xs text-outline text-center mt-1">
+                Start a blank canvas or choose a template
+              </p>
             </div>
-          </section>
-        </>
+          )}
+        </div>
       )}
 
+      {/* Modal dialog */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-surface border border-outline-variant/60 rounded-xl w-full max-w-md shadow-2xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
@@ -452,7 +518,7 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                   type="text"
                   value={newBoardTitle}
                   onChange={(e) => setNewBoardTitle(e.target.value)}
-                  className="w-full bg-surface-container-low/40 border border-outline-variant/70 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface"
+                  className="w-full bg-surface-container-low/40 border border-outline-variant/70 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface animate-in fade-in"
                   placeholder="e.g. Brainstorming Sprint, Architecture Layout"
                   autoFocus
                 />

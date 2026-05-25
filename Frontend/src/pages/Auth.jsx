@@ -20,6 +20,7 @@ import {
   setLoading,
 } from "../features/usersSlice";
 import apiRequest from "../utils/apiRequest";
+import toast from "react-hot-toast";
 
 const Auth = ({ defaultMode = "login" }) => {
   const [mode, setMode] = useState(defaultMode);
@@ -30,12 +31,21 @@ const Auth = ({ defaultMode = "login" }) => {
     role: "user",
   });
   const [isRegistered, setIsRegistered] = useState(false);
+  const [registeredData, setRegisteredData] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const { loading, error } = useSelector((state) => state.users);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const blobContainerRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verified") === "true") {
+      toast.success("Email verified successfully! You can now log in.", { id: "email-verified" });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!blobContainerRef.current) return;
@@ -81,7 +91,8 @@ const Auth = ({ defaultMode = "login" }) => {
         dispatch(setCurrentUser(res.data.data));
         navigate("/");
       } else {
-        await apiRequest.post("/users/register", formData);
+        const res = await apiRequest.post("/users/register", formData);
+        setRegisteredData(res.data?.data);
         setIsRegistered(true);
       }
     } catch (err) {
@@ -94,8 +105,57 @@ const Auth = ({ defaultMode = "login" }) => {
     }
   };
 
+  const handleVerifyInstantly = async () => {
+    dispatch(setLoading(true));
+    dispatch(clearError());
+
+    try {
+      await apiRequest.get(`/users/verify-email?token=${registeredData.verificationToken}&json=true`);
+      toast.success("Account verified successfully! Redirecting in 1 second...");
+      
+      setTimeout(async () => {
+        try {
+          const loginData = {
+            email: formData.email,
+            password: formData.password,
+          };
+          const res = await apiRequest.post("/users/login", loginData);
+          dispatch(setCurrentUser(res.data.data));
+          navigate("/");
+        } catch (err) {
+          const errorData =
+            err.response?.data?.message ||
+            "Auto-login failed. Please sign in manually.";
+          dispatch(setError(errorData));
+          setMode("login");
+          setIsRegistered(false);
+        } finally {
+          dispatch(setLoading(false));
+        }
+      }, 1000);
+    } catch (err) {
+      try {
+        const loginData = {
+          email: formData.email,
+          password: formData.password,
+        };
+        const res = await apiRequest.post("/users/login", loginData);
+        toast.success("Account already verified! Redirecting...");
+        dispatch(setCurrentUser(res.data.data));
+        navigate("/");
+      } catch (loginErr) {
+        const errorData =
+          err.response?.data?.message ||
+          "Verification failed. Please try again.";
+        dispatch(setError(errorData));
+        dispatch(setLoading(false));
+      }
+    }
+  };
+
   const handleReset = () => {
     setIsRegistered(false);
+    setRegisteredData(null);
     setMode("login");
     setFormData({
       username: "",
@@ -107,7 +167,7 @@ const Auth = ({ defaultMode = "login" }) => {
   };
 
   return (
-    <div className="canvas-grid text-on-surface min-h-screen flex items-center justify-center p-6 relative overflow-hidden selection:bg-primary/20 selection:text-primary font-sans">
+    <div className="canvas-grid text-on-surface min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-primary/20 selection:text-primary font-sans">
       <div
         ref={blobContainerRef}
         className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none"
@@ -131,7 +191,7 @@ const Auth = ({ defaultMode = "login" }) => {
           </div>
         </div>
 
-        <div className="glass-card rounded-xl p-8 border border-outline-variant/60 focus-within:border-primary transition-all duration-300">
+        <div className="glass-card rounded-xl p-6 sm:p-8 border border-outline-variant/60 focus-within:border-primary transition-all duration-300">
           {!isRegistered ? (
             <div>
               <div className="mb-6">
@@ -322,10 +382,35 @@ const Auth = ({ defaultMode = "login" }) => {
                 >
                   Open Mail App
                 </button>
+
+                {registeredData?.verificationToken && (
+                  <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/20 text-left animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs mb-1.5 uppercase tracking-wider">
+                      <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                      Local Dev Assistant
+                    </div>
+                    <p className="text-xs text-on-surface-variant mb-3 leading-relaxed">
+                      Since this is a local development environment, you can instantly verify this account bypassing configuration restrictions.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={handleVerifyInstantly}
+                      className="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 py-2.5 rounded-lg text-xs font-bold transition-all active:scale-[0.98] cursor-pointer text-center flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        "Verify Account Instantly"
+                      )}
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="text-primary text-sm font-semibold hover:underline cursor-pointer block mx-auto py-1"
+                  className="text-primary text-sm font-semibold hover:underline cursor-pointer block mx-auto py-1 pt-2"
                 >
                   Back to sign in
                 </button>

@@ -1,4 +1,11 @@
-import { Briefcase, Lock, Plus, PlusCircle, TrendingUp, ShieldCheck } from "lucide-react";
+import {
+  Briefcase,
+  Lock,
+  Plus,
+  PlusCircle,
+  TrendingUp,
+  ShieldCheck,
+} from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -30,15 +37,14 @@ const Workspace = ({ onLaunchWorkspace }) => {
       setIsModalOpen(false);
       setWorkspaceRefreshKey((key) => key + 1);
     } catch {
-      // Handled globally
     } finally {
       setIsCreating(false);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-8 py-8 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-8 mb-8 border-b border-outline-variant/60">
+    <div className="max-w-7xl mx-auto py-6 md:py-8 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 md:pb-8 mb-6 md:mb-8 border-b border-outline-variant/60">
         <div>
           <h2 className="text-3xl font-black text-on-surface tracking-tight mb-2">
             Workspaces
@@ -52,7 +58,7 @@ const Workspace = ({ onLaunchWorkspace }) => {
         {isOwner ? (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary font-bold rounded-xl shadow-lg hover:shadow-xl hover:brightness-110 transition-all active:scale-95 cursor-pointer text-sm"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary font-bold rounded-xl shadow-lg hover:shadow-xl hover:brightness-110 transition-all active:scale-95 cursor-pointer text-sm w-full sm:w-auto"
           >
             <PlusCircle size={20} />
             Create Workspace

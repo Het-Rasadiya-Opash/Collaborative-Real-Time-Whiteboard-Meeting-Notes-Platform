@@ -73,7 +73,11 @@ export const register = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        createdUser,
+        {
+          ...createdUser.toObject(),
+          verificationUrl,
+          verificationToken,
+        },
         "Registration successful! Please check your email to verify your account.",
       ),
     );
@@ -177,7 +181,11 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.verificationTokenExpires = undefined;
   await user.save({ validateBeforeSave: false });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Email verified successfully"));
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  if (req.query.json === "true" || req.headers["accept"]?.includes("application/json")) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Email verified successfully"));
+  }
+  return res.redirect(`${frontendUrl}/login?verified=true`);
 });

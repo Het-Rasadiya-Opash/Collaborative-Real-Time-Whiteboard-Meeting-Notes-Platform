@@ -3,10 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import apiRequest from "../utils/apiRequest";
 import { logout } from "../features/usersSlice";
-import { X, User, LogOut, Search, Bell } from "lucide-react";
+import { X, User, LogOut, Search, Bell, Menu } from "lucide-react";
 import toast from "react-hot-toast";
 
-const Header = () => {
+const Header = ({ onToggleSidebar }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,9 +49,15 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 right-0 left-[280px] h-toolbar-height z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant shadow-sm flex justify-between items-center px-6">
-      <div className="flex items-center w-1/3 min-w-[240px]">
-        <div className="relative w-full max-w-sm">
+    <header className="fixed top-0 right-0 left-0 lg:left-[280px] h-toolbar-height z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant shadow-sm flex justify-between items-center px-4 sm:px-6">
+      <div className="flex items-center gap-3 w-1/2 lg:w-1/3 min-w-[180px]">
+        <button
+          onClick={onToggleSidebar}
+          className="lg:hidden p-2 -ml-2 text-on-surface-variant hover:bg-surface-container rounded-xl cursor-pointer transition-colors"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="relative w-full max-w-sm hidden sm:block">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline select-none" size={18} />
           <input
             type="text"

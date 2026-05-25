@@ -172,7 +172,7 @@ const GetWorkSpace = ({
         </div>
       ) : (
         <div className="space-y-12 animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {workspaces.map((workspace, index) => {
               const userRoleInWorkspace =
                 workspace.members?.find((m) => m.user?._id === currentUser?._id)
@@ -181,7 +181,6 @@ const GetWorkSpace = ({
               const isOwnerCard = userRoleInWorkspace === "OWNER";
               const members = workspace.members || [];
               
-              // Dynamic themes for a stunning aesthetic visual
               const getCardTheme = (idx) => {
                 const themes = [
                   {
@@ -211,24 +210,27 @@ const GetWorkSpace = ({
                 <div
                   key={workspace._id}
                   onClick={() => setSelectedWorkspaceId(workspace._id)}
-                  className="glass-card p-6 rounded-2xl relative group cursor-pointer flex flex-col h-full animate-in fade-in duration-200"
+                  className="glass-card p-5 rounded-2xl relative group cursor-pointer flex flex-col justify-between min-h-[220px] animate-in fade-in duration-200"
                 >
-                  <div className="flex justify-between items-start mb-5">
-                    <div className={`p-3 rounded-xl ${theme.bg}`}>
-                      <ThemeIcon className="select-none" size={32} />
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`p-2.5 rounded-xl ${theme.bg}`}>
+                        <ThemeIcon className="select-none" size={28} />
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-semibold text-xs rounded-full border border-emerald-100">
+                        Active
+                      </span>
                     </div>
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-semibold text-xs rounded-full border border-emerald-100">
-                      Active
-                    </span>
-                  </div>
 
-                  <div className="mb-6 flex-1">
-                    <h3 className="font-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors truncate">
-                      {workspace.name}
-                    </h3>
-                    <p className="text-xs text-on-surface-variant/80 truncate">
-                      {workspace.owner?.email || "Unknown"}
-                    </p>
+                    <div className="mb-4">
+                      <h3 className="font-bold text-lg text-on-surface mb-1.5 group-hover:text-primary transition-colors truncate">
+                        {workspace.name}
+                      </h3>
+                      <p className="text-xs text-on-surface-variant/75 truncate">
+                        <span className="font-medium text-on-surface-variant/60">Owner: </span>
+                        {workspace.owner?.username || workspace.owner?.email || "Unknown"}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/40">
@@ -275,7 +277,7 @@ const GetWorkSpace = ({
                   toast.error("Only Owners can create new workspaces");
                 }
               }}
-              className="border-2 border-dashed border-outline-variant rounded-2xl p-6 flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary hover:bg-primary-container/5 transition-all group min-h-[200px] cursor-pointer text-center"
+              className="border-2 border-dashed border-outline-variant rounded-2xl p-5 flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary hover:bg-primary-container/5 transition-all group min-h-[220px] cursor-pointer text-center"
             >
               <PlusSquare className="mb-3 group-hover:scale-115 transition-transform text-outline group-hover:text-primary select-none" size={36} />
               <span className="font-bold text-base text-on-surface group-hover:text-primary transition-colors font-headline-md">
@@ -292,7 +294,7 @@ const GetWorkSpace = ({
       {selectedWorkspaceId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-surface border border-outline-variant/60 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-outline-variant/60 bg-surface-container-low/40">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-outline-variant/60 bg-surface-container-low/40">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-brand-50 border border-brand-100 text-primary rounded-xl flex items-center justify-center shadow-inner">
                   <Briefcase size={20} className="stroke-[2px]" />
@@ -316,7 +318,7 @@ const GetWorkSpace = ({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
               {isDetailsLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                   <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -428,7 +430,7 @@ const GetWorkSpace = ({
                   </div>
 
                   {isOwner && (
-                    <div className="bg-surface border border-outline-variant/60 rounded-xl p-5 space-y-4 shadow-sm">
+                    <div className="bg-surface border border-outline-variant/60 rounded-xl p-4 sm:p-5 space-y-4 shadow-sm">
                       <div className="flex items-center gap-2">
                         <UserPlus size={18} className="text-primary" />
                         <h4 className="text-sm font-bold text-on-surface">
@@ -453,11 +455,11 @@ const GetWorkSpace = ({
                             className="w-full bg-surface-container-low/40 border border-outline-variant/70 rounded-xl py-2 pl-10 pr-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface"
                           />
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                           <select
                             value={roleInput}
                             onChange={(e) => setRoleInput(e.target.value)}
-                            className="bg-surface border border-outline-variant/70 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface font-semibold"
+                            className="bg-surface border border-outline-variant/70 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface font-semibold flex-1 sm:flex-initial"
                           >
                             <option value="VIEWER">Viewer</option>
                             <option value="EDITOR">Editor</option>
@@ -465,7 +467,7 @@ const GetWorkSpace = ({
                           <button
                             type="submit"
                             disabled={isActionLoading}
-                            className="px-4 py-2 bg-primary hover:bg-brand-700 text-on-primary text-sm font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+                            className="px-4 py-2 bg-primary hover:bg-brand-700 text-on-primary text-sm font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer flex-1 sm:flex-initial"
                           >
                             {isActionLoading ? (
                               <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>

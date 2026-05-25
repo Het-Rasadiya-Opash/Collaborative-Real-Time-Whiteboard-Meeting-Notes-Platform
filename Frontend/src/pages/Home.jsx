@@ -9,6 +9,7 @@ const Home = () => {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [activeBoard, setActiveBoard] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLaunchWorkspace = (workspace) => {
     setSelectedWorkspace(workspace);
@@ -17,10 +18,26 @@ const Home = () => {
 
   return (
     <div className="bg-background text-on-background font-body-md min-h-screen relative">
-      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
-      <Header />
+      <Sidebar
+        activeNav={activeNav}
+        setActiveNav={(nav) => {
+          setActiveNav(nav);
+          setIsSidebarOpen(false);
+        }}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+      />
+      
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-35 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-      <main className="pl-[280px] pt-[56px] min-h-screen p-6 bg-background">
+      <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+
+      <main className="lg:ml-[280px] pt-20 min-h-screen px-4 sm:px-6 pb-4 sm:pb-6 bg-background transition-all duration-300">
         {activeNav === "dashboard" ? (
           <Workspace onLaunchWorkspace={handleLaunchWorkspace} />
         ) : activeNav === "boards" ? (

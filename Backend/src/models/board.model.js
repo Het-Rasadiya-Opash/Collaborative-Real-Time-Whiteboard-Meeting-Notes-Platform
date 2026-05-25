@@ -65,6 +65,10 @@ const boardSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     starredBy: [
       {
         type: mongoose.Schema.Types.ObjectId,

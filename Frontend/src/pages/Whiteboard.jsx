@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { 
-  Pencil, 
-  MousePointer, 
-  StickyNote, 
-  Square, 
-  Circle, 
-  Trash2, 
-  Eraser, 
-  Share2, 
-  Download, 
+import {
+  Pencil,
+  MousePointer,
+  StickyNote,
+  Square,
+  Circle,
+  Trash2,
+  Eraser,
+  Share2,
+  Download,
   AlertTriangle,
   ZoomIn,
   ZoomOut,
   Undo2,
-  Redo2
+  Redo2,
+  Bold,
+  Italic,
+  Underline,
+  List,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import apiRequest from "../utils/apiRequest";
+import { io } from "socket.io-client";
 
 const COLOR_PALETTE = [
   { name: "Blue", hex: "#2563eb" },
@@ -30,6 +35,17 @@ const COLOR_PALETTE = [
 
 const Whiteboard = ({ board, onClose, workspace }) => {
   const { currentUser } = useSelector((state) => state.users);
+
+  const myMember = workspace?.members?.find(
+    (m) => (m.user?._id || m.user) === currentUser?._id,
+  );
+  const myRole =
+    workspace?.owner?._id === currentUser?._id ||
+    workspace?.owner === currentUser?._id
+      ? "OWNER"
+      : myMember?.role || "VIEWER";
+  const isReadOnly = myRole === "VIEWER";
+
   const [boardTitle, setBoardTitle] = useState(board.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [elements, setElements] = useState([]);
@@ -55,6 +71,10 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   const [collaborators, setCollaborators] = useState([]);
   const clientCursorRef = useRef({ x: 0, y: 0 });
 
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const socketRef = useRef(null);
+  const lastCursorEmitRef = useRef(0);
+
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
 
@@ -62,10 +82,88 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   const isTypingCommentsRef = useRef(false);
 
   const canvasRef = useRef(null);
+  const editorRef = useRef(null);
   const autoSaveTimerRef = useRef(null);
 
   const isCanvasBusy =
     isDragging || currentDrawingElement !== null || editingStickyId !== null;
+
+  useEffect(() => {
+    const apiEndpoint =
+      import.meta.env.VITE_API_ENDPOINT || "http://localhost:3000/api";
+    const socketUrl = apiEndpoint.replace("/api", "");
+
+    console.log("Connecting to socket server at:", socketUrl);
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("Socket connected successfully!");
+      setIsSocketConnected(true);
+
+      socket.emit("join-board", {
+        boardId: board._id,
+        userId:
+          currentUser?._id ||
+          `guest_${Math.random().toString(36).substring(2, 6)}`,
+        username: currentUser?.username || "Guest Collaborator",
+      });
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Socket disconnected.");
+      setIsSocketConnected(false);
+    });
+
+    socket.on("canvas-update", (updatedElements) => {
+      setElements(updatedElements);
+    });
+
+    socket.on("notes-update", ({ meetingNotes }) => {
+      setAgendaText(meetingNotes || "");
+      if (editorRef.current && document.activeElement !== editorRef.current) {
+        editorRef.current.innerHTML = meetingNotes || "";
+      }
+    });
+
+    socket.on("comments-update", ({ comments }) => {
+      if (!isTypingCommentsRef.current) {
+        setComments(comments || []);
+      }
+    });
+
+    socket.on("cursor-update", ({ userId, username, cursorX, cursorY }) => {
+      setCollaborators((prev) => {
+        const index = prev.findIndex((c) => c.userId === userId);
+        if (index !== -1) {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], cursorX, cursorY, username };
+          return updated;
+        } else {
+          return [...prev, { userId, username, cursorX, cursorY }];
+        }
+      });
+    });
+
+    socket.on("user-joined", ({ userId, username }) => {
+      toast.success(`${username} joined the board!`);
+    });
+
+    socket.on("user-left", ({ userId, username }) => {
+      if (username) {
+        toast.success(`${username} left the board.`);
+      }
+      setCollaborators((prev) => prev.filter((c) => c.userId !== userId));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [board._id, currentUser]);
 
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +176,9 @@ const Whiteboard = ({ board, onClose, workspace }) => {
           setBoardTitle(boardData.board?.title || board.title);
           if (boardData.board?.meetingNotes !== undefined) {
             setAgendaText(boardData.board.meetingNotes);
+            if (editorRef.current) {
+              editorRef.current.innerHTML = boardData.board.meetingNotes || "";
+            }
           }
           if (
             boardData.board?.comments &&
@@ -104,6 +205,9 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     let isMounted = true;
     const pollInterval = setInterval(() => {
       if (!isMounted) return;
+
+      if (isSocketConnected) return;
+
       apiRequest
         .get(`/boards/${board._id}`)
         .then((response) => {
@@ -118,6 +222,13 @@ const Whiteboard = ({ board, onClose, workspace }) => {
               boardData.board?.meetingNotes !== undefined
             ) {
               setAgendaText(boardData.board.meetingNotes);
+              if (
+                editorRef.current &&
+                document.activeElement !== editorRef.current
+              ) {
+                editorRef.current.innerHTML =
+                  boardData.board.meetingNotes || "";
+              }
             }
             if (
               !isTypingCommentsRef.current &&
@@ -141,9 +252,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
       isMounted = false;
       clearInterval(pollInterval);
     };
-  }, [board._id, isCanvasBusy, isEditingTitle]);
-
-
+  }, [board._id, isCanvasBusy, isEditingTitle, isSocketConnected]);
 
   const triggerAutoSave = (updatedElements) => {
     setSaveStatus("unsaved");
@@ -222,6 +331,13 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     setRedoStack([]);
     setElements(newElements);
     triggerAutoSave(newElements);
+
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("canvas-change", {
+        boardId: board._id,
+        elements: newElements,
+      });
+    }
   };
 
   const handleUndo = () => {
@@ -243,6 +359,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   };
 
   const handleMouseDown = (e) => {
+    if (isReadOnly) return;
     if (editingStickyId) {
       finishStickyEditing();
       return;
@@ -324,8 +441,25 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   };
 
   const handleMouseMove = (e) => {
-    if (!isDragging) return;
     const { x, y } = getMouseCoords(e);
+
+    if (socketRef.current?.connected) {
+      const now = Date.now();
+      if (now - lastCursorEmitRef.current > 40) {
+        socketRef.current.emit("cursor-move", {
+          boardId: board._id,
+          x,
+          y,
+          userId:
+            currentUser?._id ||
+            `guest_${Math.random().toString(36).substring(2, 6)}`,
+          username: currentUser?.username || "Guest Collaborator",
+        });
+        lastCursorEmitRef.current = now;
+      }
+    }
+
+    if (!isDragging) return;
 
     if (currentDrawingElement) {
       const updated = { ...currentDrawingElement };
@@ -363,6 +497,14 @@ const Whiteboard = ({ board, onClose, workspace }) => {
           return el;
         });
         triggerAutoSave(updated);
+
+        if (socketRef.current?.connected) {
+          socketRef.current.emit("canvas-change", {
+            boardId: board._id,
+            elements: updated,
+          });
+        }
+
         return updated;
       });
     }
@@ -380,6 +522,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
   const handleDoubleClickSticky = (e, element) => {
     e.stopPropagation();
+    if (isReadOnly) return;
     if (element.type === "sticky") {
       setEditingStickyId(element.id);
       setEditingStickyText(
@@ -482,7 +625,14 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   };
 
   const handleSaveNotes = (text) => {
+    if (isReadOnly) return;
     setSaveStatus("unsaved");
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("notes-change", {
+        boardId: board._id,
+        meetingNotes: text,
+      });
+    }
     apiRequest
       .put(`/boards/${board._id}`, {
         meetingNotes: text,
@@ -493,6 +643,16 @@ const Whiteboard = ({ board, onClose, workspace }) => {
       .catch(() => {
         setSaveStatus("unsaved");
       });
+  };
+
+  const handleFormatCommand = (command, value = null) => {
+    if (isReadOnly) return;
+    document.execCommand(command, false, value);
+    if (editorRef.current) {
+      const html = editorRef.current.innerHTML;
+      setAgendaText(html);
+      handleSaveNotes(html);
+    }
   };
 
   const toggleNotes = () => {
@@ -546,6 +706,27 @@ const Whiteboard = ({ board, onClose, workspace }) => {
         }
         .sidebar-transition {
           transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .rich-text-editor:empty:before {
+          content: attr(placeholder);
+          color: #94a3b8;
+          opacity: 0.65;
+          pointer-events: none;
+        }
+        .rich-text-editor ul {
+          list-style-type: disc !important;
+          padding-left: 1.25rem !important;
+          margin-top: 0.25rem !important;
+          margin-bottom: 0.25rem !important;
+        }
+        .rich-text-editor ol {
+          list-style-type: decimal !important;
+          padding-left: 1.25rem !important;
+          margin-top: 0.25rem !important;
+          margin-bottom: 0.25rem !important;
+        }
+        .rich-text-editor p {
+          margin-bottom: 0.25rem !important;
         }
       `}</style>
 
@@ -660,9 +841,25 @@ const Whiteboard = ({ board, onClose, workspace }) => {
               )}
               {saveStatus === "saving" && (
                 <span className="flex items-center gap-1 text-primary bg-primary/10 px-2.5 py-1 rounded-full text-xs font-semibold animate-pulse">
-                  <svg className="animate-spin h-3.5 w-3.5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-3.5 w-3.5 text-primary"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Saving...
                 </span>
@@ -700,124 +897,133 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
         <div className="mt-16 flex-1 bg-surface-bright relative canvas-dot-grid overflow-hidden flex">
           <div className="flex-1 relative cursor-crosshair">
-            <div className="absolute left-6 top-1/2 -translate-y-1/2 glass-card border border-outline-variant rounded-2xl p-2 shadow-lg flex flex-col gap-2 z-30 animate-in slide-in-from-left duration-300">
-              <button
-                onClick={() => {
-                  setSelectedTool("pencil");
-                  setSelectedElementId(null);
-                }}
-                className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                  selectedTool === "pencil"
-                    ? "bg-primary text-on-primary"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                }`}
-                title="Pen Tool"
-              >
-                <Pencil size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedTool("select");
-                }}
-                className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                  selectedTool === "select"
-                    ? "bg-primary text-on-primary"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                }`}
-                title="Select"
-              >
-                <MousePointer size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedTool("sticky");
-                  setSelectedElementId(null);
-                }}
-                className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                  selectedTool === "sticky"
-                    ? "bg-primary text-on-primary"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                }`}
-                title="Sticky Note"
-              >
-                <StickyNote size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedTool("rectangle");
-                  setSelectedElementId(null);
-                }}
-                className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                  selectedTool === "rectangle"
-                    ? "bg-primary text-on-primary"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                }`}
-                title="Rectangle Shape"
-              >
-                <Square size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedTool("circle");
-                  setSelectedElementId(null);
-                }}
-                className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                  selectedTool === "circle"
-                    ? "bg-primary text-on-primary"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                }`}
-                title="Circle Shape"
-              >
-                <Circle size={20} />
-              </button>
+            {!isReadOnly ? (
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 glass-card border border-outline-variant rounded-2xl p-2 shadow-lg flex flex-col gap-2 z-30 animate-in slide-in-from-left duration-300">
+                <button
+                  onClick={() => {
+                    setSelectedTool("pencil");
+                    setSelectedElementId(null);
+                  }}
+                  className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                    selectedTool === "pencil"
+                      ? "bg-primary text-on-primary"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                  }`}
+                  title="Pen Tool"
+                >
+                  <Pencil size={20} />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedTool("select");
+                  }}
+                  className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                    selectedTool === "select"
+                      ? "bg-primary text-on-primary"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                  }`}
+                  title="Select"
+                >
+                  <MousePointer size={20} />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedTool("sticky");
+                    setSelectedElementId(null);
+                  }}
+                  className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                    selectedTool === "sticky"
+                      ? "bg-primary text-on-primary"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                  }`}
+                  title="Sticky Note"
+                >
+                  <StickyNote size={20} />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedTool("rectangle");
+                    setSelectedElementId(null);
+                  }}
+                  className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                    selectedTool === "rectangle"
+                      ? "bg-primary text-on-primary"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                  }`}
+                  title="Rectangle Shape"
+                >
+                  <Square size={20} />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedTool("circle");
+                    setSelectedElementId(null);
+                  }}
+                  className={`p-3 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                    selectedTool === "circle"
+                      ? "bg-primary text-on-primary"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                  }`}
+                  title="Circle Shape"
+                >
+                  <Circle size={20} />
+                </button>
 
-              <div className="h-[1px] bg-outline-variant mx-1 my-1"></div>
+                <div className="h-[1px] bg-outline-variant mx-1 my-1"></div>
 
-              <div className="grid grid-cols-2 gap-1.5 justify-items-center py-1">
-                {COLOR_PALETTE.map((color) => {
-                  const isSelected = currentColor === color.hex;
-                  return (
-                    <button
-                      key={color.hex}
-                      onClick={() => setCurrentColor(color.hex)}
-                      className={`w-6 h-6 rounded-full border transition-all cursor-pointer relative flex items-center justify-center ${
-                        isSelected
-                          ? "scale-110 border-primary shadow-md ring-2 ring-primary/20"
-                          : "border-transparent hover:scale-105"
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={`${color.name} Color`}
-                    >
-                      {isSelected && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                      )}
-                    </button>
-                  );
-                })}
+                <div className="grid grid-cols-2 gap-1.5 justify-items-center py-1">
+                  {COLOR_PALETTE.map((color) => {
+                    const isSelected = currentColor === color.hex;
+                    return (
+                      <button
+                        key={color.hex}
+                        onClick={() => setCurrentColor(color.hex)}
+                        className={`w-6 h-6 rounded-full border transition-all cursor-pointer relative flex items-center justify-center ${
+                          isSelected
+                            ? "scale-110 border-primary shadow-md ring-2 ring-primary/20"
+                            : "border-transparent hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: color.hex }}
+                        title={`${color.name} Color`}
+                      >
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="h-[1px] bg-outline-variant mx-1 my-1"></div>
+
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={!selectedElementId}
+                  className={`p-3 rounded-xl transition-all flex items-center justify-center ${
+                    selectedElementId
+                      ? "text-rose-500 hover:bg-rose-500/10 hover:scale-105 active:scale-95 cursor-pointer"
+                      : "text-on-surface-variant/30 cursor-not-allowed"
+                  }`}
+                  title="Delete Selected"
+                >
+                  <Trash2 size={20} />
+                </button>
+                <button
+                  onClick={handleClearCanvas}
+                  className="p-3 text-on-surface-variant hover:bg-rose-500/10 hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  title="Clear Canvas"
+                >
+                  <Eraser size={20} />
+                </button>
               </div>
-
-              <div className="h-[1px] bg-outline-variant mx-1 my-1"></div>
-
-              <button
-                onClick={handleDeleteSelected}
-                disabled={!selectedElementId}
-                className={`p-3 rounded-xl transition-all flex items-center justify-center ${
-                  selectedElementId
-                    ? "text-rose-500 hover:bg-rose-500/10 hover:scale-105 active:scale-95 cursor-pointer"
-                    : "text-on-surface-variant/30 cursor-not-allowed"
-                }`}
-                title="Delete Selected"
-              >
-                <Trash2 size={20} />
-              </button>
-              <button
-                onClick={handleClearCanvas}
-                className="p-3 text-on-surface-variant hover:bg-rose-500/10 hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                title="Clear Canvas"
-              >
-                <Eraser size={20} />
-              </button>
-            </div>
+            ) : (
+              <div className="absolute left-6 top-6 glass-card border border-outline-variant/60 rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2 z-30 animate-in slide-in-from-left duration-300 text-xs font-bold text-on-surface-variant bg-surface-container-high/90">
+                <span className="material-symbols-outlined text-[16px] text-outline">
+                  lock
+                </span>
+                <span>Viewer (Read-Only)</span>
+              </div>
+            )}
 
             <svg
               ref={canvasRef}
@@ -1063,18 +1269,38 @@ const Whiteboard = ({ board, onClose, workspace }) => {
             </svg>
 
             {collaborators.map((collab, index) => {
-              const colors = ["#7c3aed", "#166534", "#b45309", "#b91c1c", "#2563eb"];
+              const colors = [
+                "#7c3aed",
+                "#166534",
+                "#b45309",
+                "#b91c1c",
+                "#2563eb",
+              ];
               const cursorColor = colors[index % colors.length];
+              const scale = zoom / 100;
+              const leftPos = collab.cursorX * scale;
+              const topPos = collab.cursorY * scale;
               return (
-                <div 
-                  key={collab.user || index}
-                  style={{ left: `${collab.cursorX}px`, top: `${collab.cursorY}px` }} 
+                <div
+                  key={collab.userId || index}
+                  style={{ left: `${leftPos}px`, top: `${topPos}px` }}
                   className="absolute cursor-smooth pointer-events-none flex items-center gap-2 z-40"
                 >
-                  <svg fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5.65376 12.3822L17.7026 21.6111L14.7735 5.5186L5.65376 12.3822Z" fill={cursorColor} stroke="white" strokeWidth="2"></path>
+                  <svg
+                    fill="none"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5.65376 12.3822L17.7026 21.6111L14.7735 5.5186L5.65376 12.3822Z"
+                      fill={cursorColor}
+                      stroke="white"
+                      strokeWidth="2"
+                    ></path>
                   </svg>
-                  <span 
+                  <span
                     className="px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap text-white"
                     style={{ backgroundColor: cursorColor }}
                   >
@@ -1197,35 +1423,84 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                 </div>
               </div>
 
-              <div className="bg-surface-bright rounded-xl border border-outline-variant p-4 min-h-[320px] shadow-inner relative flex flex-col gap-3">
-                <h3 className="font-headline-md text-primary font-bold text-base">
-                  Agenda - Q3 Planning
-                </h3>
-                <textarea
-                  value={agendaText}
-                  onChange={(e) => {
-                    setAgendaText(e.target.value);
-                    handleSaveNotes(e.target.value);
-                  }}
-                  onFocus={() => {
-                    isTypingNotesRef.current = true;
-                  }}
-                  onBlur={() => {
-                    isTypingNotesRef.current = false;
-                    handleSaveNotes(agendaText);
-                  }}
-                  className="w-full flex-1 bg-transparent border-none focus:ring-0 text-on-surface-variant leading-relaxed outline-none resize-none text-sm"
-                  placeholder="Type agenda or workspace notes..."
-                />
+              <div className="bg-surface-bright rounded-xl border border-outline-variant p-4 min-h-[360px] shadow-sm relative flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-headline-md text-primary font-bold text-sm">
+                    Collaborative Notes
+                  </h3>
 
-                <div className="relative border-t border-outline-variant/30 pt-3 mt-auto">
-                  <p className="text-xs text-on-surface-variant opacity-70">
-                    Next steps: Coordinate with the engineering team for the API
-                    handoff.
-                  </p>
-                  <div className="absolute right-0 -top-3 bg-primary text-on-primary text-[10px] px-2 py-0.5 rounded-sm">
-                    James
-                  </div>
+                  {/* Rich-Text Formatting Toolbar */}
+                  {!isReadOnly && (
+                    <div className="flex items-center gap-1 bg-surface-container/60 p-1 rounded-lg border border-outline-variant/50">
+                      <button
+                        onClick={() => handleFormatCommand("bold")}
+                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                        title="Bold"
+                      >
+                        <Bold size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleFormatCommand("italic")}
+                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                        title="Italic"
+                      >
+                        <Italic size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleFormatCommand("underline")}
+                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                        title="Underline"
+                      >
+                        <Underline size={14} />
+                      </button>
+                      <div className="w-[1px] h-3 bg-outline-variant/60 mx-0.5"></div>
+                      <button
+                        onClick={() =>
+                          handleFormatCommand("insertUnorderedList")
+                        }
+                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                        title="Bullet List"
+                      >
+                        <List size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleFormatCommand("removeFormat")}
+                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                        title="Clear Formatting"
+                      >
+                        <span className="material-symbols-outlined text-[14px] font-bold block">
+                          format_clear
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 flex flex-col overflow-hidden min-h-[220px]">
+                  <div
+                    ref={editorRef}
+                    contentEditable={!isReadOnly}
+                    onFocus={() => {
+                      isTypingNotesRef.current = true;
+                    }}
+                    onBlur={() => {
+                      isTypingNotesRef.current = false;
+                      if (editorRef.current) {
+                        handleSaveNotes(editorRef.current.innerHTML);
+                      }
+                    }}
+                    onInput={(e) => {
+                      const html = e.currentTarget.innerHTML;
+                      setAgendaText(html);
+                      handleSaveNotes(html);
+                    }}
+                    className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-xs rich-text-editor font-sans"
+                    placeholder={
+                      isReadOnly
+                        ? "Notes are read-only for viewer role..."
+                        : "Type meeting agenda or collaborate on notes here..."
+                    }
+                  />
                 </div>
               </div>
 
@@ -1287,54 +1562,71 @@ const Whiteboard = ({ board, onClose, workspace }) => {
             </div>
 
             <div className="p-4 border-t border-outline-variant bg-surface-container-low">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!newComment.trim()) return;
+              {!isReadOnly ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newComment.trim()) return;
 
-                  const freshComment = {
-                    author: currentUser?.username || "Guest",
-                    text: newComment.trim(),
-                    createdAt: new Date().toISOString(),
-                  };
+                    const freshComment = {
+                      author: currentUser?.username || "Guest",
+                      text: newComment.trim(),
+                      createdAt: new Date().toISOString(),
+                    };
 
-                  const updatedComments = [...comments, freshComment];
-                  setComments(updatedComments);
-                  setNewComment("");
+                    const updatedComments = [...comments, freshComment];
+                    setComments(updatedComments);
+                    setNewComment("");
 
-                  apiRequest
-                    .put(`/boards/${board._id}`, {
-                      comments: updatedComments,
-                    })
-                    .catch(() => {
-                      toast.error("Failed to post comment");
-                    });
-                }}
-                className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
-              >
-                <span className="material-symbols-outlined text-outline">
-                  add_comment
-                </span>
-                <input
-                  className="bg-transparent border-none focus:ring-0 w-full text-xs text-on-surface outline-none"
-                  placeholder="Write a comment..."
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onFocus={() => {
-                    isTypingCommentsRef.current = true;
+                    apiRequest
+                      .put(`/boards/${board._id}`, {
+                        comments: updatedComments,
+                      })
+                      .then(() => {
+                        if (socketRef.current?.connected) {
+                          socketRef.current.emit("comments-change", {
+                            boardId: board._id,
+                            comments: updatedComments,
+                          });
+                        }
+                      })
+                      .catch(() => {
+                        toast.error("Failed to post comment");
+                      });
                   }}
-                  onBlur={() => {
-                    isTypingCommentsRef.current = false;
-                  }}
-                />
-                <button
-                  type="submit"
-                  className="text-primary font-bold text-xs hover:opacity-80 active:scale-95 transition-all"
+                  className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
                 >
-                  Send
-                </button>
-              </form>
+                  <span className="material-symbols-outlined text-outline text-[16px]">
+                    add_comment
+                  </span>
+                  <input
+                    className="bg-transparent border-none focus:ring-0 w-full text-xs text-on-surface outline-none font-sans"
+                    placeholder="Write a comment..."
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onFocus={() => {
+                      isTypingCommentsRef.current = true;
+                    }}
+                    onBlur={() => {
+                      isTypingCommentsRef.current = false;
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="text-primary font-bold text-xs hover:opacity-80 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Send
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant/70 bg-surface-container-high border border-outline-variant/65 py-2.5 rounded-full shadow-inner font-bold text-center">
+                  <span className="material-symbols-outlined text-[14px]">
+                    lock
+                  </span>
+                  <span>Viewer mode is read-only.</span>
+                </div>
+              )}
             </div>
           </section>
 

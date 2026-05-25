@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import workSpaceModel from "../models/workspace.model.js";
+import userModel from "../models/users.model.js";
 
 export const createBoard = asyncHandler(async (req, res) => {
   const { workspaceId } = req.params;
@@ -38,6 +39,7 @@ export const createBoard = asyncHandler(async (req, res) => {
   const boardData = {
     title: sanitizedTitle,
     workspace: workspaceId,
+    owner: req.user._id,
     boardSnapshot: [],
     boardOps: [],
     activeVersion: 0,
@@ -176,12 +178,12 @@ export const list = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Workspace ID is required");
   }
 
-  const workspace = await workSpaceModel.findById(workspaceId);
+  const workspace = await workSpaceModel.findById(workspaceId).populate("owner", "username email");
   if (!workspace) {
     throw new ApiError(404, "Workspace not found");
   }
 
-  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const isOwner = workspace.owner && workspace.owner._id.toString() === req.user._id.toString();
   const isMember = workspace.members.some(
     (member) =>
       member.user && member.user.toString() === req.user._id.toString(),
@@ -197,19 +199,55 @@ export const list = asyncHandler(async (req, res) => {
   const query = { workspace: workspaceId };
 
   if (search && search.trim() !== "") {
-    query.title = { $regex: search.trim(), $options: "i" };
+    const searchRegex = { $regex: search.trim(), $options: "i" };
+    const matchingUsers = await userModel.find({ username: searchRegex });
+    const ownerIds = matchingUsers.map((u) => u._id);
+
+    query.$or = [
+      { title: searchRegex },
+      { owner: { $in: ownerIds } }
+    ];
   }
 
   if (starred === "true") {
     query.starredBy = req.user._id;
   }
 
-  const boards = await boardModel.find(query).sort({ updatedAt: -1 });
+  const boards = await boardModel
+    .find(query)
+    .populate("owner", "username email")
+    .populate("lastOpenedBy.user", "username email")
+    .sort({ updatedAt: -1 });
 
   const formattedBoards = boards.map((board) => {
     const boardObj = board.toObject();
+    const ownerInfo = board.owner || {
+      _id: workspace.owner?._id || workspace.owner,
+      username: workspace.owner?.username || "Workspace Owner",
+      email: workspace.owner?.email || "",
+    };
+
+    let lastOpenedUser = null;
+    let lastOpenedAt = null;
+    if (board.lastOpenedBy && board.lastOpenedBy.length > 0) {
+      const sortedVisits = [...board.lastOpenedBy].sort(
+        (a, b) => new Date(b.openedAt) - new Date(a.openedAt)
+      );
+      const absoluteLastOpened = sortedVisits[0];
+      lastOpenedUser = absoluteLastOpened.user || null;
+      lastOpenedAt = absoluteLastOpened.openedAt || null;
+    }
+
+    const myLastOpened = board.lastOpenedBy?.find(
+      (item) => item.user && (item.user._id || item.user).toString() === req.user._id.toString()
+    );
+
     return {
       ...boardObj,
+      owner: ownerInfo,
+      lastOpenedUser,
+      lastOpenedAt,
+      myLastOpenedAt: myLastOpened ? myLastOpened.openedAt : null,
       isStarred: board.starredBy
         ? board.starredBy.some(
             (id) => id.toString() === req.user._id.toString(),
@@ -233,20 +271,17 @@ export const get = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Board ID is required");
   }
 
-  const board = await boardModel
-    .findById(id)
-    .populate("boardSnapshot.createdBy", "username email")
-    .populate("boardOps.createdBy", "username email");
+  const board = await boardModel.findById(id);
   if (!board) {
     throw new ApiError(404, "Board not found");
   }
 
-  const workspace = await workSpaceModel.findById(board.workspace);
+  const workspace = await workSpaceModel.findById(board.workspace).populate("owner", "username email");
   if (!workspace) {
     throw new ApiError(404, "Workspace associated with this board not found");
   }
 
-  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const isOwner = workspace.owner && workspace.owner._id.toString() === req.user._id.toString();
   const isMember = workspace.members.some(
     (member) =>
       member.user && member.user.toString() === req.user._id.toString(),
@@ -256,28 +291,72 @@ export const get = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to view this board");
   }
 
+  if (!board.lastOpenedBy) {
+    board.lastOpenedBy = [];
+  }
+  const userIdStr = req.user._id.toString();
+  const lastOpenedIndex = board.lastOpenedBy.findIndex(
+    (item) => item.user && item.user.toString() === userIdStr
+  );
+  if (lastOpenedIndex !== -1) {
+    board.lastOpenedBy[lastOpenedIndex].openedAt = new Date();
+  } else {
+    board.lastOpenedBy.push({
+      user: req.user._id,
+      openedAt: new Date(),
+    });
+  }
+  await board.save();
+
+  const populatedBoardDoc = await boardModel
+    .findById(id)
+    .populate("owner", "username email")
+    .populate("lastOpenedBy.user", "username email")
+    .populate("boardSnapshot.createdBy", "username email")
+    .populate("boardOps.createdBy", "username email");
+
   let latestSnapshot = null;
-  if (board.boardSnapshot && board.boardSnapshot.length > 0) {
-    latestSnapshot = [...board.boardSnapshot].sort(
+  if (populatedBoardDoc.boardSnapshot && populatedBoardDoc.boardSnapshot.length > 0) {
+    latestSnapshot = [...populatedBoardDoc.boardSnapshot].sort(
       (a, b) => b.version - a.version,
     )[0];
   }
 
-  let operations = board.boardOps || [];
+  let operations = populatedBoardDoc.boardOps || [];
   if (latestSnapshot) {
     operations = operations.filter((op) => op.version > latestSnapshot.version);
   }
   operations = [...operations].sort((a, b) => a.version - b.version);
 
-  const boardObj = board.toObject();
+  const boardObj = populatedBoardDoc.toObject();
+  const ownerInfo = boardObj.owner || {
+    _id: workspace.owner?._id || workspace.owner,
+    username: workspace.owner?.username || "Workspace Owner",
+    email: workspace.owner?.email || "",
+  };
+
+  let lastOpenedUser = null;
+  let lastOpenedAt = null;
+  if (populatedBoardDoc.lastOpenedBy && populatedBoardDoc.lastOpenedBy.length > 0) {
+    const sortedVisits = [...populatedBoardDoc.lastOpenedBy].sort(
+      (a, b) => new Date(b.openedAt) - new Date(a.openedAt)
+    );
+    const absoluteLastOpened = sortedVisits[0];
+    lastOpenedUser = absoluteLastOpened.user || null;
+    lastOpenedAt = absoluteLastOpened.openedAt || null;
+  }
+
   const formattedBoard = {
     ...boardObj,
-    isStarred: board.starredBy
-      ? board.starredBy.some(
+    owner: ownerInfo,
+    lastOpenedUser,
+    lastOpenedAt,
+    isStarred: populatedBoardDoc.starredBy
+      ? populatedBoardDoc.starredBy.some(
           (starredId) => starredId.toString() === req.user._id.toString(),
         )
       : false,
-    starredCount: board.starredBy ? board.starredBy.length : 0,
+    starredCount: populatedBoardDoc.starredBy ? populatedBoardDoc.starredBy.length : 0,
   };
 
   return res.status(200).json(
