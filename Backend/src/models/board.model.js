@@ -98,6 +98,26 @@ const boardSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    meetingNotes: {
+      type: String,
+      default: "",
+    },
+    comments: [
+      {
+        author: {
+          type: String,
+          required: true,
+        },
+        text: {
+          type: String,
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     boardOps: [boardOpsSchema],
     boardSnapshot: [boardSnapshotSchema],
   },

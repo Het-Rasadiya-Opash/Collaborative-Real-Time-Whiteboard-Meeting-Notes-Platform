@@ -571,7 +571,7 @@ export const restore = asyncHandler(async (req, res) => {
 
 export const updateBoard = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, snapshot, operations } = req.body;
+  const { title, snapshot, operations, meetingNotes, comments } = req.body;
 
   if (!id) {
     throw new ApiError(400, "Board ID is required");
@@ -595,14 +595,19 @@ export const updateBoard = asyncHandler(async (req, res) => {
     member && (member.role === "OWNER" || member.role === "EDITOR");
 
   if (!isOwner && !hasRequiredRole) {
-    throw new ApiError(
-      403,
-      "You are not authorized to update this board",
-    );
+    throw new ApiError(403, "You are not authorized to update this board");
   }
 
   if (title && title.trim() !== "") {
     board.title = title.trim();
+  }
+
+  if (meetingNotes !== undefined) {
+    board.meetingNotes = meetingNotes;
+  }
+
+  if (comments !== undefined && Array.isArray(comments)) {
+    board.comments = comments;
   }
 
   if (snapshot) {
@@ -661,12 +666,7 @@ export const updateBoard = asyncHandler(async (req, res) => {
     .populate("boardSnapshot.createdBy", "username email")
     .populate("boardOps.createdBy", "username email");
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      populatedBoard,
-      "Board updated successfully",
-    ),
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, populatedBoard, "Board updated successfully"));
 });
-
