@@ -2,6 +2,18 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 import {
+  User,
+  AlertCircle,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Briefcase,
+  ChevronDown,
+  Loader2,
+  MailCheck,
+} from "lucide-react";
+import {
   clearError,
   setCurrentUser,
   setError,
@@ -18,18 +30,22 @@ const Auth = ({ defaultMode = "login" }) => {
     role: "user",
   });
   const [isRegistered, setIsRegistered] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { loading, error } = useSelector((state) => state.users);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const cardRef = useRef(null);
-
+  const blobContainerRef = useRef(null);
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!cardRef.current) return;
-      const moveX = (e.clientX - window.innerWidth / 2) / 100;
-      const moveY = (e.clientY - window.innerHeight / 2) / 100;
-      cardRef.current.style.transform = `translate(${moveX}px, ${moveY}px) rotate(${-2 + moveX / 5}deg)`;
+      if (!blobContainerRef.current) return;
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      const blobs = blobContainerRef.current.children;
+      Array.from(blobs).forEach((blob, index) => {
+        const speed = (index + 1) * 15;
+        blob.style.transform = `translate(${x * speed}px, ${y * speed}px)`;
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -91,214 +107,187 @@ const Auth = ({ defaultMode = "login" }) => {
   };
 
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen flex items-center justify-center p-gutter relative overflow-hidden selection:bg-primary/20 selection:text-primary">
-      <div className="fixed inset-0 canvas-grid opacity-40 pointer-events-none"></div>
+    <div className="canvas-grid text-on-surface min-h-screen flex items-center justify-center p-6 relative overflow-hidden selection:bg-primary/20 selection:text-primary font-sans">
+      <div
+        ref={blobContainerRef}
+        className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none"
+      >
+        <div
+          className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full blur-[120px] transition-transform duration-300 ease-out"
+          style={{ backgroundColor: "rgba(219, 225, 255, 0.4)" }}
+        ></div>
+        <div
+          className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] rounded-full blur-[100px] transition-transform duration-300 ease-out"
+          style={{ backgroundColor: "rgba(234, 221, 255, 0.3)" }}
+        ></div>
+      </div>
 
-      <main className="relative z-10 w-full max-w-[1100px] flex flex-col md:flex-row bg-surface rounded-xl shadow-lg border border-outline-variant overflow-hidden">
-        <div className="hidden md:flex flex-1 bg-surface-container-low p-12 flex-col justify-between relative overflow-hidden border-r border-outline-variant/30">
-          <div>
-            <div className="flex items-center gap-2 mb-8">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-md">
-                <span
-                  className="material-symbols-outlined text-on-primary text-xl"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  bubble_chart
-                </span>
-              </div>
-              <span className="font-headline-md text-xl font-bold text-primary tracking-tight">
-                CollabFlow
-              </span>
-            </div>
-            <h1 className="font-headline-lg text-3xl font-extrabold text-on-surface mb-4 leading-tight">
-              Where ideas find their structure.
+      <main className="w-full max-w-[440px] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold text-primary tracking-tight font-sans">
+              Workspace
             </h1>
-            <p className="text-on-surface-variant font-body-md max-w-sm">
-              Join the ecosystem built for high-velocity collaboration and
-              precision engineering.
-            </p>
-          </div>
-
-          <div className="relative mt-8 group">
-            <div className="absolute -inset-4 bg-brand-50 rounded-xl scale-95 group-hover:scale-100 transition-transform duration-500"></div>
-            <img
-              ref={cardRef}
-              alt="Collaborative Whiteboard"
-              className="rounded-xl shadow-xl border border-outline-variant relative z-10 transform -rotate-2 group-hover:rotate-0 transition-all duration-500 w-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAv767oxgZ_C19ItYUgolEvsRKnyjafK7noDAUpVQ0dXgpABflEkpTMY-wJEdyCxuP1HNSNnL_D6x4RFyxjjYgXbGkEAq8HJJvMSvnueGo90nK17hHaourYwaYu7uvBBfYvfp4CGFS6XZtFiv4Uvyvjq34fdV2BxRwz7QVTwWbTcUHZkjyBz5f8Txz2Lu0WgtO7S2PoRIn2zv5PCz_II23JkYCw9Uu8ZRfHjqPj0kq3ohAFXkvPPucZTF46DNl0RtkBm-casR-VQ3cz"
-              style={{ transition: "transform 0.1s ease-out" }}
-            />
-            <div className="absolute -bottom-6 -right-6 glass-panel p-4 rounded-lg shadow-xl border border-outline-variant z-20 flex items-center gap-3 animate-bounce-slow">
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full border-2 border-surface bg-status-online"></div>
-                <div className="w-8 h-8 rounded-full border-2 border-surface bg-status-away"></div>
-                <div className="w-8 h-8 rounded-full border-2 border-surface bg-status-offline"></div>
-              </div>
-              <span className="font-label-md text-sm text-on-surface font-semibold">
-                3 Active Editors
-              </span>
-            </div>
           </div>
         </div>
 
-        <div className="flex-1 bg-surface p-8 md:p-16 flex flex-col justify-center">
-          <div className="md:hidden flex items-center gap-2 mb-8 justify-center">
-            <span className="material-symbols-outlined text-primary text-3xl">
-              bubble_chart
-            </span>
-            <span className="font-headline-md text-2xl font-bold text-primary">
-              CollabFlow
-            </span>
-          </div>
-
+        <div className="glass-card rounded-xl p-8 border border-outline-variant/60 focus-within:border-primary transition-all duration-300">
           {!isRegistered ? (
-            <div id="auth-container">
-              <div className="flex bg-surface-container p-1 rounded-lg mb-8 w-fit mx-auto md:mx-0">
-                <button
-                  type="button"
-                  className={`px-6 py-2 rounded-md font-label-md text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                    mode === "login"
-                      ? "bg-surface text-primary shadow-sm"
-                      : "text-on-surface-variant hover:bg-surface-container-high"
-                  }`}
-                  onClick={() => handleToggle("login")}
-                >
-                  Login
-                </button>
-                <button
-                  type="button"
-                  className={`px-6 py-2 rounded-md font-label-md text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                    mode === "signup"
-                      ? "bg-surface text-primary shadow-sm"
-                      : "text-on-surface-variant hover:bg-surface-container-high"
-                  }`}
-                  onClick={() => handleToggle("signup")}
-                >
-                  Sign Up
-                </button>
-              </div>
-
-              <div className="mb-8 text-center md:text-left">
-                <h2 className="font-headline-md text-2xl font-bold text-on-surface mb-2">
+            <div>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-on-surface mb-1">
                   {mode === "login" ? "Welcome back" : "Create your account"}
                 </h2>
-                <p className="text-on-surface-variant font-body-md text-sm">
-                  {mode === "login"
-                    ? "Enter your credentials to access your workspace."
-                    : "Start collaborating with your team in seconds."}
-                </p>
               </div>
 
               {error && (
-                <div className="mb-6 p-4 bg-error-container border-l-4 border-error rounded text-on-error-container text-sm flex gap-2 items-center">
-                  <span className="material-symbols-outlined text-xl">
-                    error
-                  </span>
+                <div className="mb-5 p-4 bg-error-container/85 border-l-4 border-error rounded-lg text-on-error-container text-sm flex gap-2 items-center animate-in fade-in duration-200">
+                  <AlertCircle size={20} className="shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} className="space-y-5">
                 {mode === "signup" && (
-                  <div className="space-y-2">
+                  <div>
                     <label
-                      className="block font-label-md text-sm font-semibold text-on-surface"
+                      className="block text-xs font-semibold text-outline uppercase tracking-wider mb-2"
                       htmlFor="username"
                     >
                       Username
                     </label>
-                    <input
-                      className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 font-body-md text-sm"
-                      id="username"
-                      name="username"
-                      type="text"
-                      placeholder="alex_dev"
-                      required
-                      value={formData.username}
-                      onChange={handleChange}
-                    />
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <User
+                          size={20}
+                          className="text-outline group-focus-within:text-primary transition-colors"
+                        />
+                      </div>
+                      <input
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-sans"
+                        id="username"
+                        name="username"
+                        placeholder="alex_dev"
+                        required
+                        type="text"
+                        value={formData.username}
+                        onChange={handleChange}
+                      />
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div>
                   <label
-                    className="block font-label-md text-sm font-semibold text-on-surface"
+                    className="block text-xs font-semibold text-outline uppercase tracking-wider mb-2"
                     htmlFor="email"
                   >
-                    Work Email
+                    Email Address
                   </label>
-                  <input
-                    className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 font-body-md text-sm"
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="name@company.com"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                  />
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail
+                        size={20}
+                        className="text-outline group-focus-within:text-primary transition-colors"
+                      />
+                    </div>
+                    <input
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-sans"
+                      id="email"
+                      name="email"
+                      placeholder="name@company.com"
+                      required
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
                     <label
-                      className="block font-label-md text-sm font-semibold text-on-surface"
+                      className="block text-xs font-semibold text-outline uppercase tracking-wider"
                       htmlFor="password"
                     >
                       Password
                     </label>
                     {mode === "login" && (
                       <a
+                        className="text-xs font-medium text-primary hover:underline transition-all"
                         href="#"
-                        className="text-primary font-label-sm text-xs font-semibold hover:underline"
                       >
-                        Forgot password?
+                        Forgot Password?
                       </a>
                     )}
                   </div>
-                  <input
-                    className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 font-body-md text-sm"
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="********"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock
+                        size={20}
+                        className="text-outline group-focus-within:text-primary transition-colors"
+                      />
+                    </div>
+                    <input
+                      className="w-full pl-10 pr-12 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-sans"
+                      id="password"
+                      name="password"
+                      placeholder="••••••••"
+                      required
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                    <button
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-outline hover:text-on-surface transition-colors cursor-pointer"
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                 </div>
 
                 {mode === "signup" && (
-                  <div className="space-y-2">
+                  <div>
                     <label
-                      className="block font-label-md text-sm font-semibold text-on-surface"
+                      className="block text-xs font-semibold text-outline uppercase tracking-wider mb-2"
                       htmlFor="role"
                     >
                       Workspace Role
                     </label>
-                    <select
-                      className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 font-body-md text-sm cursor-pointer"
-                      id="role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                    >
-                      <option value="OWNER">OWNER</option>
-                      <option value="VIEWER">VIEWER</option>
-                      <option value="EDITOR">EDITOR</option>
-                    </select>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Briefcase
+                          size={20}
+                          className="text-outline group-focus-within:text-primary transition-colors"
+                        />
+                      </div>
+                      <select
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-sans cursor-pointer appearance-none"
+                        id="role"
+                        name="role"
+                        value={formData.role}
+                        onChange={handleChange}
+                      >
+                        <option value="OWNER">OWNER</option>
+                        <option value="VIEWER">VIEWER</option>
+                        <option value="EDITOR">EDITOR</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-outline">
+                        <ChevronDown size={20} />
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 <button
+                  className="w-full bg-primary text-on-primary py-3 rounded-lg text-sm font-bold shadow-md hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 font-sans"
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary text-on-primary py-3 px-6 rounded-lg font-label-md text-sm font-bold shadow-md hover:bg-brand-700 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <span className="material-symbols-outlined animate-spin text-xl">
-                      progress_activity
-                    </span>
+                    <Loader2 size={20} className="animate-spin" />
                   ) : mode === "login" ? (
                     "Sign In"
                   ) : (
@@ -308,19 +297,14 @@ const Auth = ({ defaultMode = "login" }) => {
               </form>
             </div>
           ) : (
-            <div className="text-center" id="verification-view">
-              <div className="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                <span
-                  className="material-symbols-outlined text-4xl"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  mark_email_read
-                </span>
+            <div className="text-center py-4" id="verification-view">
+              <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-5">
+                <MailCheck size={32} />
               </div>
-              <h2 className="font-headline-md text-2xl font-bold text-on-surface mb-2">
+              <h2 className="text-xl font-bold text-on-surface mb-2">
                 Check your email
               </h2>
-              <p className="text-on-surface-variant font-body-md text-sm mb-8 leading-relaxed">
+              <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
                 We've sent a magic link to{" "}
                 <span className="font-bold text-on-surface">
                   {formData.email}
@@ -328,58 +312,58 @@ const Auth = ({ defaultMode = "login" }) => {
                 . Please click the verification link in that email to activate
                 your workspace.
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <button
                   type="button"
                   onClick={() =>
                     window.open("https://mail.google.com", "_blank")
                   }
-                  className="w-full bg-primary text-on-primary py-3 px-6 rounded-lg font-label-md text-sm font-bold hover:bg-brand-700 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+                  className="w-full bg-primary text-on-primary py-3 rounded-lg text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-md"
                 >
                   Open Mail App
                 </button>
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="text-primary font-label-md text-sm font-semibold hover:underline cursor-pointer block mx-auto"
+                  className="text-primary text-sm font-semibold hover:underline cursor-pointer block mx-auto py-1"
                 >
                   Back to sign in
                 </button>
               </div>
             </div>
           )}
-
-          <p className="mt-8 text-center text-on-surface-variant text-xs">
-            By continuing, you agree to our{" "}
-            <a className="underline hover:text-primary" href="#">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a className="underline hover:text-primary" href="#">
-              Privacy Policy
-            </a>
-            .
-          </p>
         </div>
+
+        {!isRegistered && (
+          <p className="text-center mt-6 text-sm text-on-surface-variant font-sans">
+            {mode === "login" ? (
+              <>
+                Don't have an account?{" "}
+                <button
+                  type="button"
+                  className="text-primary font-semibold hover:underline transition-all cursor-pointer"
+                  onClick={() => handleToggle("signup")}
+                >
+                  Sign up for free
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="text-primary font-semibold hover:underline transition-all cursor-pointer"
+                  onClick={() => handleToggle("login")}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </p>
+        )}
       </main>
 
-      <div className="fixed top-20 left-10 opacity-10 animate-pulse pointer-events-none">
-        <svg height="100" viewBox="0 0 100 100" width="100">
-          <circle
-            cx="50"
-            cy="50"
-            fill="none"
-            r="40"
-            stroke="currentColor"
-            strokeWidth="2"
-          ></circle>
-          <path
-            d="M50 10 L50 90 M10 50 L90 50"
-            stroke="currentColor"
-            strokeWidth="1"
-          ></path>
-        </svg>
-      </div>
+    
     </div>
   );
 };

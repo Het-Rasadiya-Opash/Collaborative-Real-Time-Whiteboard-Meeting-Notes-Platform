@@ -160,6 +160,19 @@
   backdrop-filter: blur(12px);
 }
 
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-outline-variant);
+  box-shadow: 0 12px 24px -8px rgba(37, 99, 235, 0.08);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -12px rgba(37, 99, 235, 0.16);
+}
+
 .note-yellow {
   background: var(--color-note-yellow-bg);
   color: var(--color-note-yellow-text);

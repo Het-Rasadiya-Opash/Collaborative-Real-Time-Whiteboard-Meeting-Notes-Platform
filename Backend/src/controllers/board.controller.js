@@ -568,3 +568,105 @@ export const restore = asyncHandler(async (req, res) => {
     ),
   );
 });
+
+export const updateBoard = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, snapshot, operations } = req.body;
+
+  if (!id) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const board = await boardModel.findById(id);
+  if (!board) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspace = await workSpaceModel.findById(board.workspace);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const member = workspace.members.find(
+    (m) => m.user && m.user.toString() === req.user._id.toString(),
+  );
+  const hasRequiredRole =
+    member && (member.role === "OWNER" || member.role === "EDITOR");
+
+  if (!isOwner && !hasRequiredRole) {
+    throw new ApiError(
+      403,
+      "You are not authorized to update this board",
+    );
+  }
+
+  if (title && title.trim() !== "") {
+    board.title = title.trim();
+  }
+
+  if (snapshot) {
+    let canvasJson = [];
+    let version = board.activeVersion + 1;
+    let yjsStateVector = null;
+
+    if (Array.isArray(snapshot)) {
+      canvasJson = snapshot;
+    } else if (typeof snapshot === "object" && snapshot !== null) {
+      canvasJson = snapshot.canvasJson || [];
+      version =
+        typeof snapshot.version === "number"
+          ? snapshot.version
+          : board.activeVersion + 1;
+      if (snapshot.yjsStateVector) {
+        if (typeof snapshot.yjsStateVector === "string") {
+          yjsStateVector = Buffer.from(snapshot.yjsStateVector, "base64");
+        } else if (Buffer.isBuffer(snapshot.yjsStateVector)) {
+          yjsStateVector = snapshot.yjsStateVector;
+        }
+      }
+    }
+
+    board.boardSnapshot.push({
+      version,
+      canvasJson,
+      yjsStateVector,
+      createdBy: req.user._id,
+    });
+    board.activeVersion = version;
+  }
+
+  if (operations) {
+    const opsArray = Array.isArray(operations) ? operations : [operations];
+    for (const item of opsArray) {
+      if (!item) continue;
+      let opVersion = item.version || board.activeVersion + 1;
+      let opDetail = item.op || item;
+
+      board.boardOps.push({
+        version: opVersion,
+        op: opDetail,
+        createdBy: req.user._id,
+      });
+      if (opVersion > board.activeVersion) {
+        board.activeVersion = opVersion;
+      }
+    }
+  }
+
+  await board.save();
+
+  const populatedBoard = await boardModel
+    .findById(board._id)
+    .populate("boardSnapshot.createdBy", "username email")
+    .populate("boardOps.createdBy", "username email");
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      populatedBoard,
+      "Board updated successfully",
+    ),
+  );
+});
+

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import apiRequest from "../utils/apiRequest";
 import { logout } from "../features/usersSlice";
-import { Search, X, Plus, Bell, User, LogOut } from "lucide-react";
+import { X, User, LogOut, Search, Bell } from "lucide-react";
 import toast from "react-hot-toast";
 
 const Header = () => {
@@ -47,95 +47,120 @@ const Header = () => {
       navigate("/login");
     }
   };
+
   return (
-    <header className="fixed top-0 right-0 left-[280px] h-toolbar-height flex justify-between items-center px-gutter z-30 bg-surface border-b border-outline-variant shadow-sm">
-      <div className="flex items-center flex-1 max-w-xl">
-        <div className="relative w-full">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-outline"
-          />
+    <header className="fixed top-0 right-0 left-[280px] h-toolbar-height z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant shadow-sm flex justify-between items-center px-6">
+      <div className="flex items-center w-1/3 min-w-[240px]">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline select-none" size={18} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-low border border-outline-variant rounded-full py-1.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md"
-            placeholder="Search boards, files, or members..."
+            className="w-full pl-10 pr-10 py-1.5 bg-surface-container-low border border-outline-variant rounded-full text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-on-surface"
+            placeholder="Search workspace..."
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface cursor-pointer"
             >
-              <X size={18} />
+              <X size={14} />
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-4 relative">
-        <button
-          onClick={() => toast("Canvas creation is coming soon")}
-          className="px-4 py-2 bg-primary text-on-primary font-label-md text-sm font-semibold rounded-lg hover:bg-brand-700 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
-        >
-          <Plus size={18} />
-          New Canvas
-        </button>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5 pr-4 border-r border-outline-variant">
+          <div ref={notificationRef} className="relative">
+            <button
+              onClick={() => {
+                setIsNotificationsOpen(!isNotificationsOpen);
+                setIsProfileOpen(false);
+              }}
+              className="p-2 hover:bg-primary-container/10 text-on-surface-variant hover:text-primary rounded-full transition-all cursor-pointer relative"
+              title="Notifications"
+            >
+              <Bell className="select-none" size={20} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+            </button>
 
-        <div ref={notificationRef} className="relative">
-          <button
-            onClick={() => {
-              setIsNotificationsOpen(!isNotificationsOpen);
-              setIsProfileOpen(false);
-            }}
-            className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors rounded-full relative cursor-pointer"
-          >
-            <Bell size={20} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-error rounded-full"></span>
-          </button>
+            {isNotificationsOpen && (
+              <div className="absolute right-0 top-11 w-80 bg-surface rounded-xl shadow-xl border border-outline-variant p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="pb-2 border-b border-outline-variant flex justify-between items-center">
+                  <h4 className="font-bold text-sm text-on-surface">
+                    Notifications
+                  </h4>
+                  <button
+                    onClick={() =>
+                      toast.success("Notifications marked as read!")
+                    }
+                    className="text-[10px] text-primary hover:underline font-semibold"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="py-4 text-center text-xs text-on-surface-variant/80">
+                  You are all caught up!
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="h-8 w-[1px] bg-outline-variant mx-1"></div>
+        <div ref={profileRef} className="flex items-center gap-3 ml-2 relative">
+          <div
+            className="text-right hidden sm:block cursor-pointer select-none"
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+          >
+            <p className="font-bold text-xs text-on-surface leading-tight">
+              {currentUser?.username || "Guest User"}
+            </p>
+            <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mt-0.5">
+              {currentUser?.role || "MEMBER"} Lead
+            </p>
+          </div>
 
-        <div ref={profileRef} className="relative">
           <img
             onClick={() => {
               setIsProfileOpen(!isProfileOpen);
               setIsNotificationsOpen(false);
             }}
             alt="User avatar"
-            className="w-9 h-9 rounded-full object-cover border border-outline-variant cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvlUPR7_j1Ww20SndKhRhUMJbSIBEOWqlPS9FD062q6wHEJxjMgeMHmr7wkwRP-f52D3m05tBP_dLMYSHqTfef07pEAnb0OKNPfgUSv7RowTmK0XVCHtjhRVwY0mLjtD9RAyv2Oa9fZId_qB0Xi-KaDqDYX1EpIHJ8Wlxd4ZjajiV_YUFqzQhLd3teqrCRJSrgGpqtzA-zBHMGJ0wX1ylneSIkZgdtvS-98xc9LJ0UMznnu6cW61QDxlkpkajq1KdwIr3nUco1ynp8"
+            className="w-10 h-10 rounded-full border-2 border-primary-container shadow-sm object-cover cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+            src="https://cdn-icons-png.magnific.com/256/11136/11136505.png?semt=ais_white_label"
           />
 
           {isProfileOpen && (
             <div className="absolute right-0 top-12 w-64 bg-surface rounded-xl shadow-xl border border-outline-variant p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="pb-3 border-b border-outline-variant">
                 <p className="font-bold text-on-surface text-sm leading-tight">
-                  {currentUser.username}
+                  {currentUser?.username}
                 </p>
                 <p className="text-xs text-on-surface-variant/80 mt-0.5">
-                  {currentUser.email}
+                  {currentUser?.email}
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-semibold badge-info px-2 py-0.5 rounded uppercase">
-                  {currentUser.role}
+                <span className="inline-block mt-2 text-[10px] font-semibold badge-info px-2.5 py-0.5 rounded uppercase font-black tracking-wider">
+                  {currentUser?.role}
                 </span>
               </div>
               <div className="pt-2 space-y-1">
                 <button
                   onClick={() => {
                     setIsProfileOpen(false);
+                    toast.success("Profile details page is coming soon!");
                   }}
                   className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-surface-container transition-colors text-on-surface flex items-center gap-2 cursor-pointer"
                 >
-                  <User size={18} />
+                  <User size={16} />
                   Profile Settings
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-error-container/20 text-error hover:text-error transition-colors flex items-center gap-2 cursor-pointer font-semibold"
+                  className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-error-container/20 text-error hover:text-error transition-colors flex items-center gap-2 cursor-pointer font-bold"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={16} />
                   Sign Out
                 </button>
               </div>

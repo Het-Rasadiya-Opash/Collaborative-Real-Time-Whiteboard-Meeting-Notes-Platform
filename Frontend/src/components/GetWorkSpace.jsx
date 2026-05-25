@@ -11,6 +11,9 @@ import {
   UserPlus,
   Users,
   X,
+  Palette,
+  Megaphone,
+  PlusSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -24,10 +27,14 @@ const roleBadgeClass = {
   MEMBER: "badge-viewer",
 };
 
-const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
+const GetWorkSpace = ({
+  onCreateWorkspace,
+  refreshKey = 0,
+  onLaunchWorkspace,
+}) => {
   const { currentUser } = useSelector((state) => state.users);
   const isOwner = currentUser?.role === "OWNER";
-  
+
   const [workspaces, setWorkspaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,11 +54,7 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
         if (!isMounted) return;
         setWorkspaces(response.data?.data || []);
       })
-      .catch(() => {
-        if (isMounted) {
-          toast.error("Failed to load workspaces");
-        }
-      })
+      .catch(() => {})
       .finally(() => {
         if (isMounted) {
           setIsLoading(false);
@@ -108,14 +111,16 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
         {
           email: emailInput.trim(),
           role: roleInput,
-        }
+        },
       );
-      
+
       const updatedWorkspace = response.data?.data;
       if (updatedWorkspace) {
         setActiveWorkspace(updatedWorkspace);
         setWorkspaces((prev) =>
-          prev.map((w) => (w._id === updatedWorkspace._id ? updatedWorkspace : w))
+          prev.map((w) =>
+            w._id === updatedWorkspace._id ? updatedWorkspace : w,
+          ),
         );
         setEmailInput("");
         setRoleInput("VIEWER");
@@ -129,7 +134,7 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
   const handleRemoveMember = async (userId, username) => {
     if (
       !window.confirm(
-        `Are you sure you want to remove ${username || "this member"} from the workspace?`
+        `Are you sure you want to remove ${username || "this member"} from the workspace?`,
       )
     ) {
       return;
@@ -138,14 +143,16 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
     setIsActionLoading(true);
     try {
       const response = await apiRequest.delete(
-        `/workspaces/${selectedWorkspaceId}/member/${userId}`
+        `/workspaces/${selectedWorkspaceId}/member/${userId}`,
       );
-      
+
       const updatedWorkspace = response.data?.data;
       if (updatedWorkspace) {
         setActiveWorkspace(updatedWorkspace);
         setWorkspaces((prev) =>
-          prev.map((w) => (w._id === updatedWorkspace._id ? updatedWorkspace : w))
+          prev.map((w) =>
+            w._id === updatedWorkspace._id ? updatedWorkspace : w,
+          ),
         );
       }
     } catch (err) {
@@ -164,86 +171,103 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
           </p>
         </div>
       ) : (
-        <div className="space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workspaces.map((workspace) => {
+        <div className="space-y-12 animate-in fade-in duration-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {workspaces.map((workspace, index) => {
               const userRoleInWorkspace =
                 workspace.members?.find((m) => m.user?._id === currentUser?._id)
                   ?.role || "MEMBER";
 
               const isOwnerCard = userRoleInWorkspace === "OWNER";
+              const members = workspace.members || [];
+              
+              // Dynamic themes for a stunning aesthetic visual
+              const getCardTheme = (idx) => {
+                const themes = [
+                  {
+                    bg: "bg-brand-100/80 text-primary",
+                    icon: Rocket,
+                  },
+                  {
+                    bg: "bg-purple-100/80 text-purple-700",
+                    icon: Palette,
+                  },
+                  {
+                    bg: "bg-amber-100/80 text-amber-700",
+                    icon: Megaphone,
+                  },
+                  {
+                    bg: "bg-emerald-100/80 text-emerald-700",
+                    icon: Briefcase,
+                  }
+                ];
+                return themes[idx % themes.length];
+              };
+              
+              const theme = getCardTheme(index);
+              const ThemeIcon = theme.icon;
 
               return (
                 <div
                   key={workspace._id}
                   onClick={() => setSelectedWorkspaceId(workspace._id)}
-                  className="group relative bg-surface border border-outline-variant/70 rounded-xl p-6 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 flex flex-col justify-between min-h-[220px] cursor-pointer"
+                  className="glass-card p-6 rounded-2xl relative group cursor-pointer flex flex-col h-full animate-in fade-in duration-200"
                 >
-                  <div>
-                    <div className="flex items-start justify-between mb-4">
-                      {isOwnerCard ? (
-                        <div className="w-12 h-12 bg-brand-50 border border-brand-100 text-primary rounded-xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
-                          <Briefcase size={22} className="stroke-[2px]" />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 bg-info-bg border border-info-border text-info-text rounded-xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
-                          <Rocket size={22} className="stroke-[2px]" />
-                        </div>
-                      )}
-
-                      <span
-                        className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${roleBadgeClass[userRoleInWorkspace] || "badge-viewer"}`}
-                      >
-                        {userRoleInWorkspace}
-                      </span>
+                  <div className="flex justify-between items-start mb-5">
+                    <div className={`p-3 rounded-xl ${theme.bg}`}>
+                      <ThemeIcon className="select-none" size={32} />
                     </div>
-
-                    <h3
-                      className={`text-lg font-bold transition-colors group-hover:text-primary ${
-                        isOwnerCard ? "text-on-surface" : "text-primary"
-                      }`}
-                    >
-                      {workspace.name}
-                    </h3>
-
-                    <div className="mt-4 space-y-2 text-sm text-on-surface-variant/80">
-                      <div className="flex items-center gap-2.5">
-                        <Mail size={15} className="text-outline/70" />
-                        <span className="truncate">
-                          {workspace.owner?.email || "Unknown"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Users size={15} className="text-outline/70" />
-                        <span>{workspace.members?.length || 0} Members</span>
-                      </div>
-                    </div>
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-semibold text-xs rounded-full border border-emerald-100">
+                      Active
+                    </span>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-end text-xs text-primary-container font-bold">
-                    {isOwnerCard ? (
-                      <span className="flex items-center gap-1 transition-all group-hover:underline">
-                        View Details
-                        <ArrowRight
-                          size={14}
-                          className="group-hover:translate-x-0.5 transition-transform"
-                        />
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 transition-all group-hover:underline">
-                        Launch Space
-                        <ExternalLink
-                          size={14}
-                          className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform"
-                        />
-                      </span>
-                    )}
+                  <div className="mb-6 flex-1">
+                    <h3 className="font-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors truncate">
+                      {workspace.name}
+                    </h3>
+                    <p className="text-xs text-on-surface-variant/80 truncate">
+                      {workspace.owner?.email || "Unknown"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/40">
+                    <div className="flex -space-x-2">
+                      {members.slice(0, 3).map((member, mIdx) => {
+                        const username = member.user?.username || "?";
+                        const firstChar = username.charAt(0).toUpperCase();
+                        const colors = [
+                          "bg-blue-100 text-blue-700 border-surface",
+                          "bg-purple-100 text-purple-700 border-surface",
+                          "bg-amber-100 text-amber-700 border-surface",
+                          "bg-emerald-100 text-emerald-700 border-surface",
+                        ];
+                        const colorClass = colors[mIdx % colors.length];
+                        return (
+                          <div
+                            key={member._id || mIdx}
+                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold ${colorClass}`}
+                            title={username}
+                          >
+                            {firstChar}
+                          </div>
+                        );
+                      })}
+                      {members.length > 3 && (
+                        <div className="w-8 h-8 rounded-full border-2 border-surface bg-surface-container flex items-center justify-center text-[10px] font-bold text-primary">
+                          +{members.length - 3}
+                        </div>
+                      )}
+                    </div>
+                    <span className={`text-xs font-bold tracking-wide uppercase ${isOwnerCard ? "text-primary" : "text-on-surface-variant"}`}>
+                      {userRoleInWorkspace}
+                    </span>
                   </div>
                 </div>
               );
             })}
 
-            <div
+            <button
               onClick={() => {
                 if (isOwner) {
                   onCreateWorkspace?.();
@@ -251,18 +275,16 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
                   toast.error("Only Owners can create new workspaces");
                 }
               }}
-              className="group border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-6 bg-transparent hover:bg-brand-50 hover:border-primary/40 transition-all duration-300 min-h-[220px] cursor-pointer text-center"
+              className="border-2 border-dashed border-outline-variant rounded-2xl p-6 flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary hover:bg-primary-container/5 transition-all group min-h-[200px] cursor-pointer text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-outline/80 mb-3 group-hover:scale-105 group-hover:text-primary transition-all duration-300">
-                <Plus size={20} className="stroke-[2.5px]" />
-              </div>
-              <h4 className="text-base font-bold text-on-surface group-hover:text-primary transition-colors">
+              <PlusSquare className="mb-3 group-hover:scale-115 transition-transform text-outline group-hover:text-primary select-none" size={36} />
+              <span className="font-bold text-base text-on-surface group-hover:text-primary transition-colors font-headline-md">
                 New Workspace
-              </h4>
-              <p className="text-xs text-on-surface-variant/70 mt-1 max-w-[200px]">
-                Create a new collaborative zone
+              </span>
+              <p className="text-xs text-on-surface-variant/70 mt-2 px-4 leading-relaxed max-w-[200px]">
+                Initialize a new secure environment for your team's collaboration.
               </p>
-            </div>
+            </button>
           </div>
         </div>
       )}
@@ -277,7 +299,9 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-on-surface">
-                    {activeWorkspace ? activeWorkspace.name : "Workspace Details"}
+                    {activeWorkspace
+                      ? activeWorkspace.name
+                      : "Workspace Details"}
                   </h3>
                   <p className="text-xs text-on-surface-variant/80">
                     Collaborative Workspace Management
@@ -310,7 +334,9 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
                       <div className="flex items-center gap-3 bg-surface p-3 rounded-lg border border-outline-variant/40">
                         <Mail size={16} className="text-primary" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold text-outline uppercase">Owner</p>
+                          <p className="text-[10px] font-bold text-outline uppercase">
+                            Owner
+                          </p>
                           <p className="font-semibold text-on-surface truncate">
                             {activeWorkspace.owner?.email || "Unknown"}
                           </p>
@@ -319,9 +345,13 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
                       <div className="flex items-center gap-3 bg-surface p-3 rounded-lg border border-outline-variant/40">
                         <Calendar size={16} className="text-primary" />
                         <div>
-                          <p className="text-[10px] font-bold text-outline uppercase">Created At</p>
+                          <p className="text-[10px] font-bold text-outline uppercase">
+                            Created At
+                          </p>
                           <p className="font-semibold text-on-surface">
-                            {new Date(activeWorkspace.createdAt).toLocaleDateString(undefined, {
+                            {new Date(
+                              activeWorkspace.createdAt,
+                            ).toLocaleDateString(undefined, {
                               year: "numeric",
                               month: "long",
                               day: "numeric",
@@ -341,7 +371,9 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
 
                     <div className="border border-outline-variant/50 rounded-xl divide-y divide-outline-variant/40 overflow-hidden bg-surface">
                       {activeWorkspace.members?.map((member) => {
-                        const isMemberOwner = member.role === "OWNER" || member.user?._id === activeWorkspace.owner?._id;
+                        const isMemberOwner =
+                          member.role === "OWNER" ||
+                          member.user?._id === activeWorkspace.owner?._id;
                         return (
                           <div
                             key={member._id || member.user?._id}
@@ -376,7 +408,10 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
                               {isOwner && !isMemberOwner && (
                                 <button
                                   onClick={() =>
-                                    handleRemoveMember(member.user?._id, member.user?.username)
+                                    handleRemoveMember(
+                                      member.user?._id,
+                                      member.user?.username,
+                                    )
                                   }
                                   disabled={isActionLoading}
                                   className="p-1.5 text-error/80 hover:text-error hover:bg-error-container/60 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
@@ -400,7 +435,10 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
                           Invite Collaborator
                         </h4>
                       </div>
-                      <form onSubmit={handleAddMember} className="flex flex-col sm:flex-row gap-3">
+                      <form
+                        onSubmit={handleAddMember}
+                        className="flex flex-col sm:flex-row gap-3"
+                      >
                         <div className="relative flex-1">
                           <Mail
                             size={16}
@@ -457,8 +495,11 @@ const GetWorkSpace = ({ onCreateWorkspace, refreshKey = 0 }) => {
               {activeWorkspace && (
                 <button
                   onClick={() => {
-                    toast.success(`Entering workspace: ${activeWorkspace.name}`);
+                    toast.success(
+                      `Entering workspace: ${activeWorkspace.name}`,
+                    );
                     setSelectedWorkspaceId(null);
+                    onLaunchWorkspace?.(activeWorkspace);
                   }}
                   className="px-4 py-2 bg-primary text-on-primary text-sm font-bold rounded-xl hover:bg-brand-700 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
                 >

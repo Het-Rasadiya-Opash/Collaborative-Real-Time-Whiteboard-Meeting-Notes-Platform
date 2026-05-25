@@ -9,6 +9,7 @@ import {
   getPublicBoard,
   restore,
   snapShotList,
+  updateBoard,
 } from "../controllers/board.controller.js";
 import { authorizeRole } from "../middlewares/authRole.middleware.js";
 
@@ -22,6 +23,7 @@ router.post(
 );
 router.get("/workspace/:workspaceId", authMiddleware, list);
 router.get("/:id", authMiddleware, get);
+router.put("/:id", authMiddleware, updateBoard);
 router.post("/:id/star", authMiddleware, toggleStar);
 router.post(
   "/:id/share-link",
@@ -30,14 +32,7 @@ router.post(
   generateShareLink,
 );
 router.get("/share/:token", getPublicBoard);
-
-router.get(
-  "/:id/snapshots",
-  authMiddleware,
-  authorizeRole("OWNER", "EDITOR", "VIEWER"),
-  snapShotList,
-);
-
+router.get("/:id/snapshots", authMiddleware, snapShotList);
 router.post(
   "/:id/snapshots/:snapId/restore",
   authMiddleware,

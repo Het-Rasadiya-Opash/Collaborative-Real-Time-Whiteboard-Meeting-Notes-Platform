@@ -1,168 +1,101 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
+import apiRequest from "../utils/apiRequest";
+import { logout } from "../features/usersSlice";
 import {
-  Network,
   LayoutDashboard,
-  Palette,
+  PenTool,
   FileText,
   Users,
   Settings,
-  ListFilter,
-  User,
-  Share2,
-  UserPlus,
   HelpCircle,
+  LogOut,
 } from "lucide-react";
 
 const Sidebar = ({ activeNav, setActiveNav }) => {
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest.post("/users/logout");
+      dispatch(logout());
+      navigate("/login");
+    } catch {
+      dispatch(logout());
+      navigate("/login");
+    }
+  };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-sidebar-width flex flex-col p-4 border-r border-outline-variant z-40 bg-surface">
-      <div className="flex items-center gap-3 mb-8 px-2">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-on-primary shadow-sm">
-          <Network className="w-6 h-6 font-semibold" />
-        </div>
-        <div>
-          <h2 className="font-headline-sm text-headline-sm font-black text-on-surface">
-            Project Space
-          </h2>
-          <p className="font-label-md text-label-md text-on-surface-variant opacity-70">
-            Collaborative Team
-          </p>
-        </div>
+    <aside className="fixed left-0 top-0 h-screen w-sidebar-width flex flex-col py-6 border-r border-outline-variant z-40 bg-surface">
+      <div className="px-6 mb-8">
+        <h1 className="font-bold text-lg text-primary tracking-tight">
+          {" "}
+          Workspace
+        </h1>
       </div>
 
-      <nav className="flex-1 space-y-1">
-        <button
-          onClick={() => setActiveNav("dashboard")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-            activeNav === "dashboard"
-              ? "text-primary font-bold bg-brand-50"
-              : "text-on-surface-variant hover:bg-surface-container"
-          }`}
-        >
-          <LayoutDashboard size={20} />
-          <span className="font-label-md text-sm">Dashboard</span>
-        </button>
-
-        <button
-          onClick={() => setActiveNav("boards")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-            activeNav === "boards"
-              ? "text-primary font-bold bg-brand-50"
-              : "text-on-surface-variant hover:bg-surface-container"
-          }`}
-        >
-          <Palette size={20} />
-          <span className="font-label-md text-sm">Boards</span>
-        </button>
-
-        <button
-          onClick={() => setActiveNav("notes")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-            activeNav === "notes"
-              ? "text-primary font-bold bg-brand-50"
-              : "text-on-surface-variant hover:bg-surface-container"
-          }`}
-        >
-          <FileText size={20} />
-          <span className="font-label-md text-sm">Notes</span>
-        </button>
-        <button
-          onClick={() => setActiveNav("members")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-            activeNav === "members"
-              ? "text-primary font-bold bg-brand-50"
-              : "text-on-surface-variant hover:bg-surface-container"
-          }`}
-        >
-          <Users size={20} />
-          <span className="font-label-md text-sm">Members</span>
-        </button>
-        <button
-          onClick={() => setActiveNav("settings")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-            activeNav === "settings"
-              ? "text-primary font-bold bg-brand-50"
-              : "text-on-surface-variant hover:bg-surface-container"
-          }`}
-        >
-          <Settings size={20} />
-          <span className="font-label-md text-sm">Settings</span>
-        </button>
+      <nav className="flex-1 space-y-1 px-3">
+        {[
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { id: "boards", label: "Boards", icon: PenTool },
+          { id: "notes", label: "Notes", icon: FileText },
+          { id: "members", label: "Members", icon: Users },
+          { id: "settings", label: "Settings", icon: Settings },
+        ].map((item) => {
+          const isActive = activeNav === item.id;
+          const IconComponent = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveNav(item.id)}
+              className={`w-full flex items-center gap-3 py-2.5 px-4 transition-all duration-150 active:scale-95 cursor-pointer rounded-xl ${
+                isActive
+                  ? "bg-surface-container text-primary font-bold border-l-4 border-primary shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-container-low hover:translate-x-1"
+              }`}
+            >
+              <IconComponent size={20} className="select-none" />
+              <span className="text-sm font-semibold">{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="mt-6">
-        <p className="font-label-sm text-label-sm text-outline uppercase px-3 mb-2 font-bold tracking-wider">
-          Filters
-        </p>
-        <div className="space-y-1">
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-              activeFilter === "all"
-                ? "bg-brand-50 text-primary font-semibold"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
+      <div className="mt-auto px-4 space-y-4">
+        <button
+          onClick={() =>
+            toast.success(
+              "Click 'Create Workspace' on the dashboard panel to add a workspace!",
+            )
+          }
+          className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-outline text-primary font-bold text-xs hover:bg-primary/5 transition-colors cursor-pointer"
+        >
+          New Workspace
+        </button>
+        <div className="pt-4 border-t border-outline-variant space-y-1">
+          <a
+            className="flex items-center gap-3 text-on-surface-variant py-2 px-4 hover:bg-surface-container-low rounded-lg transition-all"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              toast.success("Help Center is always here to assist you.");
+            }}
           >
-            <span className="flex items-center gap-3">
-              <ListFilter size={18} />
-              <span className="font-label-md text-sm">Boards</span>
-            </span>
-          </button>
+            <HelpCircle size={18} className="select-none" />
+            <span className="text-xs font-semibold">Help Center</span>
+          </a>
           <button
-            onClick={() => setActiveFilter("owned")}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-              activeFilter === "owned"
-                ? "bg-brand-50 text-primary font-semibold"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 text-on-surface-variant py-2 px-4 hover:bg-error-container/20 hover:text-error rounded-lg transition-all cursor-pointer"
           >
-            <span className="flex items-center gap-3">
-              <User size={18} />
-              <span className="font-label-md text-sm">Owned by me</span>
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveFilter("shared")}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-              activeFilter === "shared"
-                ? "bg-brand-50 text-primary font-semibold"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <Share2 size={18} />
-              <span className="font-label-md text-sm">Shared with me</span>
-            </span>
+            <LogOut size={18} className="select-none" />
+            <span className="text-xs font-semibold">Log Out</span>
           </button>
         </div>
-      </div>
-
-      <div className="mt-auto pt-6 border-t border-outline-variant space-y-1">
-        <button
-          onClick={() => toast("Member invites are coming soon")}
-          className="w-full flex items-center gap-3 px-3 py-2 text-primary font-bold hover:bg-brand-50 rounded-lg transition-all duration-200 cursor-pointer"
-        >
-          <UserPlus size={20} />
-          <span className="font-label-md text-sm">Invite Member</span>
-        </button>
-        <a
-          className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all duration-200"
-          href="#"
-        >
-          <HelpCircle size={20} />
-          <span className="font-label-md text-sm">Help Center</span>
-        </a>
-        <button
-          onClick={() => setIsProfileOpen(!isProfileOpen)}
-          className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all duration-200 cursor-pointer"
-        >
-          <User size={20} />
-          <span className="font-label-md text-sm">Account</span>
-        </button>
       </div>
     </aside>
   );
