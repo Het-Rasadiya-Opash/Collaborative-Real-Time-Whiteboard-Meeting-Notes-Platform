@@ -46,9 +46,6 @@ const Workspace = () => {
           <h1 className="text-3xl font-black tracking-tight text-on-surface">
             Workspaces
           </h1>
-          <p className="text-on-surface-variant/80 mt-1 text-sm">
-            Manage your collaborative team zones, shared canvases, and members.
-          </p>
         </div>
 
         {isOwner ? (
