@@ -11,6 +11,8 @@ import {
   snapShotList,
   updateBoard,
   createSnapshot,
+  exportPNG,
+  exportPDF,
 } from "../controllers/board.controller.js";
 import { authorizeRole } from "../middlewares/authRole.middleware.js";
 
@@ -46,5 +48,7 @@ router.post(
   authorizeRole("OWNER", "EDITOR"),
   restore,
 );
+router.get("/:id/export/png", authMiddleware, exportPNG);
+router.get("/:id/export/pdf", authMiddleware, exportPDF);
 
 export default router;

@@ -40,6 +40,13 @@ const usersSlice = createSlice({
       state.currentUser = null;
       state.isCheckingAuth = false;
       state.error = null;
+      try {
+        localStorage.removeItem("activeNav");
+        localStorage.removeItem("selectedWorkspace");
+        localStorage.removeItem("activeBoard");
+      } catch (e) {
+        console.error("Error clearing localStorage on logout:", e);
+      }
     },
   },
 });

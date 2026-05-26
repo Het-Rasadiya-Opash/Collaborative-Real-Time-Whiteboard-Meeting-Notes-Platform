@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import * as Y from "yjs";
+import { createCanvas } from "canvas";
+import PDFDocument from "pdfkit";
 import boardModel from "../models/board.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -179,12 +181,16 @@ export const list = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Workspace ID is required");
   }
 
-  const workspace = await workSpaceModel.findById(workspaceId).populate("owner", "username email");
+  const workspace = await workSpaceModel
+    .findById(workspaceId)
+    .populate("owner", "username email");
   if (!workspace) {
     throw new ApiError(404, "Workspace not found");
   }
 
-  const isOwner = workspace.owner && workspace.owner._id.toString() === req.user._id.toString();
+  const isOwner =
+    workspace.owner &&
+    workspace.owner._id.toString() === req.user._id.toString();
   const isMember = workspace.members.some(
     (member) =>
       member.user && member.user.toString() === req.user._id.toString(),
@@ -204,10 +210,7 @@ export const list = asyncHandler(async (req, res) => {
     const matchingUsers = await userModel.find({ username: searchRegex });
     const ownerIds = matchingUsers.map((u) => u._id);
 
-    query.$or = [
-      { title: searchRegex },
-      { owner: { $in: ownerIds } }
-    ];
+    query.$or = [{ title: searchRegex }, { owner: { $in: ownerIds } }];
   }
 
   if (starred === "true") {
@@ -232,7 +235,7 @@ export const list = asyncHandler(async (req, res) => {
     let lastOpenedAt = null;
     if (board.lastOpenedBy && board.lastOpenedBy.length > 0) {
       const sortedVisits = [...board.lastOpenedBy].sort(
-        (a, b) => new Date(b.openedAt) - new Date(a.openedAt)
+        (a, b) => new Date(b.openedAt) - new Date(a.openedAt),
       );
       const absoluteLastOpened = sortedVisits[0];
       lastOpenedUser = absoluteLastOpened.user || null;
@@ -240,7 +243,9 @@ export const list = asyncHandler(async (req, res) => {
     }
 
     const myLastOpened = board.lastOpenedBy?.find(
-      (item) => item.user && (item.user._id || item.user).toString() === req.user._id.toString()
+      (item) =>
+        item.user &&
+        (item.user._id || item.user).toString() === req.user._id.toString(),
     );
 
     return {
@@ -277,12 +282,16 @@ export const get = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Board not found");
   }
 
-  const workspace = await workSpaceModel.findById(board.workspace).populate("owner", "username email");
+  const workspace = await workSpaceModel
+    .findById(board.workspace)
+    .populate("owner", "username email");
   if (!workspace) {
     throw new ApiError(404, "Workspace associated with this board not found");
   }
 
-  const isOwner = workspace.owner && workspace.owner._id.toString() === req.user._id.toString();
+  const isOwner =
+    workspace.owner &&
+    workspace.owner._id.toString() === req.user._id.toString();
   const isMember = workspace.members.some(
     (member) =>
       member.user && member.user.toString() === req.user._id.toString(),
@@ -297,7 +306,7 @@ export const get = asyncHandler(async (req, res) => {
   }
   const userIdStr = req.user._id.toString();
   const lastOpenedIndex = board.lastOpenedBy.findIndex(
-    (item) => item.user && item.user.toString() === userIdStr
+    (item) => item.user && item.user.toString() === userIdStr,
   );
   if (lastOpenedIndex !== -1) {
     board.lastOpenedBy[lastOpenedIndex].openedAt = new Date();
@@ -317,7 +326,10 @@ export const get = asyncHandler(async (req, res) => {
     .populate("boardOps.createdBy", "username email");
 
   let latestSnapshot = null;
-  if (populatedBoardDoc.boardSnapshot && populatedBoardDoc.boardSnapshot.length > 0) {
+  if (
+    populatedBoardDoc.boardSnapshot &&
+    populatedBoardDoc.boardSnapshot.length > 0
+  ) {
     latestSnapshot = [...populatedBoardDoc.boardSnapshot].sort(
       (a, b) => b.version - a.version,
     )[0];
@@ -338,9 +350,12 @@ export const get = asyncHandler(async (req, res) => {
 
   let lastOpenedUser = null;
   let lastOpenedAt = null;
-  if (populatedBoardDoc.lastOpenedBy && populatedBoardDoc.lastOpenedBy.length > 0) {
+  if (
+    populatedBoardDoc.lastOpenedBy &&
+    populatedBoardDoc.lastOpenedBy.length > 0
+  ) {
     const sortedVisits = [...populatedBoardDoc.lastOpenedBy].sort(
-      (a, b) => new Date(b.openedAt) - new Date(a.openedAt)
+      (a, b) => new Date(b.openedAt) - new Date(a.openedAt),
     );
     const absoluteLastOpened = sortedVisits[0];
     lastOpenedUser = absoluteLastOpened.user || null;
@@ -357,7 +372,9 @@ export const get = asyncHandler(async (req, res) => {
           (starredId) => starredId.toString() === req.user._id.toString(),
         )
       : false,
-    starredCount: populatedBoardDoc.starredBy ? populatedBoardDoc.starredBy.length : 0,
+    starredCount: populatedBoardDoc.starredBy
+      ? populatedBoardDoc.starredBy.length
+      : 0,
   };
 
   return res.status(200).json(
@@ -639,7 +656,7 @@ export const restore = asyncHandler(async (req, res) => {
   const tempDoc = new Y.Doc();
   const canvasMap = tempDoc.getMap("canvas");
   const notesText = tempDoc.getText("notes");
-  
+
   if (Array.isArray(snapshot.canvasJson)) {
     snapshot.canvasJson.forEach((el) => {
       if (el && el.id) {
@@ -723,9 +740,10 @@ export const createSnapshot = asyncHandler(async (req, res) => {
     const canvasMap = doc.getMap("canvas");
     elements = Array.from(canvasMap.values());
   } else {
-    const sortedSnaps = board.boardSnapshot && board.boardSnapshot.length > 0
-      ? [...board.boardSnapshot].sort((a, b) => b.version - a.version)
-      : [];
+    const sortedSnaps =
+      board.boardSnapshot && board.boardSnapshot.length > 0
+        ? [...board.boardSnapshot].sort((a, b) => b.version - a.version)
+        : [];
     elements = sortedSnaps.length > 0 ? sortedSnaps[0].canvasJson : [];
   }
 
@@ -749,15 +767,13 @@ export const createSnapshot = asyncHandler(async (req, res) => {
     .findById(board._id)
     .populate("boardSnapshot.createdBy", "username email");
 
-  const createdSnap = populatedBoard.boardSnapshot.find((s) => s.version === version);
-
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      createdSnap,
-      "Snapshot created successfully",
-    ),
+  const createdSnap = populatedBoard.boardSnapshot.find(
+    (s) => s.version === version,
   );
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, createdSnap, "Snapshot created successfully"));
 });
 
 export const updateBoard = asyncHandler(async (req, res) => {
@@ -860,4 +876,405 @@ export const updateBoard = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, populatedBoard, "Board updated successfully"));
+});
+
+const drawElementsOnCanvas = (elements) => {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+
+  elements.forEach((el) => {
+    if (!el) return;
+    if (el.type === "stroke" && Array.isArray(el.points)) {
+      el.points.forEach((p) => {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      });
+    } else if (el.type === "rectangle" || el.type === "sticky") {
+      if (el.x < minX) minX = el.x;
+      if (el.y < minY) minY = el.y;
+      if (el.x + el.width > maxX) maxX = el.x + el.width;
+      if (el.y + el.height > maxY) maxY = el.y + el.height;
+    } else if (el.type === "circle") {
+      if (el.cx - el.r < minX) minX = el.cx - el.r;
+      if (el.cy - el.r < minY) minY = el.cy - el.r;
+      if (el.cx + el.r > maxX) maxX = el.cx + el.r;
+      if (el.cy + el.r > maxY) maxY = el.cy + el.r;
+    }
+  });
+
+  const padding = 50;
+  let width = 1920;
+  let height = 1080;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (minX !== Infinity && minY !== Infinity) {
+    width = maxX - minX + padding * 2;
+    height = maxY - minY + padding * 2;
+    offsetX = -minX + padding;
+    offsetY = -minY + padding;
+    if (width < 300) width = 300;
+    if (height < 300) height = 300;
+  }
+
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.translate(offsetX, offsetY);
+
+  elements.forEach((el) => {
+    if (!el) return;
+    if (
+      el.type === "stroke" &&
+      Array.isArray(el.points) &&
+      el.points.length > 0
+    ) {
+      ctx.beginPath();
+      ctx.strokeStyle = el.color || "#2563eb";
+      ctx.lineWidth = el.strokeWidth || 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.moveTo(el.points[0].x, el.points[0].y);
+      for (let i = 1; i < el.points.length; i++) {
+        ctx.lineTo(el.points[i].x, el.points[i].y);
+      }
+      ctx.stroke();
+    } else if (el.type === "rectangle") {
+      ctx.beginPath();
+      ctx.strokeStyle = el.color || "#2563eb";
+      ctx.lineWidth = 3;
+      ctx.rect(el.x, el.y, el.width, el.height);
+      ctx.stroke();
+    } else if (el.type === "circle") {
+      ctx.beginPath();
+      ctx.arc(el.cx, el.cy, el.r, 0, 2 * Math.PI);
+      ctx.strokeStyle = el.color || "#2563eb";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    } else if (el.type === "sticky") {
+      const rx = el.x;
+      const ry = el.y;
+      const rw = el.width || 160;
+      const rh = el.height || 160;
+      const radius = 12;
+
+      ctx.beginPath();
+      ctx.moveTo(rx + radius, ry);
+      ctx.lineTo(rx + rw - radius, ry);
+      ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + radius);
+      ctx.lineTo(rx + rw, ry + rh - radius);
+      ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - radius, ry + rh);
+      ctx.lineTo(rx + radius, ry + rh - radius);
+      ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - radius);
+      ctx.lineTo(rx, ry + radius);
+      ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
+      ctx.closePath();
+
+      ctx.fillStyle = el.color || "#fef08a";
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.1)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(rx + rw - 15, ry + 15, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.fill();
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const text = el.text || "";
+      const words = text.split(" ");
+      let line = "";
+      const lines = [];
+      const maxWidth = rw - 24;
+      const lineHeight = 16;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          lines.push(line);
+          line = words[n] + " ";
+        } else {
+          line = testLine;
+        }
+      }
+      lines.push(line);
+
+      const totalTextHeight = lines.length * lineHeight;
+      let startY = ry + (rh - totalTextHeight) / 2 + lineHeight / 2;
+
+      lines.forEach((l) => {
+        ctx.fillText(l.trim(), rx + rw / 2, startY);
+        startY += lineHeight;
+      });
+    }
+  });
+
+  return canvas.toBuffer("image/png");
+};
+
+export const exportPNG = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const board = await boardModel.findById(id);
+  if (!board) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspace = await workSpaceModel.findById(board.workspace);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const isMember = workspace.members.some(
+    (member) =>
+      member.user && member.user.toString() === req.user._id.toString(),
+  );
+
+  if (!isOwner && !isMember) {
+    throw new ApiError(403, "You are not authorized to export this board");
+  }
+
+  const activeDocs = req.app.get("activeDocs");
+  let elements = [];
+  if (activeDocs && activeDocs.has(id)) {
+    const doc = activeDocs.get(id).doc;
+    const canvasMap = doc.getMap("canvas");
+    elements = Array.from(canvasMap.values());
+  } else {
+    const sortedSnaps =
+      board.boardSnapshot && board.boardSnapshot.length > 0
+        ? [...board.boardSnapshot].sort((a, b) => b.version - a.version)
+        : [];
+    elements = sortedSnaps.length > 0 ? sortedSnaps[0].canvasJson : [];
+  }
+
+  const pngBuffer = drawElementsOnCanvas(elements);
+
+  res.setHeader("Content-Type", "image/png");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${board.title.replace(/\s+/g, "_")}.png"`,
+  );
+  return res.send(pngBuffer);
+});
+
+export const exportPDF = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const board = await boardModel.findById(id);
+  if (!board) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspace = await workSpaceModel.findById(board.workspace);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const isMember = workspace.members.some(
+    (member) =>
+      member.user && member.user.toString() === req.user._id.toString(),
+  );
+
+  if (!isOwner && !isMember) {
+    throw new ApiError(403, "You are not authorized to export this board");
+  }
+
+  const activeDocs = req.app.get("activeDocs");
+  let elements = [];
+  let meetingNotesText = board.meetingNotes || "";
+
+  if (activeDocs && activeDocs.has(id)) {
+    const active = activeDocs.get(id);
+    const doc = active.doc;
+    const canvasMap = doc.getMap("canvas");
+    elements = Array.from(canvasMap.values());
+    const notesText = doc.getText("notes");
+    meetingNotesText = notesText.toString();
+  } else {
+    const sortedSnaps =
+      board.boardSnapshot && board.boardSnapshot.length > 0
+        ? [...board.boardSnapshot].sort((a, b) => b.version - a.version)
+        : [];
+    elements = sortedSnaps.length > 0 ? sortedSnaps[0].canvasJson : [];
+  }
+
+  const pngBuffer = drawElementsOnCanvas(elements);
+  console.log(pngBuffer);
+  const doc = new PDFDocument({ margin: 50, size: "A4", bufferPages: true });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${board.title.replace(/\s+/g, "_")}_meeting_summary.pdf"`,
+  );
+
+  doc.pipe(res);
+
+  doc.rect(0, 0, 595, 80).fill("#1e293b");
+  doc
+    .fillColor("#ffffff")
+    .font("Helvetica-Bold")
+    .fontSize(18)
+    .text(board.title, 50, 22, { width: 495, ellipsis: true });
+  doc
+    .fillColor("#94a3b8")
+    .font("Helvetica")
+    .fontSize(9)
+    .text(
+      `Workspace: ${workspace.name || "Default Workspace"}  |  Generated on ${new Date().toLocaleString()}`,
+      50,
+      48,
+    );
+
+  doc.y = 110;
+
+  doc
+    .fillColor("#2563eb")
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text("WHITEBOARD CANVAS SNAPSHOT", 50, doc.y);
+  doc.moveDown(0.5);
+
+  try {
+    doc.image(pngBuffer, {
+      fit: [495, 260],
+      align: "center",
+      valign: "center",
+    });
+    doc.y = 400;
+  } catch (err) {
+    console.error("Error embedding PNG in PDF:", err);
+    doc
+      .fillColor("#ef4444")
+      .font("Helvetica-Oblique")
+      .fontSize(10)
+      .text("[Could not render whiteboard snapshot]");
+    doc.moveDown(2);
+  }
+
+  doc
+    .moveTo(50, doc.y)
+    .lineTo(545, doc.y)
+    .strokeColor("#cbd5e1")
+    .lineWidth(1)
+    .stroke();
+  doc.moveDown(1.5);
+
+  doc
+    .fillColor("#7c3aed")
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text("MEETING NOTES & SUMMARY", 50, doc.y);
+  doc.moveDown(0.8);
+
+  if (!meetingNotesText || meetingNotesText.trim() === "") {
+    doc
+      .fillColor("#64748b")
+      .font("Helvetica-Oblique")
+      .fontSize(11)
+      .text("No notes captured during this whiteboard session.");
+  } else {
+    let cleanHtml = meetingNotesText
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<\/h1>/gi, "\n\n")
+      .replace(/<\/h2>/gi, "\n\n")
+      .replace(/<\/h3>/gi, "\n\n")
+      .replace(/<\/li>/gi, "\n");
+
+    const lines = cleanHtml.split("\n");
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+
+      const stripTags = (txt) => {
+        return txt
+          .replace(/<[^>]*>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">");
+      };
+
+      if (line.startsWith("<h1")) {
+        doc.moveDown(0.6);
+        doc
+          .fillColor("#1e293b")
+          .font("Helvetica-Bold")
+          .fontSize(16)
+          .text(stripTags(line));
+        doc.moveDown(0.3);
+      } else if (line.startsWith("<h2")) {
+        doc.moveDown(0.5);
+        doc
+          .fillColor("#1e293b")
+          .font("Helvetica-Bold")
+          .fontSize(14)
+          .text(stripTags(line));
+        doc.moveDown(0.2);
+      } else if (line.startsWith("<h3")) {
+        doc.moveDown(0.4);
+        doc
+          .fillColor("#1e293b")
+          .font("Helvetica-Bold")
+          .fontSize(12)
+          .text(stripTags(line));
+        doc.moveDown(0.2);
+      } else if (line.startsWith("<li")) {
+        doc
+          .fillColor("#334155")
+          .font("Helvetica")
+          .fontSize(10)
+          .text(`  •  ${stripTags(line)}`, { indent: 15 });
+      } else {
+        doc
+          .fillColor("#334155")
+          .font("Helvetica")
+          .fontSize(10)
+          .text(stripTags(line), { paragraphGap: 6, lineGap: 2 });
+      }
+    }
+  }
+
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+    doc
+      .fillColor("#94a3b8")
+      .font("Helvetica")
+      .fontSize(8)
+      .text(`Page ${i + 1} of ${range.count}`, 50, doc.page.height - 35, {
+        align: "center",
+        width: doc.page.width - 100,
+      });
+  }
+
+  doc.end();
 });

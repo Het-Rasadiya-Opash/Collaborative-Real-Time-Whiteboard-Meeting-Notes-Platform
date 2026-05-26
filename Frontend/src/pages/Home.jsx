@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import Workspace from "./Workspace";
@@ -6,10 +6,56 @@ import Boards from "./Boards";
 import Whiteboard from "./Whiteboard";
 
 const Home = () => {
-  const [activeNav, setActiveNav] = useState("dashboard");
-  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
-  const [activeBoard, setActiveBoard] = useState(null);
+  const [activeNav, setActiveNav] = useState(() => {
+    try {
+      return localStorage.getItem("activeNav") || "dashboard";
+    } catch {
+      return "dashboard";
+    }
+  });
+  const [selectedWorkspace, setSelectedWorkspace] = useState(() => {
+    try {
+      const stored = localStorage.getItem("selectedWorkspace");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [activeBoard, setActiveBoard] = useState(() => {
+    try {
+      const stored = localStorage.getItem("activeBoard");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("activeNav", activeNav);
+    } catch {}
+  }, [activeNav]);
+
+  useEffect(() => {
+    try {
+      if (selectedWorkspace) {
+        localStorage.setItem("selectedWorkspace", JSON.stringify(selectedWorkspace));
+      } else {
+        localStorage.removeItem("selectedWorkspace");
+      }
+    } catch {}
+  }, [selectedWorkspace]);
+
+  useEffect(() => {
+    try {
+      if (activeBoard) {
+        localStorage.setItem("activeBoard", JSON.stringify(activeBoard));
+      } else {
+        localStorage.removeItem("activeBoard");
+      }
+    } catch {}
+  }, [activeBoard]);
 
   const handleLaunchWorkspace = (workspace) => {
     setSelectedWorkspace(workspace);

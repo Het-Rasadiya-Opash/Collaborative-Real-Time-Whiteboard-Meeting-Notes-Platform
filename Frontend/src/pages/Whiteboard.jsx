@@ -76,8 +76,7 @@ function setCaretPosition(element, offset) {
       range.collapse(true);
       sel.removeAllRanges();
       sel.addRange(range);
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 }
 
@@ -86,13 +85,21 @@ function syncContentEditableToYText(yText, newText) {
   if (oldText === newText) return;
 
   let start = 0;
-  while (start < oldText.length && start < newText.length && oldText[start] === newText[start]) {
+  while (
+    start < oldText.length &&
+    start < newText.length &&
+    oldText[start] === newText[start]
+  ) {
     start++;
   }
 
   let oldEnd = oldText.length;
   let newEnd = newText.length;
-  while (oldEnd > start && newEnd > start && oldText[oldEnd - 1] === newText[newEnd - 1]) {
+  while (
+    oldEnd > start &&
+    newEnd > start &&
+    oldText[oldEnd - 1] === newText[newEnd - 1]
+  ) {
     oldEnd--;
     newEnd--;
   }
@@ -147,6 +154,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
   const [zoom, setZoom] = useState(85);
   const [isNotesOpen, setIsNotesOpen] = useState(true);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [agendaText, setAgendaText] = useState("");
@@ -208,7 +216,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     if (isReadOnly) return;
     if (
       window.confirm(
-        `Are you sure you want to restore the whiteboard to "${snap.label || 'this version'}"? This will modify the board for all active users.`
+        `Are you sure you want to restore the whiteboard to "${snap.label || "this version"}"? This will modify the board for all active users.`,
       )
     ) {
       apiRequest
@@ -352,28 +360,31 @@ const Whiteboard = ({ board, onClose, workspace }) => {
       setCollaborators((prev) => prev.filter((c) => c.userId !== userId));
     });
 
-    socket.on("board-restored", ({ elements: restoredElements, meetingNotes, syncData }) => {
-      toast.success("The whiteboard was restored to a previous version!");
-      setElements(restoredElements);
-      setPreviewSnapshot(null);
-      if (meetingNotes !== undefined) {
-        setAgendaText(meetingNotes || "");
-        if (editorRef.current) {
-          editorRef.current.innerHTML = meetingNotes || "";
+    socket.on(
+      "board-restored",
+      ({ elements: restoredElements, meetingNotes, syncData }) => {
+        toast.success("The whiteboard was restored to a previous version!");
+        setElements(restoredElements);
+        setPreviewSnapshot(null);
+        if (meetingNotes !== undefined) {
+          setAgendaText(meetingNotes || "");
+          if (editorRef.current) {
+            editorRef.current.innerHTML = meetingNotes || "";
+          }
         }
-      }
-      if (ydoc && syncData) {
-        ydoc.transact(() => {
-          if (canvasMap) {
-            canvasMap.clear();
-          }
-          if (notesText) {
-            notesText.delete(0, notesText.length);
-          }
-        });
-        Y.applyUpdate(ydoc, new Uint8Array(syncData), "server");
-      }
-    });
+        if (ydoc && syncData) {
+          ydoc.transact(() => {
+            if (canvasMap) {
+              canvasMap.clear();
+            }
+            if (notesText) {
+              notesText.delete(0, notesText.length);
+            }
+          });
+          Y.applyUpdate(ydoc, new Uint8Array(syncData), "server");
+        }
+      },
+    );
 
     return () => {
       socket.disconnect();
@@ -820,59 +831,54 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     }
   };
 
-  const handleExportPNG = () => {
-    toast.success("Preparing whiteboard image export...");
-    if (!canvasRef.current) return;
+  const handleExportPNG = async () => {
+    const loadingToast = toast.loading("Generating board PNG on the server...");
     try {
-      const svgString = new XMLSerializer().serializeToString(
-        canvasRef.current,
-      );
-      const svgBlob = new Blob([svgString], {
-        type: "image/svg+xml;charset=utf-8",
+      const response = await apiRequest.get(`/boards/${board._id}/export/png`, {
+        responseType: "blob",
       });
-      const DOMURL = window.URL || window.webkitURL || window;
-      const url = DOMURL.createObjectURL(svgBlob);
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = canvasRef.current.clientWidth || 1920;
-        canvas.height = canvasRef.current.clientHeight || 1080;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#f8f9ff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-        const png = canvas.toDataURL("image/png");
-        const downloadLink = document.createElement("a");
-        downloadLink.href = png;
-        downloadLink.download = `${boardTitle}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        DOMURL.revokeObjectURL(png);
-        toast.success("Exported PNG successfully!");
-      };
-      img.src = url;
-    } catch (e) {
-      toast.error("Failed to export PNG. Exporting SVG instead.");
-      const svgString = new XMLSerializer().serializeToString(
-        canvasRef.current,
-      );
-      const svgBlob = new Blob([svgString], {
-        type: "image/svg+xml;charset=utf-8",
-      });
-      const url = URL.createObjectURL(svgBlob);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = url;
-      downloadLink.download = `${boardTitle}.svg`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      const blob = new Blob([response.data], { type: "image/png" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${boardTitle.replace(/\s+/g, "_")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.dismiss(loadingToast);
+      toast.success("Board exported as PNG successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.dismiss(loadingToast);
+      toast.error("Failed to export board as PNG.");
     }
   };
 
-  const handleExportPDF = () => {
-    toast.success("Preparing PDF document...");
-    window.print();
+  const handleExportPDF = async () => {
+    const loadingToast = toast.loading(
+      "Generating meeting summary PDF on the server...",
+    );
+    try {
+      const response = await apiRequest.get(`/boards/${board._id}/export/pdf`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${boardTitle.replace(/\s+/g, "_")}_meeting_summary.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.dismiss(loadingToast);
+      toast.success("Meeting summary exported as PDF successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.dismiss(loadingToast);
+      toast.error("Failed to export meeting summary as PDF.");
+    }
   };
 
   const handleSaveNotes = (text) => {
@@ -912,7 +918,9 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     setIsNotesOpen(!isNotesOpen);
   };
 
-  const displayedElements = previewSnapshot ? previewSnapshot.canvasJson || [] : elements;
+  const displayedElements = previewSnapshot
+    ? previewSnapshot.canvasJson || []
+    : elements;
 
   return (
     <div className="fixed inset-0 w-full h-full flex z-50 bg-background text-on-background font-sans overflow-hidden select-none animate-in fade-in duration-200 whiteboard-root">
@@ -1137,15 +1145,61 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                   Share
                 </span>
               </button>
-              <button
-                onClick={handleExportPNG}
-                className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-all text-xs font-bold text-on-surface-variant active:scale-95 cursor-pointer"
-              >
-                <Download size={16} />
-                <span className="font-label-md text-label-md uppercase tracking-wider">
-                  Export
-                </span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-all text-xs font-bold text-on-surface-variant active:scale-95 cursor-pointer"
+                >
+                  <Download size={16} />
+                  <span className="font-label-md text-label-md uppercase tracking-wider">
+                    Export
+                  </span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    keyboard_arrow_down
+                  </span>
+                </button>
+                {isExportDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-3 py-2 text-[10px] font-bold text-outline uppercase tracking-wider border-b border-outline-variant/40 mb-1">
+                      Export Options
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsExportDropdownOpen(false);
+                        handleExportPNG();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-primary text-[20px]">
+                        image
+                      </span>
+                      <div className="flex flex-col">
+                        <span>Export Board (PNG)</span>
+                        <span className="text-[9px] text-outline font-medium normal-case">
+                          Server-rendered whiteboard image
+                        </span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsExportDropdownOpen(false);
+                        handleExportPDF();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-secondary text-[20px]">
+                        picture_as_pdf
+                      </span>
+                      <div className="flex flex-col">
+                        <span>Export Notes (PDF)</span>
+                        <span className="text-[9px] text-outline font-medium normal-case">
+                          Server-generated meeting summary
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -1157,9 +1211,12 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                 <div className="flex items-center gap-2.5">
                   <Clock size={20} className="animate-pulse" />
                   <div className="flex flex-col text-left">
-                    <span className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Previewing Past Version</span>
+                    <span className="text-[10px] opacity-80 uppercase tracking-widest font-bold">
+                      Previewing Past Version
+                    </span>
                     <span className="text-sm font-black truncate max-w-[280px]">
-                      {previewSnapshot.label || `Version - ${new Date(previewSnapshot.createdAt || previewSnapshot.version).toLocaleString()}`}
+                      {previewSnapshot.label ||
+                        `Version - ${new Date(previewSnapshot.createdAt || previewSnapshot.version).toLocaleString()}`}
                     </span>
                   </div>
                 </div>
@@ -1169,7 +1226,9 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                       onClick={() => handleRestoreSnapshot(previewSnapshot)}
                       className="bg-white text-amber-700 hover:bg-amber-50 transition-all font-bold text-xs px-4 py-2 rounded-xl active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-200"
                     >
-                      <span className="material-symbols-outlined text-[16px] font-bold">restore</span>
+                      <span className="material-symbols-outlined text-[16px] font-bold">
+                        restore
+                      </span>
                       Restore This Version
                     </button>
                   )}
@@ -1675,7 +1734,9 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                       : "text-on-surface-variant hover:bg-white/40"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">description</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    description
+                  </span>
                   Notes
                 </button>
                 <button
@@ -1831,14 +1892,18 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                             <span>{comment.author}</span>
                             <span className="text-[10px] font-normal text-on-surface-variant opacity-60 font-sans">
                               {comment.createdAt
-                                ? new Date(comment.createdAt).toLocaleTimeString(
-                                    [],
-                                    { hour: "2-digit", minute: "2-digit" },
-                                  )
+                                ? new Date(
+                                    comment.createdAt,
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
                                 : "Just now"}
                             </span>
                           </div>
-                          <p className="text-on-surface-variant">{comment.text}</p>
+                          <p className="text-on-surface-variant">
+                            {comment.text}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -1892,16 +1957,28 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
                     {snapshots.length === 0 ? (
                       <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                        <History className="mx-auto text-outline/50 mb-3 opacity-70" size={32} />
-                        <p className="text-xs text-on-surface-variant font-medium">No snapshots saved yet.</p>
-                        <p className="text-[10px] text-outline/80 mt-1">Automatic version snapshots are taken periodically during edits.</p>
+                        <History
+                          className="mx-auto text-outline/50 mb-3 opacity-70"
+                          size={32}
+                        />
+                        <p className="text-xs text-on-surface-variant font-medium">
+                          No snapshots saved yet.
+                        </p>
+                        <p className="text-[10px] text-outline/80 mt-1">
+                          Automatic version snapshots are taken periodically
+                          during edits.
+                        </p>
                       </div>
                     ) : (
                       snapshots.map((snap) => {
-                        const dateStr = new Date(snap.createdAt || snap.version).toLocaleString();
-                        const creatorName = snap.createdBy?.username || "System Auto-save";
-                        const isCurrentlyPreviewed = previewSnapshot && previewSnapshot._id === snap._id;
-                        
+                        const dateStr = new Date(
+                          snap.createdAt || snap.version,
+                        ).toLocaleString();
+                        const creatorName =
+                          snap.createdBy?.username || "System Auto-save";
+                        const isCurrentlyPreviewed =
+                          previewSnapshot && previewSnapshot._id === snap._id;
+
                         return (
                           <div
                             key={snap._id || snap.version}
@@ -1913,7 +1990,8 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                           >
                             <div className="flex flex-col text-left">
                               <h4 className="text-xs font-bold text-on-surface line-clamp-2">
-                                {snap.label || `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
+                                {snap.label ||
+                                  `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
                               </h4>
                               <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-on-surface-variant opacity-75">
                                 <Clock size={11} />
@@ -1926,21 +2004,29 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
                             <div className="flex items-center gap-2 w-full mt-1 border-t border-outline-variant/30 pt-2.5">
                               <button
-                                onClick={() => setPreviewSnapshot(isCurrentlyPreviewed ? null : snap)}
+                                onClick={() =>
+                                  setPreviewSnapshot(
+                                    isCurrentlyPreviewed ? null : snap,
+                                  )
+                                }
                                 className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all active:scale-95 cursor-pointer text-center ${
                                   isCurrentlyPreviewed
                                     ? "bg-amber-500 text-white hover:bg-amber-600"
                                     : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
                                 }`}
                               >
-                                {isCurrentlyPreviewed ? "Viewing Preview" : "Preview Version"}
+                                {isCurrentlyPreviewed
+                                  ? "Viewing Preview"
+                                  : "Preview Version"}
                               </button>
                               {!isReadOnly && (
                                 <button
                                   onClick={() => handleRestoreSnapshot(snap)}
                                   className="py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all bg-primary/10 hover:bg-primary/20 text-primary active:scale-95 cursor-pointer text-center flex items-center gap-1"
                                 >
-                                  <span className="material-symbols-outlined text-[12px] font-bold">restore</span>
+                                  <span className="material-symbols-outlined text-[12px] font-bold">
+                                    restore
+                                  </span>
                                   Restore
                                 </button>
                               )}
@@ -2044,7 +2130,10 @@ const Whiteboard = ({ board, onClose, workspace }) => {
           <div className="bg-surface-bright border border-outline-variant/60 rounded-3xl p-6 shadow-2xl max-w-sm w-full mx-4 flex flex-col gap-4 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <History className="text-primary animate-in spin-in-12 duration-500" size={20} />
+                <History
+                  className="text-primary animate-in spin-in-12 duration-500"
+                  size={20}
+                />
                 <h3 className="font-headline-md text-base font-black text-on-surface">
                   Save Custom Version
                 </h3>
@@ -2059,8 +2148,11 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                 <X size={16} />
               </button>
             </div>
-            
-            <form onSubmit={handleCreateSnapshot} className="flex flex-col gap-4">
+
+            <form
+              onSubmit={handleCreateSnapshot}
+              className="flex flex-col gap-4"
+            >
               <div className="flex flex-col gap-1.5 text-left">
                 <label className="text-[10px] text-outline uppercase font-bold tracking-wider">
                   Version Label / Name
