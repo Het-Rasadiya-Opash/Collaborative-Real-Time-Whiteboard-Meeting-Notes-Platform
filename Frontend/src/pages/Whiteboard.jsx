@@ -28,7 +28,16 @@ import toast from "react-hot-toast";
 import apiRequest from "../utils/apiRequest";
 import { io } from "socket.io-client";
 import * as Y from "yjs";
-import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Text, Transformer } from "react-konva";
+import {
+  Stage,
+  Layer,
+  Rect,
+  Circle as KonvaCircle,
+  Line,
+  Group,
+  Text,
+  Transformer,
+} from "react-konva";
 
 function getCaretCharacterOffsetWithin(element) {
   let caretOffset = 0;
@@ -124,18 +133,26 @@ const COLOR_PALETTE = [
   { name: "White", hex: "#ffffff" },
 ];
 
-const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, publicShareToken }) => {
+const Whiteboard = ({
+  board,
+  onClose,
+  workspace,
+  isReadOnly: propIsReadOnly,
+  publicShareToken,
+}) => {
   const { currentUser } = useSelector((state) => state.users);
 
   const myMember = workspace?.members?.find(
     (m) => currentUser?._id && (m.user?._id || m.user) === currentUser?._id,
   );
   const myRole =
-    currentUser?._id && (workspace?.owner?._id === currentUser?._id ||
-    workspace?.owner === currentUser?._id)
+    currentUser?._id &&
+    (workspace?.owner?._id === currentUser?._id ||
+      workspace?.owner === currentUser?._id)
       ? "OWNER"
       : myMember?.role || "VIEWER";
-  const isReadOnly = propIsReadOnly !== undefined ? propIsReadOnly : (myRole === "VIEWER");
+  const isReadOnly =
+    propIsReadOnly !== undefined ? propIsReadOnly : myRole === "VIEWER";
 
   const [boardTitle, setBoardTitle] = useState(board.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -144,10 +161,18 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareExpiry, setShareExpiry] = useState("24");
   const [shareRole, setShareRole] = useState("VIEWER");
-  const [activeShareToken, setActiveShareToken] = useState(board.publicShareToken || "");
-  const [activeShareExpires, setActiveShareExpires] = useState(board.publicShareExpires || null);
-  const [activeShareRole, setActiveShareRole] = useState(board.publicShareRole || "VIEWER");
-  const [isPublicLinkActive, setIsPublicLinkActive] = useState(board.isPublic || false);
+  const [activeShareToken, setActiveShareToken] = useState(
+    board.publicShareToken || "",
+  );
+  const [activeShareExpires, setActiveShareExpires] = useState(
+    board.publicShareExpires || null,
+  );
+  const [activeShareRole, setActiveShareRole] = useState(
+    board.publicShareRole || "VIEWER",
+  );
+  const [isPublicLinkActive, setIsPublicLinkActive] = useState(
+    board.isPublic || false,
+  );
   const [selectedTool, setSelectedTool] = useState("pencil");
   const [currentColor, setCurrentColor] = useState("#2563eb");
   const [saveStatus, setSaveStatus] = useState("saved");
@@ -232,7 +257,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
         .post(
           `/boards/${board._id}/snapshots/${snap._id}/restore`,
           {},
-          { skipSuccessToast: true }
+          { skipSuccessToast: true },
         )
         .then(() => {
           setElements(snap.canvasJson || []);
@@ -273,7 +298,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   }, []);
 
   useEffect(() => {
-    if (selectedElementId && selectedTool === "select" && transformerRef.current) {
+    if (
+      selectedElementId &&
+      selectedTool === "select" &&
+      transformerRef.current
+    ) {
       const stage = transformerRef.current.getStage();
       const selectedNode = stage.findOne("#" + selectedElementId);
       if (selectedNode) {
@@ -409,7 +438,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
         const index = prev.findIndex((c) => c.userId === userId);
         if (index !== -1) {
           const updated = [...prev];
-          updated[index] = { ...updated[index], isTypingNotes: isTyping, username };
+          updated[index] = {
+            ...updated[index],
+            isTypingNotes: isTyping,
+            username,
+          };
           return updated;
         } else {
           return [...prev, { userId, username, isTypingNotes: isTyping }];
@@ -462,7 +495,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
 
   useEffect(() => {
     let isMounted = true;
-    const fetchUrl = publicShareToken ? `/boards/share/${publicShareToken}` : `/boards/${board._id}`;
+    const fetchUrl = publicShareToken
+      ? `/boards/share/${publicShareToken}`
+      : `/boards/${board._id}`;
     apiRequest
       .get(fetchUrl)
       .then((response) => {
@@ -508,7 +543,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
 
       if (isSocketConnected) return;
 
-      const fetchUrl = publicShareToken ? `/boards/share/${publicShareToken}` : `/boards/${board._id}`;
+      const fetchUrl = publicShareToken
+        ? `/boards/share/${publicShareToken}`
+        : `/boards/${board._id}`;
       apiRequest
         .get(fetchUrl)
         .then((response) => {
@@ -552,7 +589,13 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       isMounted = false;
       clearInterval(pollInterval);
     };
-  }, [board._id, isCanvasBusy, isEditingTitle, isSocketConnected, publicShareToken]);
+  }, [
+    board._id,
+    isCanvasBusy,
+    isEditingTitle,
+    isSocketConnected,
+    publicShareToken,
+  ]);
 
   const triggerAutoSave = (updatedElements) => {
     setSaveStatus("unsaved");
@@ -570,7 +613,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
           },
           {
             skipSuccessToast: true,
-          }
+          },
         )
         .then(() => {
           setSaveStatus("saved");
@@ -594,7 +637,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
         },
         {
           skipSuccessToast: true,
-        }
+        },
       );
       setSaveStatus("saved");
     } catch {
@@ -634,16 +677,16 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
         },
         {
           skipSuccessToast: true,
-        }
+        },
       );
-      
+
       const data = response.data?.data;
       if (data) {
         setActiveShareToken(data.shareToken);
         setActiveShareExpires(data.expiresAt);
         setActiveShareRole(data.publicShareRole);
         setIsPublicLinkActive(true);
-        
+
         const frontendShareUrl = `${window.location.protocol}//${window.location.host}/board/shared/${data.shareToken}`;
         await navigator.clipboard.writeText(frontendShareUrl);
         toast.success("Share link generated and copied to clipboard!");
@@ -660,7 +703,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
         {},
         {
           skipSuccessToast: true,
-        }
+        },
       );
       setIsPublicLinkActive(false);
       setActiveShareToken("");
@@ -753,7 +796,8 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       return;
     }
 
-    const clickedOnEmpty = e.target === e.target.getStage() || e.target.id() === "stage-background";
+    const clickedOnEmpty =
+      e.target === e.target.getStage() || e.target.id() === "stage-background";
     if (clickedOnEmpty) {
       setSelectedElementId(null);
     }
@@ -1088,7 +1132,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
             },
             {
               skipSuccessToast: true,
-            }
+            },
           )
           .then(() => {
             setSaveStatus("saved");
@@ -1180,7 +1224,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
     : elements;
 
   const typingCollaborators = collaborators.filter(
-    (c) => c.isTypingNotes && c.userId !== currentUser?._id
+    (c) => c.isTypingNotes && c.userId !== currentUser?._id,
   );
 
   return (
@@ -1318,7 +1362,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
               ) : (
                 <span
                   onClick={() => !isReadOnly && setIsEditingTitle(true)}
-                  className={!isReadOnly ? "cursor-pointer hover:underline decoration-dashed decoration-primary decoration-2 underline-offset-4" : ""}
+                  className={
+                    !isReadOnly
+                      ? "cursor-pointer hover:underline decoration-dashed decoration-primary decoration-2 underline-offset-4"
+                      : ""
+                  }
                   title={!isReadOnly ? "Click to rename board" : ""}
                 >
                   Board: {boardTitle}
@@ -1632,7 +1680,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
               </div>
             )}
 
-            <div ref={canvasRef} className="w-full h-full relative overflow-hidden" style={{ pointerEvents: "all" }}>
+            <div
+              ref={canvasRef}
+              className="w-full h-full relative overflow-hidden"
+              style={{ pointerEvents: "all" }}
+            >
               <Stage
                 width={dimensions.width}
                 height={dimensions.height}
@@ -1643,7 +1695,13 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                 onTouchStart={handleStageMouseDown}
                 onTouchMove={handleStageMouseMove}
                 onTouchEnd={handleStageMouseUp}
-                style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%" }}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: "100%",
+                  height: "100%",
+                }}
               >
                 <Layer>
                   <Rect
@@ -1751,7 +1809,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                           <Text
                             x={12}
                             y={12}
-                            text={el.color === "#fef08a" || el.color === "#eff4ff" ? "STICKY NOTE" : "IDEA"}
+                            text={
+                              el.color === "#fef08a" || el.color === "#eff4ff"
+                                ? "STICKY NOTE"
+                                : "IDEA"
+                            }
                             fontSize={9}
                             fontFamily="sans-serif"
                             fontWeight="bold"
@@ -1785,7 +1847,10 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                     <Group>
                       {currentDrawingElement.type === "stroke" && (
                         <Line
-                          points={currentDrawingElement.points.flatMap((p) => [p.x, p.y])}
+                          points={currentDrawingElement.points.flatMap((p) => [
+                            p.x,
+                            p.y,
+                          ])}
                           stroke={currentDrawingElement.color}
                           strokeWidth={4}
                           lineCap="round"
@@ -1825,7 +1890,10 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                     <Transformer
                       ref={transformerRef}
                       boundBoxFunc={(oldBox, newBox) => {
-                        if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
+                        if (
+                          Math.abs(newBox.width) < 10 ||
+                          Math.abs(newBox.height) < 10
+                        ) {
                           return oldBox;
                         }
                         return newBox;
@@ -1836,9 +1904,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                 </Layer>
               </Stage>
 
-              {editingStickyId && (
+              {editingStickyId &&
                 (() => {
-                  const el = elements.find(item => item.id === editingStickyId);
+                  const el = elements.find(
+                    (item) => item.id === editingStickyId,
+                  );
                   if (!el) return null;
                   const scale = zoom / 100;
                   return (
@@ -1858,7 +1928,8 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         top: `${el.y * scale}px`,
                         width: `${el.width * scale}px`,
                         height: `${el.height * scale}px`,
-                        backgroundColor: el.color === "#eff4ff" ? "#fef08a" : el.color,
+                        backgroundColor:
+                          el.color === "#eff4ff" ? "#fef08a" : el.color,
                         fontSize: `${13 * scale}px`,
                         zIndex: 100,
                         border: "2px solid #2563eb",
@@ -1871,13 +1942,12 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         fontFamily: "sans-serif",
                         fontWeight: "bold",
                         color: "#1e293b",
-                        overflow: "hidden"
+                        overflow: "hidden",
                       }}
                       autoFocus
                     />
                   );
-                })()
-              )}
+                })()}
             </div>
 
             {collaborators.map((collab, index) => {
@@ -2046,21 +2116,28 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         ];
                         const ringColorClass = colors[mIdx % colors.length];
 
-                        const isOnline = (currentUser?._id && (member.user?._id === currentUser?._id || member.user === currentUser?._id)) ||
+                        const isOnline =
+                          (currentUser?._id &&
+                            (member.user?._id === currentUser?._id ||
+                              member.user === currentUser?._id)) ||
                           collaborators.some(
-                            (collab) => collab.userId === member.user?._id || (member.user && collab.userId === member.user)
+                            (collab) =>
+                              collab.userId === member.user?._id ||
+                              (member.user && collab.userId === member.user),
                           );
 
                         const typingCollab = collaborators.find(
-                          (collab) => collab.userId === member.user?._id || (member.user && collab.userId === member.user)
+                          (collab) =>
+                            collab.userId === member.user?._id ||
+                            (member.user && collab.userId === member.user),
                         );
                         const isTyping = typingCollab?.isTypingNotes;
 
                         return (
                           <div
                             key={member._id || mIdx}
-                            className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px] relative transition-transform duration-200 ${isTyping ? 'animate-bounce shadow-md' : ''}`}
-                            title={`${username} ${isOnline ? '(Online)' : '(Offline)'} ${isTyping ? '- Typing notes...' : ''}`}
+                            className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px] relative transition-transform duration-200 ${isTyping ? "animate-bounce shadow-md" : ""}`}
+                            title={`${username} ${isOnline ? "(Online)" : "(Offline)"} ${isTyping ? "- Typing notes..." : ""}`}
                           >
                             {initials}
                             {isOnline && (
@@ -2075,37 +2152,44 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         );
                       })}
 
-                      {collaborators.filter(
-                        (collab) =>
-                          collab.userId !== currentUser?._id &&
-                          !(workspace?.members || []).some(
-                            (m) => m.user?._id === collab.userId || m.user === collab.userId
-                          )
-                      ).map((collab, gIdx) => {
-                        const initials = (collab.username || "Guest").slice(0, 2).toUpperCase();
-                        const isGuestTyping = collab.isTypingNotes;
-                        return (
-                          <div
-                            key={collab.userId || gIdx}
-                            className={`w-8 h-8 rounded-full ring-2 ring-dashed ring-outline bg-surface-container flex items-center justify-center font-bold text-[10px] relative text-outline transition-transform duration-200 ${isGuestTyping ? 'animate-bounce shadow-md' : ''}`}
-                            title={`${collab.username || "Guest"} (Guest - Online) ${isGuestTyping ? '- Typing notes...' : ''}`}
-                          >
-                            {initials}
-                            <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-green-500" />
-                            {isGuestTyping && (
-                              <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 shadow-sm animate-pulse">
-                                <Pencil size={8} />
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {collaborators
+                        .filter(
+                          (collab) =>
+                            collab.userId !== currentUser?._id &&
+                            !(workspace?.members || []).some(
+                              (m) =>
+                                m.user?._id === collab.userId ||
+                                m.user === collab.userId,
+                            ),
+                        )
+                        .map((collab, gIdx) => {
+                          const initials = (collab.username || "Guest")
+                            .slice(0, 2)
+                            .toUpperCase();
+                          const isGuestTyping = collab.isTypingNotes;
+                          return (
+                            <div
+                              key={collab.userId || gIdx}
+                              className={`w-8 h-8 rounded-full ring-2 ring-dashed ring-outline bg-surface-container flex items-center justify-center font-bold text-[10px] relative text-outline transition-transform duration-200 ${isGuestTyping ? "animate-bounce shadow-md" : ""}`}
+                              title={`${collab.username || "Guest"} (Guest - Online) ${isGuestTyping ? "- Typing notes..." : ""}`}
+                            >
+                              {initials}
+                              <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-green-500" />
+                              {isGuestTyping && (
+                                <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 shadow-sm animate-pulse">
+                                  <Pencil size={8} />
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
 
-                      {(workspace?.members || []).length === 0 && collaborators.length === 0 && (
-                        <div className="text-xs text-on-surface-variant opacity-60">
-                          No active editors
-                        </div>
-                      )}
+                      {(workspace?.members || []).length === 0 &&
+                        collaborators.length === 0 && (
+                          <div className="text-xs text-on-surface-variant opacity-60">
+                            No active editors
+                          </div>
+                        )}
                     </div>
                   </div>
 
@@ -2182,17 +2266,30 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                             : "Type meeting agenda or collaborate on notes here..."
                         }
                       />
-                      
+
                       {typingCollaborators.length > 0 && (
                         <div className="flex items-center gap-2 text-primary bg-primary/5 border border-primary/10 rounded-xl px-3.5 py-2 animate-pulse mt-2 select-none self-start">
                           <div className="flex gap-1 items-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000" style={{ animationDelay: '0ms' }}></span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000" style={{ animationDelay: '150ms' }}></span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000" style={{ animationDelay: '300ms' }}></span>
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000"
+                              style={{ animationDelay: "0ms" }}
+                            ></span>
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000"
+                              style={{ animationDelay: "150ms" }}
+                            ></span>
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000"
+                              style={{ animationDelay: "300ms" }}
+                            ></span>
                           </div>
                           <span className="text-[11px] font-bold tracking-wide">
-                            {typingCollaborators.map((c) => c.username || "Collaborator").join(", ")}{" "}
-                            {typingCollaborators.length === 1 ? "is typing notes..." : "are typing notes..."}
+                            {typingCollaborators
+                              .map((c) => c.username || "Collaborator")
+                              .join(", ")}{" "}
+                            {typingCollaborators.length === 1
+                              ? "is typing notes..."
+                              : "are typing notes..."}
                           </span>
                         </div>
                       )}
@@ -2542,10 +2639,14 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>Public Sharing Active</span>
                   </div>
-                  
+
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] text-emerald-800 uppercase font-black tracking-wider">
-                      Access Link ({activeShareRole === "VIEWER" ? "Viewer Only" : "Editor/Collaborative"})
+                      Access Link (
+                      {activeShareRole === "VIEWER"
+                        ? "Viewer Only"
+                        : "Editor/Collaborative"}
+                      )
                     </span>
                     <div className="flex items-center gap-2 mt-1">
                       <input
@@ -2563,7 +2664,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all cursor-pointer flex items-center justify-center shadow-md active:scale-95"
                         title="Copy Link"
                       >
-                        <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          content_copy
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -2571,8 +2674,8 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                   <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-200/60 pt-2.5 mt-1">
                     <span className="font-semibold">Expires:</span>
                     <span className="font-extrabold text-emerald-700">
-                      {activeShareExpires 
-                        ? new Date(activeShareExpires).toLocaleString() 
+                      {activeShareExpires
+                        ? new Date(activeShareExpires).toLocaleString()
                         : "Never (No Expiry)"}
                     </span>
                   </div>
@@ -2582,7 +2685,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                   onClick={handleRevokeShareLink}
                   className="w-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-extrabold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-sm"
                 >
-                  <span className="material-symbols-outlined text-[16px]">link_off</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    link_off
+                  </span>
                   Revoke Share Link
                 </button>
               </div>
@@ -2615,7 +2720,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
                   >
                     <option value="VIEWER">Viewer (View-Only Access)</option>
-                    <option value="EDITOR">Editor (Collaborative Draw & Chat)</option>
+                    <option value="EDITOR">
+                      Editor (Collaborative Draw & Chat)
+                    </option>
                   </select>
                 </div>
 
@@ -2623,7 +2730,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                   onClick={handleGenerateShareLink}
                   className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer shadow-md mt-2"
                 >
-                  <span className="material-symbols-outlined text-[16px]">link</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    link
+                  </span>
                   Generate Public Share Link
                 </button>
               </div>
