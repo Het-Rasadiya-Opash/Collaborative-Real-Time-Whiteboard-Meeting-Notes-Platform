@@ -488,8 +488,12 @@ export const generateShareLink = asyncHandler(async (req, res) => {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  const expiresInHours = req.body.expiresIn !== undefined ? Number(req.body.expiresIn) : 24;
-  const expiresAt = expiresInHours === -1 ? null : new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+  const expiresInHours =
+    req.body.expiresIn !== undefined ? Number(req.body.expiresIn) : 24;
+  const expiresAt =
+    expiresInHours === -1
+      ? null
+      : new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
   const role = req.body.role || "VIEWER";
 
   board.isPublic = true;
@@ -553,13 +557,9 @@ export const revokeShareLink = asyncHandler(async (req, res) => {
 
   await board.save();
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      board,
-      "Share link revoked successfully",
-    ),
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, board, "Share link revoked successfully"));
 });
 
 export const getPublicBoard = asyncHandler(async (req, res) => {
@@ -569,7 +569,8 @@ export const getPublicBoard = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Share token is required");
   }
 
-  const board = await boardModel.findOne({ publicShareToken: token })
+  const board = await boardModel
+    .findOne({ publicShareToken: token })
     .populate("owner", "username email")
     .populate("boardSnapshot.createdBy", "username email")
     .populate("boardOps.createdBy", "username email");
@@ -1176,7 +1177,6 @@ export const exportPDF = asyncHandler(async (req, res) => {
   }
 
   const pngBuffer = drawElementsOnCanvas(elements);
-  console.log(pngBuffer);
   const doc = new PDFDocument({ margin: 50, size: "A4", bufferPages: true });
 
   res.setHeader("Content-Type", "application/pdf");

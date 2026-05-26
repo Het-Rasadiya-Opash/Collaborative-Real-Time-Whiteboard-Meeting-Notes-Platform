@@ -19,6 +19,17 @@ const activeDocs = new Map();
 app.set("activeDocs", activeDocs);
 app.set("io", io);
 
+function convertToUint8Array(data) {
+  if (!data) return new Uint8Array(0);
+  if (data.type === "Buffer" && Array.isArray(data.data)) {
+    return new Uint8Array(data.data);
+  }
+  if (Array.isArray(data)) {
+    return new Uint8Array(data);
+  }
+  return new Uint8Array(data);
+}
+
 async function getOrCreateYDoc(boardId) {
   if (activeDocs.has(boardId)) {
     return activeDocs.get(boardId).doc;
@@ -31,7 +42,7 @@ async function getOrCreateYDoc(boardId) {
     const board = await boardModel.findById(boardId);
     if (board) {
       if (board.yjsState) {
-        Y.applyUpdate(doc, new Uint8Array(board.yjsState));
+        Y.applyUpdate(doc, convertToUint8Array(board.yjsState));
       } else {
         doc.transact(() => {
           const canvasMap = doc.getMap("canvas");
@@ -138,7 +149,7 @@ io.on("connection", (socket) => {
     if (!boardId || !update) return;
 
     const doc = await getOrCreateYDoc(boardId);
-    Y.applyUpdate(doc, new Uint8Array(update));
+    Y.applyUpdate(doc, convertToUint8Array(update));
 
     socket.to(`board_${boardId}`).emit("yjs-update", update);
 
@@ -165,9 +176,41 @@ io.on("connection", (socket) => {
     socket.to(`board_${boardId}`).emit("notes-update", { meetingNotes });
   });
 
+  socket.on("notes-typing", ({ boardId, userId, username, isTyping }) => {
+    if (!boardId) return;
+    socket.to(`board_${boardId}`).emit("notes-typing-update", {
+      userId,
+      username,
+      isTyping,
+    });
+  });
+
   socket.on("comments-change", ({ boardId, comments }) => {
     if (!boardId) return;
     socket.to(`board_${boardId}`).emit("comments-update", { comments });
+  });
+
+  socket.on("add-comment", async ({ boardId, comment }) => {
+    if (!boardId || !comment) return;
+    try {
+      const board = await boardModel.findById(boardId);
+      if (board) {
+        const freshComment = {
+          author: comment.author,
+          text: comment.text,
+          createdAt: new Date(),
+        };
+        if (!board.comments) {
+          board.comments = [];
+        }
+        board.comments.push(freshComment);
+        await board.save();
+
+        io.to(`board_${boardId}`).emit("comments-update", { comments: board.comments });
+      }
+    } catch (err) {
+      console.error("Error adding comment via socket:", err);
+    }
   });
 
   socket.on("disconnect", () => {

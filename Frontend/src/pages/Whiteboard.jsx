@@ -179,7 +179,8 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   const [redoStack, setRedoStack] = useState([]);
 
   const isTypingNotesRef = useRef(false);
-  const isTypingCommentsRef = useRef(false);
+  const notesTypingTimeoutRef = useRef(null);
+  const myTypingStatusRef = useRef(false);
 
   const [snapshots, setSnapshots] = useState([]);
   const [activeRightTab, setActiveRightTab] = useState("notes");
@@ -294,6 +295,17 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       import.meta.env.VITE_API_ENDPOINT || "http://localhost:3000/api";
     const socketUrl = apiEndpoint.replace("/api", "");
 
+    const convertToUint8Array = (data) => {
+      if (!data) return new Uint8Array(0);
+      if (data.type === "Buffer" && Array.isArray(data.data)) {
+        return new Uint8Array(data.data);
+      }
+      if (Array.isArray(data)) {
+        return new Uint8Array(data);
+      }
+      return new Uint8Array(data);
+    };
+
     console.log("Connecting to socket server at:", socketUrl);
     const socket = io(socketUrl, {
       withCredentials: true,
@@ -333,7 +345,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       if (origin !== "server" && socket.connected) {
         socket.emit("yjs-update", {
           boardId: board._id,
-          update: Buffer.from(update),
+          update: Array.from(update),
         });
       }
     });
@@ -357,11 +369,11 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
     });
 
     socket.on("yjs-sync", (syncData) => {
-      Y.applyUpdate(ydoc, new Uint8Array(syncData), "server");
+      Y.applyUpdate(ydoc, convertToUint8Array(syncData), "server");
     });
 
     socket.on("yjs-update", (updateData) => {
-      Y.applyUpdate(ydoc, new Uint8Array(updateData), "server");
+      Y.applyUpdate(ydoc, convertToUint8Array(updateData), "server");
     });
 
     socket.on("canvas-update", (updatedElements) => {
@@ -376,9 +388,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
     });
 
     socket.on("comments-update", ({ comments }) => {
-      if (!isTypingCommentsRef.current) {
-        setComments(comments || []);
-      }
+      setComments(comments || []);
     });
 
     socket.on("cursor-update", ({ userId, username, cursorX, cursorY }) => {
@@ -390,6 +400,19 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
           return updated;
         } else {
           return [...prev, { userId, username, cursorX, cursorY }];
+        }
+      });
+    });
+
+    socket.on("notes-typing-update", ({ userId, username, isTyping }) => {
+      setCollaborators((prev) => {
+        const index = prev.findIndex((c) => c.userId === userId);
+        if (index !== -1) {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], isTypingNotes: isTyping, username };
+          return updated;
+        } else {
+          return [...prev, { userId, username, isTypingNotes: isTyping }];
         }
       });
     });
@@ -509,7 +532,6 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
               }
             }
             if (
-              !isTypingCommentsRef.current &&
               boardData.board?.comments &&
               Array.isArray(boardData.board.comments)
             ) {
@@ -557,6 +579,27 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
           setSaveStatus("unsaved");
         });
     }, 1500);
+  };
+
+  const forceSaveCanvas = async (updatedElements = elements) => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    setSaveStatus("saving");
+    try {
+      await apiRequest.put(
+        `/boards/${board._id}`,
+        {
+          snapshot: updatedElements,
+        },
+        {
+          skipSuccessToast: true,
+        }
+      );
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("unsaved");
+    }
   };
 
   useEffect(() => {
@@ -961,6 +1004,13 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   };
 
   const handleExportPNG = async () => {
+    if (saveStatus !== "saved") {
+      try {
+        await forceSaveCanvas(elements);
+      } catch (err) {
+        console.warn("Failed to auto-save before export:", err);
+      }
+    }
     const loadingToast = toast.loading("Generating board PNG on the server...");
     try {
       const response = await apiRequest.get(`/boards/${board._id}/export/png`, {
@@ -985,6 +1035,13 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   };
 
   const handleExportPDF = async () => {
+    if (saveStatus !== "saved") {
+      try {
+        await forceSaveCanvas(elements);
+      } catch (err) {
+        console.warn("Failed to auto-save before export:", err);
+      }
+    }
     const loadingToast = toast.loading(
       "Generating meeting summary PDF on the server...",
     );
@@ -1022,7 +1079,26 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       clearTimeout(autoSaveTimerRef.current);
     }
     autoSaveTimerRef.current = setTimeout(() => {
-      setSaveStatus("saved");
+      if (!socketRef.current?.connected) {
+        apiRequest
+          .put(
+            `/boards/${board._id}`,
+            {
+              meetingNotes: text,
+            },
+            {
+              skipSuccessToast: true,
+            }
+          )
+          .then(() => {
+            setSaveStatus("saved");
+          })
+          .catch(() => {
+            setSaveStatus("unsaved");
+          });
+      } else {
+        setSaveStatus("saved");
+      }
     }, 1500);
 
     if (socketRef.current?.connected) {
@@ -1030,6 +1106,58 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
         boardId: board._id,
         meetingNotes: text,
       });
+    }
+  };
+
+  const handleNotesTyping = () => {
+    if (isReadOnly || !socketRef.current?.connected) return;
+
+    if (!myTypingStatusRef.current) {
+      myTypingStatusRef.current = true;
+      socketRef.current.emit("notes-typing", {
+        boardId: board._id,
+        userId: currentUser?._id || `guest_${socketRef.current.id}`,
+        username: currentUser?.username || "Guest Collaborator",
+        isTyping: true,
+      });
+    }
+
+    if (notesTypingTimeoutRef.current) {
+      clearTimeout(notesTypingTimeoutRef.current);
+    }
+
+    notesTypingTimeoutRef.current = setTimeout(() => {
+      myTypingStatusRef.current = false;
+      if (socketRef.current?.connected) {
+        socketRef.current.emit("notes-typing", {
+          boardId: board._id,
+          userId: currentUser?._id || `guest_${socketRef.current.id}`,
+          username: currentUser?.username || "Guest Collaborator",
+          isTyping: false,
+        });
+      }
+    }, 2000);
+  };
+
+  const handleNotesBlur = () => {
+    isTypingNotesRef.current = false;
+    if (editorRef.current) {
+      handleSaveNotes(editorRef.current.innerHTML);
+    }
+
+    if (myTypingStatusRef.current) {
+      myTypingStatusRef.current = false;
+      if (notesTypingTimeoutRef.current) {
+        clearTimeout(notesTypingTimeoutRef.current);
+      }
+      if (socketRef.current?.connected) {
+        socketRef.current.emit("notes-typing", {
+          boardId: board._id,
+          userId: currentUser?._id || `guest_${socketRef.current.id}`,
+          username: currentUser?.username || "Guest Collaborator",
+          isTyping: false,
+        });
+      }
     }
   };
 
@@ -1050,6 +1178,10 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   const displayedElements = previewSnapshot
     ? previewSnapshot.canvasJson || []
     : elements;
+
+  const typingCollaborators = collaborators.filter(
+    (c) => c.isTypingNotes && c.userId !== currentUser?._id
+  );
 
   return (
     <div className="fixed inset-0 w-full h-full flex z-50 bg-background text-on-background font-sans overflow-hidden select-none animate-in fade-in duration-200 whiteboard-root">
@@ -1902,7 +2034,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         Active Editors
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {(workspace?.members || []).map((member, mIdx) => {
                         const username = member.user?.username || "?";
                         const initials = username.slice(0, 2).toUpperCase();
@@ -1913,17 +2045,63 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                           "ring-amber-500 text-amber-500",
                         ];
                         const ringColorClass = colors[mIdx % colors.length];
+
+                        const isOnline = (currentUser?._id && (member.user?._id === currentUser?._id || member.user === currentUser?._id)) ||
+                          collaborators.some(
+                            (collab) => collab.userId === member.user?._id || (member.user && collab.userId === member.user)
+                          );
+
+                        const typingCollab = collaborators.find(
+                          (collab) => collab.userId === member.user?._id || (member.user && collab.userId === member.user)
+                        );
+                        const isTyping = typingCollab?.isTypingNotes;
+
                         return (
                           <div
                             key={member._id || mIdx}
-                            className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px]`}
-                            title={username}
+                            className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px] relative transition-transform duration-200 ${isTyping ? 'animate-bounce shadow-md' : ''}`}
+                            title={`${username} ${isOnline ? '(Online)' : '(Offline)'} ${isTyping ? '- Typing notes...' : ''}`}
                           >
                             {initials}
+                            {isOnline && (
+                              <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-green-500" />
+                            )}
+                            {isTyping && (
+                              <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 shadow-sm animate-pulse">
+                                <Pencil size={8} />
+                              </span>
+                            )}
                           </div>
                         );
                       })}
-                      {(workspace?.members || []).length === 0 && (
+
+                      {collaborators.filter(
+                        (collab) =>
+                          collab.userId !== currentUser?._id &&
+                          !(workspace?.members || []).some(
+                            (m) => m.user?._id === collab.userId || m.user === collab.userId
+                          )
+                      ).map((collab, gIdx) => {
+                        const initials = (collab.username || "Guest").slice(0, 2).toUpperCase();
+                        const isGuestTyping = collab.isTypingNotes;
+                        return (
+                          <div
+                            key={collab.userId || gIdx}
+                            className={`w-8 h-8 rounded-full ring-2 ring-dashed ring-outline bg-surface-container flex items-center justify-center font-bold text-[10px] relative text-outline transition-transform duration-200 ${isGuestTyping ? 'animate-bounce shadow-md' : ''}`}
+                            title={`${collab.username || "Guest"} (Guest - Online) ${isGuestTyping ? '- Typing notes...' : ''}`}
+                          >
+                            {initials}
+                            <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-green-500" />
+                            {isGuestTyping && (
+                              <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 shadow-sm animate-pulse">
+                                <Pencil size={8} />
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {(workspace?.members || []).length === 0 && collaborators.length === 0 && (
                         <div className="text-xs text-on-surface-variant opacity-60">
                           No active editors
                         </div>
@@ -1990,16 +2168,12 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         onFocus={() => {
                           isTypingNotesRef.current = true;
                         }}
-                        onBlur={() => {
-                          isTypingNotesRef.current = false;
-                          if (editorRef.current) {
-                            handleSaveNotes(editorRef.current.innerHTML);
-                          }
-                        }}
+                        onBlur={handleNotesBlur}
                         onInput={(e) => {
                           const html = e.currentTarget.innerHTML;
                           setAgendaText(html);
                           handleSaveNotes(html);
+                          handleNotesTyping();
                         }}
                         className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-xs rich-text-editor font-sans"
                         placeholder={
@@ -2008,6 +2182,20 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                             : "Type meeting agenda or collaborate on notes here..."
                         }
                       />
+                      
+                      {typingCollaborators.length > 0 && (
+                        <div className="flex items-center gap-2 text-primary bg-primary/5 border border-primary/10 rounded-xl px-3.5 py-2 animate-pulse mt-2 select-none self-start">
+                          <div className="flex gap-1 items-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce animate-duration-1000" style={{ animationDelay: '300ms' }}></span>
+                          </div>
+                          <span className="text-[11px] font-bold tracking-wide">
+                            {typingCollaborators.map((c) => c.username || "Collaborator").join(", ")}{" "}
+                            {typingCollaborators.length === 1 ? "is typing notes..." : "are typing notes..."}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2190,25 +2378,25 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                         createdAt: new Date().toISOString(),
                       };
 
-                      const updatedComments = [...comments, freshComment];
-                      setComments(updatedComments);
-                      setNewComment("");
-
-                      apiRequest
-                        .put(`/boards/${board._id}`, {
-                          comments: updatedComments,
-                        })
-                        .then(() => {
-                          if (socketRef.current?.connected) {
-                            socketRef.current.emit("comments-change", {
-                              boardId: board._id,
-                              comments: updatedComments,
-                            });
-                          }
-                        })
-                        .catch(() => {
-                          toast.error("Failed to post comment");
+                      if (socketRef.current?.connected) {
+                        socketRef.current.emit("add-comment", {
+                          boardId: board._id,
+                          comment: freshComment,
                         });
+                        setNewComment("");
+                      } else {
+                        const updatedComments = [...comments, freshComment];
+                        setComments(updatedComments);
+                        setNewComment("");
+
+                        apiRequest
+                          .put(`/boards/${board._id}`, {
+                            comments: updatedComments,
+                          })
+                          .catch(() => {
+                            toast.error("Failed to post comment");
+                          });
+                      }
                     }}
                     className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
                   >
@@ -2221,12 +2409,6 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                       type="text"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      onFocus={() => {
-                        isTypingCommentsRef.current = true;
-                      }}
-                      onBlur={() => {
-                        isTypingCommentsRef.current = false;
-                      }}
                     />
                     <button
                       type="submit"
