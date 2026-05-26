@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import { Route, Routes } from "react-router";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
+import PublicBoard from "./pages/PublicBoard";
 import { useDispatch } from "react-redux";
 import apiRequest from "./utils/apiRequest";
 import { setCheckingAuth, setCurrentUser } from "./features/usersSlice";
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
         </Route>
         <Route path="/login" element={<Auth />} />
+        <Route path="/board/shared/:token" element={<PublicBoard />} />
       </Routes>
     </div>
   );

@@ -101,6 +101,11 @@ const boardSchema = new mongoose.Schema(
     publicShareExpires: {
       type: Date,
     },
+    publicShareRole: {
+      type: String,
+      enum: ["VIEWER", "EDITOR"],
+      default: "VIEWER",
+    },
     activeVersion: {
       type: Number,
       default: 0,

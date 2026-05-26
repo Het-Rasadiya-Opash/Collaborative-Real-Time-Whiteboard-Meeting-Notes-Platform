@@ -8,13 +8,16 @@ const apiRequest = axios.create({
 
 apiRequest.interceptors.response.use(
   (response) => {
+    if (response.config?.skipToast || response.config?.skipSuccessToast) {
+      return response;
+    }
     if (response.config.method !== "get" && response.data?.message) {
       toast.success(response.data.message);
     }
     return response;
   },
   (error) => {
-    if (error.config?.skipToast) {
+    if (error.config?.skipToast || error.config?.skipErrorToast) {
       return Promise.reject(error);
     }
 

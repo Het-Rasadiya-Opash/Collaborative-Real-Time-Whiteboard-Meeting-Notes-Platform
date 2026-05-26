@@ -488,16 +488,18 @@ export const generateShareLink = asyncHandler(async (req, res) => {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  const expiresInHours = Number(req.body.expiresIn) || 24;
-  const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+  const expiresInHours = req.body.expiresIn !== undefined ? Number(req.body.expiresIn) : 24;
+  const expiresAt = expiresInHours === -1 ? null : new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+  const role = req.body.role || "VIEWER";
 
   board.isPublic = true;
   board.publicShareToken = token;
   board.publicShareExpires = expiresAt;
+  board.publicShareRole = role;
 
   await board.save();
 
-  const shareUrl = `${req.protocol}://${req.get("host")}/api/boards/shared/${token}`;
+  const shareUrl = `${req.protocol}://${req.get("host")}/api/boards/share/${token}`;
 
   return res.status(200).json(
     new ApiResponse(
@@ -506,9 +508,56 @@ export const generateShareLink = asyncHandler(async (req, res) => {
         shareToken: token,
         expiresAt,
         shareUrl,
+        publicShareRole: role,
         board,
       },
       "Share link generated successfully",
+    ),
+  );
+});
+
+export const revokeShareLink = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const board = await boardModel.findById(id);
+  if (!board) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspace = await workSpaceModel.findById(board.workspace);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const member = workspace.members.find(
+    (m) => m.user && m.user.toString() === req.user._id.toString(),
+  );
+  const hasRequiredRole =
+    member && (member.role === "OWNER" || member.role === "EDITOR");
+
+  if (!isOwner && !hasRequiredRole) {
+    throw new ApiError(
+      403,
+      "You are not authorized to revoke the share link for this board",
+    );
+  }
+
+  board.isPublic = false;
+  board.publicShareToken = undefined;
+  board.publicShareExpires = undefined;
+
+  await board.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      board,
+      "Share link revoked successfully",
     ),
   );
 });
@@ -520,7 +569,10 @@ export const getPublicBoard = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Share token is required");
   }
 
-  const board = await boardModel.findOne({ publicShareToken: token });
+  const board = await boardModel.findOne({ publicShareToken: token })
+    .populate("owner", "username email")
+    .populate("boardSnapshot.createdBy", "username email")
+    .populate("boardOps.createdBy", "username email");
 
   if (
     !board ||
@@ -530,19 +582,18 @@ export const getPublicBoard = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Public board not found or token has expired");
   }
 
-  const latestSnapshot = await boardSnapshotModel
-    .findOne({ board: board._id })
-    .sort({ version: -1 })
-    .populate("createdBy", "username email");
-
-  const opQuery = { board: board._id };
-  if (latestSnapshot) {
-    opQuery.version = { $gt: latestSnapshot.version };
+  let latestSnapshot = null;
+  if (board.boardSnapshot && board.boardSnapshot.length > 0) {
+    latestSnapshot = [...board.boardSnapshot].sort(
+      (a, b) => b.version - a.version,
+    )[0];
   }
-  const operations = await boardOpsModel
-    .find(opQuery)
-    .sort({ version: 1 })
-    .populate("createdBy", "username email");
+
+  let operations = board.boardOps || [];
+  if (latestSnapshot) {
+    operations = operations.filter((op) => op.version > latestSnapshot.version);
+  }
+  operations = [...operations].sort((a, b) => a.version - b.version);
 
   const boardObj = board.toObject();
   const formattedBoard = {
@@ -558,7 +609,7 @@ export const getPublicBoard = asyncHandler(async (req, res) => {
         board: formattedBoard,
         snapshot: latestSnapshot,
         operations,
-        isReadOnly: true,
+        isReadOnly: board.publicShareRole === "VIEWER",
       },
       "Public board details retrieved successfully",
     ),

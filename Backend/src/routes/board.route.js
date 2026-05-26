@@ -6,6 +6,7 @@ import {
   get,
   toggleStar,
   generateShareLink,
+  revokeShareLink,
   getPublicBoard,
   restore,
   snapShotList,
@@ -33,6 +34,12 @@ router.post(
   authMiddleware,
   authorizeRole("OWNER", "EDITOR"),
   generateShareLink,
+);
+router.post(
+  "/:id/revoke-share",
+  authMiddleware,
+  authorizeRole("OWNER", "EDITOR"),
+  revokeShareLink,
 );
 router.get("/share/:token", getPublicBoard);
 router.get("/:id/snapshots", authMiddleware, snapShotList);
