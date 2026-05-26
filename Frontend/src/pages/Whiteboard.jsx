@@ -19,10 +19,93 @@ import {
   Italic,
   Underline,
   List,
+  History,
+  Clock,
+  Plus,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import apiRequest from "../utils/apiRequest";
 import { io } from "socket.io-client";
+import * as Y from "yjs";
+
+function getCaretCharacterOffsetWithin(element) {
+  let caretOffset = 0;
+  const doc = element.ownerDocument || element.document;
+  const win = doc.defaultView || doc.parentWindow;
+  let sel;
+  if (typeof win.getSelection !== "undefined") {
+    sel = win.getSelection();
+    if (sel.rangeCount > 0) {
+      const range = win.getSelection().getRangeAt(0);
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(element);
+      preCaretRange.setEnd(range.endContainer, range.endOffset);
+      caretOffset = preCaretRange.toString().length;
+    }
+  }
+  return caretOffset;
+}
+
+function setCaretPosition(element, offset) {
+  const range = document.createRange();
+  const sel = window.getSelection();
+  let currentOffset = 0;
+  let node = null;
+
+  function traverse(currentNode) {
+    if (currentNode.nodeType === Node.TEXT_NODE) {
+      if (currentOffset + currentNode.length >= offset) {
+        node = currentNode;
+        return true;
+      }
+      currentOffset += currentNode.length;
+    } else {
+      for (let i = 0; i < currentNode.childNodes.length; i++) {
+        if (traverse(currentNode.childNodes[i])) return true;
+      }
+    }
+    return false;
+  }
+
+  traverse(element);
+
+  if (node) {
+    try {
+      range.setStart(node, offset - currentOffset);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (e) {
+    }
+  }
+}
+
+function syncContentEditableToYText(yText, newText) {
+  const oldText = yText.toString();
+  if (oldText === newText) return;
+
+  let start = 0;
+  while (start < oldText.length && start < newText.length && oldText[start] === newText[start]) {
+    start++;
+  }
+
+  let oldEnd = oldText.length;
+  let newEnd = newText.length;
+  while (oldEnd > start && newEnd > start && oldText[oldEnd - 1] === newText[newEnd - 1]) {
+    oldEnd--;
+    newEnd--;
+  }
+
+  yText.doc.transact(() => {
+    if (oldEnd > start) {
+      yText.delete(start, oldEnd - start);
+    }
+    if (newEnd > start) {
+      yText.insert(start, newText.slice(start, newEnd));
+    }
+  });
+}
 
 const COLOR_PALETTE = [
   { name: "Blue", hex: "#2563eb" },
@@ -81,9 +164,74 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   const isTypingNotesRef = useRef(false);
   const isTypingCommentsRef = useRef(false);
 
+  const [snapshots, setSnapshots] = useState([]);
+  const [activeRightTab, setActiveRightTab] = useState("notes");
+  const [previewSnapshot, setPreviewSnapshot] = useState(null);
+  const [isSnapshotModalOpen, setIsSnapshotModalOpen] = useState(false);
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
+
+  const fetchSnapshots = () => {
+    apiRequest
+      .get(`/boards/${board._id}/snapshots`)
+      .then((response) => {
+        const snaps = response.data?.data || [];
+        setSnapshots(snaps);
+      })
+      .catch(() => {});
+  };
+
+  const handleCreateSnapshot = (e) => {
+    e.preventDefault();
+    if (isCreatingSnapshot) return;
+    setIsCreatingSnapshot(true);
+    apiRequest
+      .post(`/boards/${board._id}/snapshots`, { label: snapshotLabel.trim() })
+      .then((response) => {
+        const newSnap = response.data?.data;
+        if (newSnap) {
+          setSnapshots((prev) => [newSnap, ...prev]);
+          toast.success("Snapshot created successfully!");
+        }
+        setIsSnapshotModalOpen(false);
+        setSnapshotLabel("");
+      })
+      .catch(() => {
+        toast.error("Failed to create snapshot");
+      })
+      .finally(() => {
+        setIsCreatingSnapshot(false);
+      });
+  };
+
+  const handleRestoreSnapshot = (snap) => {
+    if (isReadOnly) return;
+    if (
+      window.confirm(
+        `Are you sure you want to restore the whiteboard to "${snap.label || 'this version'}"? This will modify the board for all active users.`
+      )
+    ) {
+      apiRequest
+        .post(`/boards/${board._id}/snapshots/${snap._id}/restore`)
+        .then(() => {
+          toast.success("Board restored successfully!");
+          setElements(snap.canvasJson || []);
+          setPreviewSnapshot(null);
+          fetchSnapshots();
+        })
+        .catch(() => {
+          toast.error("Failed to restore board");
+        });
+    }
+  };
+
   const canvasRef = useRef(null);
   const editorRef = useRef(null);
   const autoSaveTimerRef = useRef(null);
+
+  const ydocRef = useRef(null);
+  const canvasMapRef = useRef(null);
+  const notesTextRef = useRef(null);
 
   const isCanvasBusy =
     isDragging || currentDrawingElement !== null || editingStickyId !== null;
@@ -101,6 +249,42 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
     socketRef.current = socket;
 
+    const ydoc = new Y.Doc();
+    ydocRef.current = ydoc;
+
+    const canvasMap = ydoc.getMap("canvas");
+    canvasMapRef.current = canvasMap;
+
+    const notesText = ydoc.getText("notes");
+    notesTextRef.current = notesText;
+
+    canvasMap.observe(() => {
+      setElements(Array.from(canvasMap.values()));
+    });
+
+    notesText.observe(() => {
+      const newHtml = notesText.toString();
+      setAgendaText(newHtml);
+      if (editorRef.current) {
+        if (document.activeElement === editorRef.current) {
+          const caretOffset = getCaretCharacterOffsetWithin(editorRef.current);
+          editorRef.current.innerHTML = newHtml || "";
+          setCaretPosition(editorRef.current, caretOffset);
+        } else {
+          editorRef.current.innerHTML = newHtml || "";
+        }
+      }
+    });
+
+    ydoc.on("update", (update, origin) => {
+      if (origin !== "server" && socket.connected) {
+        socket.emit("yjs-update", {
+          boardId: board._id,
+          update: Buffer.from(update),
+        });
+      }
+    });
+
     socket.on("connect", () => {
       console.log("Socket connected successfully!");
       setIsSocketConnected(true);
@@ -117,6 +301,14 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     socket.on("disconnect", () => {
       console.log("Socket disconnected.");
       setIsSocketConnected(false);
+    });
+
+    socket.on("yjs-sync", (syncData) => {
+      Y.applyUpdate(ydoc, new Uint8Array(syncData), "server");
+    });
+
+    socket.on("yjs-update", (updateData) => {
+      Y.applyUpdate(ydoc, new Uint8Array(updateData), "server");
     });
 
     socket.on("canvas-update", (updatedElements) => {
@@ -160,8 +352,32 @@ const Whiteboard = ({ board, onClose, workspace }) => {
       setCollaborators((prev) => prev.filter((c) => c.userId !== userId));
     });
 
+    socket.on("board-restored", ({ elements: restoredElements, meetingNotes, syncData }) => {
+      toast.success("The whiteboard was restored to a previous version!");
+      setElements(restoredElements);
+      setPreviewSnapshot(null);
+      if (meetingNotes !== undefined) {
+        setAgendaText(meetingNotes || "");
+        if (editorRef.current) {
+          editorRef.current.innerHTML = meetingNotes || "";
+        }
+      }
+      if (ydoc && syncData) {
+        ydoc.transact(() => {
+          if (canvasMap) {
+            canvasMap.clear();
+          }
+          if (notesText) {
+            notesText.delete(0, notesText.length);
+          }
+        });
+        Y.applyUpdate(ydoc, new Uint8Array(syncData), "server");
+      }
+    });
+
     return () => {
       socket.disconnect();
+      ydoc.destroy();
     };
   }, [board._id, currentUser]);
 
@@ -195,6 +411,8 @@ const Whiteboard = ({ board, onClose, workspace }) => {
         }
       })
       .catch(() => {});
+
+    fetchSnapshots();
 
     return () => {
       isMounted = false;
@@ -332,6 +550,28 @@ const Whiteboard = ({ board, onClose, workspace }) => {
     setElements(newElements);
     triggerAutoSave(newElements);
 
+    if (canvasMapRef.current && ydocRef.current) {
+      ydocRef.current.transact(() => {
+        const currentKeys = new Set(canvasMapRef.current.keys());
+        const newIds = new Set(newElements.map((el) => el.id));
+
+        for (const key of currentKeys) {
+          if (!newIds.has(key)) {
+            canvasMapRef.current.delete(key);
+          }
+        }
+
+        newElements.forEach((el) => {
+          if (el && el.id) {
+            const existing = canvasMapRef.current.get(el.id);
+            if (JSON.stringify(existing) !== JSON.stringify(el)) {
+              canvasMapRef.current.set(el.id, el);
+            }
+          }
+        });
+      });
+    }
+
     if (socketRef.current?.connected) {
       socketRef.current.emit("canvas-change", {
         boardId: board._id,
@@ -359,7 +599,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   };
 
   const handleMouseDown = (e) => {
-    if (isReadOnly) return;
+    if (isReadOnly || previewSnapshot) return;
     if (editingStickyId) {
       finishStickyEditing();
       return;
@@ -441,6 +681,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   };
 
   const handleMouseMove = (e) => {
+    if (previewSnapshot) return;
     const { x, y } = getMouseCoords(e);
 
     if (socketRef.current?.connected) {
@@ -478,12 +719,15 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
     if (selectedTool === "select" && selectedElementId) {
       setElements((prevElements) => {
+        let movedEl = null;
         const updated = prevElements.map((el) => {
           if (el.id !== selectedElementId) return el;
           if (el.type === "rectangle" || el.type === "sticky") {
-            return { ...el, x: x - dragOffset.x, y: y - dragOffset.y };
+            movedEl = { ...el, x: x - dragOffset.x, y: y - dragOffset.y };
+            return movedEl;
           } else if (el.type === "circle") {
-            return { ...el, cx: x - dragOffset.x, cy: y - dragOffset.y };
+            movedEl = { ...el, cx: x - dragOffset.x, cy: y - dragOffset.y };
+            return movedEl;
           } else if (el.type === "stroke") {
             const dx = x - dragOffset.x;
             const dy = y - dragOffset.y;
@@ -492,10 +736,16 @@ const Whiteboard = ({ board, onClose, workspace }) => {
               y: pt.y + dy,
             }));
             setDragOffset({ x, y });
-            return { ...el, points: newPoints };
+            movedEl = { ...el, points: newPoints };
+            return movedEl;
           }
           return el;
         });
+
+        if (movedEl && canvasMapRef.current) {
+          canvasMapRef.current.set(movedEl.id, movedEl);
+        }
+
         triggerAutoSave(updated);
 
         if (socketRef.current?.connected) {
@@ -511,6 +761,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   };
 
   const handleMouseUp = () => {
+    if (previewSnapshot) return;
     setIsDragging(false);
 
     if (currentDrawingElement) {
@@ -626,23 +877,25 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
   const handleSaveNotes = (text) => {
     if (isReadOnly) return;
-    setSaveStatus("unsaved");
+    setSaveStatus("saving");
+
+    if (notesTextRef.current) {
+      syncContentEditableToYText(notesTextRef.current, text);
+    }
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      setSaveStatus("saved");
+    }, 1500);
+
     if (socketRef.current?.connected) {
       socketRef.current.emit("notes-change", {
         boardId: board._id,
         meetingNotes: text,
       });
     }
-    apiRequest
-      .put(`/boards/${board._id}`, {
-        meetingNotes: text,
-      })
-      .then(() => {
-        setSaveStatus("saved");
-      })
-      .catch(() => {
-        setSaveStatus("unsaved");
-      });
   };
 
   const handleFormatCommand = (command, value = null) => {
@@ -658,6 +911,8 @@ const Whiteboard = ({ board, onClose, workspace }) => {
   const toggleNotes = () => {
     setIsNotesOpen(!isNotesOpen);
   };
+
+  const displayedElements = previewSnapshot ? previewSnapshot.canvasJson || [] : elements;
 
   return (
     <div className="fixed inset-0 w-full h-full flex z-50 bg-background text-on-background font-sans overflow-hidden select-none animate-in fade-in duration-200 whiteboard-root">
@@ -897,6 +1152,36 @@ const Whiteboard = ({ board, onClose, workspace }) => {
 
         <div className="mt-16 flex-1 bg-surface-bright relative canvas-dot-grid overflow-hidden flex">
           <div className="flex-1 relative cursor-crosshair">
+            {previewSnapshot && (
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 bg-amber-500/90 text-white font-sans px-6 py-3.5 rounded-2xl shadow-xl flex items-center gap-6 animate-in slide-in-from-top duration-300 backdrop-blur-md border border-amber-400/40">
+                <div className="flex items-center gap-2.5">
+                  <Clock size={20} className="animate-pulse" />
+                  <div className="flex flex-col text-left">
+                    <span className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Previewing Past Version</span>
+                    <span className="text-sm font-black truncate max-w-[280px]">
+                      {previewSnapshot.label || `Version - ${new Date(previewSnapshot.createdAt || previewSnapshot.version).toLocaleString()}`}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!isReadOnly && (
+                    <button
+                      onClick={() => handleRestoreSnapshot(previewSnapshot)}
+                      className="bg-white text-amber-700 hover:bg-amber-50 transition-all font-bold text-xs px-4 py-2 rounded-xl active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm border border-amber-200"
+                    >
+                      <span className="material-symbols-outlined text-[16px] font-bold">restore</span>
+                      Restore This Version
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setPreviewSnapshot(null)}
+                    className="bg-white/10 hover:bg-white/20 transition-all font-bold text-xs px-4 py-2 rounded-xl active:scale-95 cursor-pointer flex items-center gap-1.5 border border-white/20"
+                  >
+                    Exit Preview
+                  </button>
+                </div>
+              </div>
+            )}
             {!isReadOnly ? (
               <div className="absolute left-6 top-1/2 -translate-y-1/2 glass-card border border-outline-variant rounded-2xl p-2 shadow-lg flex flex-col gap-2 z-30 animate-in slide-in-from-left duration-300">
                 <button
@@ -1039,7 +1324,7 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                   transformOrigin: "0 0",
                 }}
               >
-                {elements.map((el) => {
+                {displayedElements.map((el) => {
                   const isSelected = el.id === selectedElementId;
                   const selectProps =
                     selectedTool === "select"
@@ -1367,266 +1652,377 @@ const Whiteboard = ({ board, onClose, workspace }) => {
             }`}
             id="notes-panel"
           >
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">
-                  description
-                </span>
-                <h2 className="font-headline-md text-lg font-bold text-on-surface">
-                  Meeting Notes
+            <div className="border-b border-outline-variant flex flex-col">
+              <div className="p-4 px-6 flex justify-between items-center border-b border-outline-variant/40">
+                <h2 className="font-headline-md text-lg font-black text-on-surface tracking-tight">
+                  Board Workspace
                 </h2>
+                <button
+                  onClick={toggleNotes}
+                  className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined block text-[20px]">
+                    keyboard_double_arrow_right
+                  </span>
+                </button>
               </div>
-              <button
-                onClick={toggleNotes}
-                className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined block">
-                  keyboard_double_arrow_right
-                </span>
-              </button>
+              <div className="flex w-full bg-surface-container-low p-1">
+                <button
+                  onClick={() => setActiveRightTab("notes")}
+                  className={`flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-2 rounded-lg cursor-pointer ${
+                    activeRightTab === "notes"
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-on-surface-variant hover:bg-white/40"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">description</span>
+                  Notes
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveRightTab("history");
+                    fetchSnapshots();
+                  }}
+                  className={`flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-2 rounded-lg cursor-pointer ${
+                    activeRightTab === "history"
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-on-surface-variant hover:bg-white/40"
+                  }`}
+                >
+                  <History size={16} />
+                  History
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                  <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
-                    Active Editors
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  {(workspace?.members || []).map((member, mIdx) => {
-                    const username = member.user?.username || "?";
-                    const initials = username.slice(0, 2).toUpperCase();
-                    const colors = [
-                      "ring-primary text-primary",
-                      "ring-secondary text-secondary",
-                      "ring-success-emerald text-success-emerald",
-                      "ring-amber-500 text-amber-500",
-                    ];
-                    const ringColorClass = colors[mIdx % colors.length];
-                    return (
+              {activeRightTab === "notes" ? (
+                <>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                      <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
+                        Active Editors
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      {(workspace?.members || []).map((member, mIdx) => {
+                        const username = member.user?.username || "?";
+                        const initials = username.slice(0, 2).toUpperCase();
+                        const colors = [
+                          "ring-primary text-primary",
+                          "ring-secondary text-secondary",
+                          "ring-success-emerald text-success-emerald",
+                          "ring-amber-500 text-amber-500",
+                        ];
+                        const ringColorClass = colors[mIdx % colors.length];
+                        return (
+                          <div
+                            key={member._id || mIdx}
+                            className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px]`}
+                            title={username}
+                          >
+                            {initials}
+                          </div>
+                        );
+                      })}
+                      {(workspace?.members || []).length === 0 && (
+                        <div className="text-xs text-on-surface-variant opacity-60">
+                          No active editors
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-surface-bright rounded-xl border border-outline-variant p-4 min-h-[360px] shadow-sm relative flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-headline-md text-primary font-bold text-sm">
+                        Collaborative Notes
+                      </h3>
+
+                      {!isReadOnly && (
+                        <div className="flex items-center gap-1 bg-surface-container/60 p-1 rounded-lg border border-outline-variant/50">
+                          <button
+                            onClick={() => handleFormatCommand("bold")}
+                            className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                            title="Bold"
+                          >
+                            <Bold size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleFormatCommand("italic")}
+                            className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                            title="Italic"
+                          >
+                            <Italic size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleFormatCommand("underline")}
+                            className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                            title="Underline"
+                          >
+                            <Underline size={14} />
+                          </button>
+                          <div className="w-[1px] h-3 bg-outline-variant/60 mx-0.5"></div>
+                          <button
+                            onClick={() =>
+                              handleFormatCommand("insertUnorderedList")
+                            }
+                            className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                            title="Bullet List"
+                          >
+                            <List size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleFormatCommand("removeFormat")}
+                            className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                            title="Clear Formatting"
+                          >
+                            <span className="material-symbols-outlined text-[14px] font-bold block">
+                              format_clear
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 flex flex-col overflow-hidden min-h-[220px]">
                       <div
-                        key={member._id || mIdx}
-                        className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px]`}
-                        title={username}
-                      >
-                        {initials}
-                      </div>
-                    );
-                  })}
-                  {(workspace?.members || []).length === 0 && (
-                    <div className="text-xs text-on-surface-variant opacity-60">
-                      No active editors
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-surface-bright rounded-xl border border-outline-variant p-4 min-h-[360px] shadow-sm relative flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-headline-md text-primary font-bold text-sm">
-                    Collaborative Notes
-                  </h3>
-
-                  {!isReadOnly && (
-                    <div className="flex items-center gap-1 bg-surface-container/60 p-1 rounded-lg border border-outline-variant/50">
-                      <button
-                        onClick={() => handleFormatCommand("bold")}
-                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
-                        title="Bold"
-                      >
-                        <Bold size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleFormatCommand("italic")}
-                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
-                        title="Italic"
-                      >
-                        <Italic size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleFormatCommand("underline")}
-                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
-                        title="Underline"
-                      >
-                        <Underline size={14} />
-                      </button>
-                      <div className="w-[1px] h-3 bg-outline-variant/60 mx-0.5"></div>
-                      <button
-                        onClick={() =>
-                          handleFormatCommand("insertUnorderedList")
+                        ref={editorRef}
+                        contentEditable={!isReadOnly}
+                        onFocus={() => {
+                          isTypingNotesRef.current = true;
+                        }}
+                        onBlur={() => {
+                          isTypingNotesRef.current = false;
+                          if (editorRef.current) {
+                            handleSaveNotes(editorRef.current.innerHTML);
+                          }
+                        }}
+                        onInput={(e) => {
+                          const html = e.currentTarget.innerHTML;
+                          setAgendaText(html);
+                          handleSaveNotes(html);
+                        }}
+                        className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-xs rich-text-editor font-sans"
+                        placeholder={
+                          isReadOnly
+                            ? "Notes are read-only for viewer role..."
+                            : "Type meeting agenda or collaborate on notes here..."
                         }
-                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
-                        title="Bullet List"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-primary"></span>
+                      <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
+                        Recent Comments
+                      </span>
+                    </div>
+                    <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
+                      {comments.map((comment, index) => (
+                        <div
+                          key={comment._id || comment.id || index}
+                          className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/30 text-xs"
+                        >
+                          <div className="flex justify-between items-center mb-1 font-bold text-primary">
+                            <span>{comment.author}</span>
+                            <span className="text-[10px] font-normal text-on-surface-variant opacity-60 font-sans">
+                              {comment.createdAt
+                                ? new Date(comment.createdAt).toLocaleTimeString(
+                                    [],
+                                    { hour: "2-digit", minute: "2-digit" },
+                                  )
+                                : "Just now"}
+                            </span>
+                          </div>
+                          <p className="text-on-surface-variant">{comment.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="glass-card border border-outline-variant rounded-xl p-4">
+                    <h4 className="font-label-md text-xs font-bold text-outline mb-3 uppercase tracking-wider">
+                      Export Options
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={handleExportPNG}
+                        className="flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer"
                       >
-                        <List size={14} />
+                        <span className="material-symbols-outlined text-[18px]">
+                          image
+                        </span>
+                        <span className="font-body-md">PNG</span>
                       </button>
                       <button
-                        onClick={() => handleFormatCommand("removeFormat")}
-                        className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
-                        title="Clear Formatting"
+                        onClick={handleExportPDF}
+                        className="flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[14px] font-bold block">
-                          format_clear
+                        <span className="material-symbols-outlined text-[18px]">
+                          picture_as_pdf
                         </span>
+                        <span className="font-body-md">PDF</span>
                       </button>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex-1 flex flex-col overflow-hidden min-h-[220px]">
-                  <div
-                    ref={editorRef}
-                    contentEditable={!isReadOnly}
-                    onFocus={() => {
-                      isTypingNotesRef.current = true;
-                    }}
-                    onBlur={() => {
-                      isTypingNotesRef.current = false;
-                      if (editorRef.current) {
-                        handleSaveNotes(editorRef.current.innerHTML);
-                      }
-                    }}
-                    onInput={(e) => {
-                      const html = e.currentTarget.innerHTML;
-                      setAgendaText(html);
-                      handleSaveNotes(html);
-                    }}
-                    className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-xs rich-text-editor font-sans"
-                    placeholder={
-                      isReadOnly
-                        ? "Notes are read-only for viewer role..."
-                        : "Type meeting agenda or collaborate on notes here..."
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary"></span>
-                  <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
-                    Recent Comments
-                  </span>
-                </div>
-                <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
-                  {comments.map((comment, index) => (
-                    <div
-                      key={comment._id || comment.id || index}
-                      className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/30 text-xs"
-                    >
-                      <div className="flex justify-between items-center mb-1 font-bold text-primary">
-                        <span>{comment.author}</span>
-                        <span className="text-[10px] font-normal text-on-surface-variant opacity-60 font-sans">
-                          {comment.createdAt
-                            ? new Date(comment.createdAt).toLocaleTimeString(
-                                [],
-                                { hour: "2-digit", minute: "2-digit" },
-                              )
-                            : "Just now"}
-                        </span>
-                      </div>
-                      <p className="text-on-surface-variant">{comment.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="glass-card border border-outline-variant rounded-xl p-4">
-                <h4 className="font-label-md text-xs font-bold text-outline mb-3 uppercase tracking-wider">
-                  Export Options
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={handleExportPNG}
-                    className="flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      image
-                    </span>
-                    <span className="font-body-md">PNG</span>
-                  </button>
-                  <button
-                    onClick={handleExportPDF}
-                    className="flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      picture_as_pdf
-                    </span>
-                    <span className="font-body-md">PDF</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-outline-variant bg-surface-container-low">
-              {!isReadOnly ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!newComment.trim()) return;
-
-                    const freshComment = {
-                      author: currentUser?.username || "Guest",
-                      text: newComment.trim(),
-                      createdAt: new Date().toISOString(),
-                    };
-
-                    const updatedComments = [...comments, freshComment];
-                    setComments(updatedComments);
-                    setNewComment("");
-
-                    apiRequest
-                      .put(`/boards/${board._id}`, {
-                        comments: updatedComments,
-                      })
-                      .then(() => {
-                        if (socketRef.current?.connected) {
-                          socketRef.current.emit("comments-change", {
-                            boardId: board._id,
-                            comments: updatedComments,
-                          });
-                        }
-                      })
-                      .catch(() => {
-                        toast.error("Failed to post comment");
-                      });
-                  }}
-                  className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
-                >
-                  <span className="material-symbols-outlined text-outline text-[16px]">
-                    add_comment
-                  </span>
-                  <input
-                    className="bg-transparent border-none focus:ring-0 w-full text-xs text-on-surface outline-none font-sans"
-                    placeholder="Write a comment..."
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onFocus={() => {
-                      isTypingCommentsRef.current = true;
-                    }}
-                    onBlur={() => {
-                      isTypingCommentsRef.current = false;
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    className="text-primary font-bold text-xs hover:opacity-80 active:scale-95 transition-all cursor-pointer"
-                  >
-                    Send
-                  </button>
-                </form>
+                  </div>
+                </>
               ) : (
-                <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant/70 bg-surface-container-high border border-outline-variant/65 py-2.5 rounded-full shadow-inner font-bold text-center">
-                  <span className="material-symbols-outlined text-[14px]">
-                    lock
-                  </span>
-                  <span>Viewer mode is read-only.</span>
+                <div className="space-y-4 flex flex-col h-full overflow-hidden">
+                  {!isReadOnly && (
+                    <button
+                      onClick={() => setIsSnapshotModalOpen(true)}
+                      className="w-full bg-primary hover:bg-primary/95 text-on-primary font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-md"
+                    >
+                      <Plus size={16} />
+                      Save Current Version
+                    </button>
+                  )}
+
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-2 h-2 rounded-full bg-primary"></span>
+                      <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
+                        Saved Versions ({snapshots.length})
+                      </span>
+                    </div>
+
+                    {snapshots.length === 0 ? (
+                      <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
+                        <History className="mx-auto text-outline/50 mb-3 opacity-70" size={32} />
+                        <p className="text-xs text-on-surface-variant font-medium">No snapshots saved yet.</p>
+                        <p className="text-[10px] text-outline/80 mt-1">Automatic version snapshots are taken periodically during edits.</p>
+                      </div>
+                    ) : (
+                      snapshots.map((snap) => {
+                        const dateStr = new Date(snap.createdAt || snap.version).toLocaleString();
+                        const creatorName = snap.createdBy?.username || "System Auto-save";
+                        const isCurrentlyPreviewed = previewSnapshot && previewSnapshot._id === snap._id;
+                        
+                        return (
+                          <div
+                            key={snap._id || snap.version}
+                            className={`p-4 rounded-2xl border transition-all relative flex flex-col gap-3.5 bg-surface-bright shadow-sm hover:shadow-md ${
+                              isCurrentlyPreviewed
+                                ? "border-amber-400 bg-amber-50/10 shadow-amber-100/20"
+                                : "border-outline-variant/60"
+                            }`}
+                          >
+                            <div className="flex flex-col text-left">
+                              <h4 className="text-xs font-bold text-on-surface line-clamp-2">
+                                {snap.label || `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
+                              </h4>
+                              <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-on-surface-variant opacity-75">
+                                <Clock size={11} />
+                                <span>{dateStr}</span>
+                              </div>
+                              <div className="text-[10px] text-primary/80 font-bold mt-1">
+                                by {creatorName}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full mt-1 border-t border-outline-variant/30 pt-2.5">
+                              <button
+                                onClick={() => setPreviewSnapshot(isCurrentlyPreviewed ? null : snap)}
+                                className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all active:scale-95 cursor-pointer text-center ${
+                                  isCurrentlyPreviewed
+                                    ? "bg-amber-500 text-white hover:bg-amber-600"
+                                    : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                                }`}
+                              >
+                                {isCurrentlyPreviewed ? "Viewing Preview" : "Preview Version"}
+                              </button>
+                              {!isReadOnly && (
+                                <button
+                                  onClick={() => handleRestoreSnapshot(snap)}
+                                  className="py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all bg-primary/10 hover:bg-primary/20 text-primary active:scale-95 cursor-pointer text-center flex items-center gap-1"
+                                >
+                                  <span className="material-symbols-outlined text-[12px] font-bold">restore</span>
+                                  Restore
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+
+            {activeRightTab === "notes" && (
+              <div className="p-4 border-t border-outline-variant bg-surface-container-low">
+                {!isReadOnly ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newComment.trim()) return;
+
+                      const freshComment = {
+                        author: currentUser?.username || "Guest",
+                        text: newComment.trim(),
+                        createdAt: new Date().toISOString(),
+                      };
+
+                      const updatedComments = [...comments, freshComment];
+                      setComments(updatedComments);
+                      setNewComment("");
+
+                      apiRequest
+                        .put(`/boards/${board._id}`, {
+                          comments: updatedComments,
+                        })
+                        .then(() => {
+                          if (socketRef.current?.connected) {
+                            socketRef.current.emit("comments-change", {
+                              boardId: board._id,
+                              comments: updatedComments,
+                            });
+                          }
+                        })
+                        .catch(() => {
+                          toast.error("Failed to post comment");
+                        });
+                    }}
+                    className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-outline text-[16px]">
+                      add_comment
+                    </span>
+                    <input
+                      className="bg-transparent border-none focus:ring-0 w-full text-xs text-on-surface outline-none font-sans"
+                      placeholder="Write a comment..."
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onFocus={() => {
+                        isTypingCommentsRef.current = true;
+                      }}
+                      onBlur={() => {
+                        isTypingCommentsRef.current = false;
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      className="text-primary font-bold text-xs hover:opacity-80 active:scale-95 transition-all cursor-pointer"
+                    >
+                      Send
+                    </button>
+                  </form>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant/70 bg-surface-container-high border border-outline-variant/65 py-2.5 rounded-full shadow-inner font-bold text-center">
+                    <span className="material-symbols-outlined text-[14px]">
+                      lock
+                    </span>
+                    <span>Viewer mode is read-only.</span>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           {!isNotesOpen && (
@@ -1642,6 +2038,67 @@ const Whiteboard = ({ board, onClose, workspace }) => {
           )}
         </div>
       </main>
+
+      {isSnapshotModalOpen && (
+        <div className="fixed inset-0 bg-on-background/40 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-200">
+          <div className="bg-surface-bright border border-outline-variant/60 rounded-3xl p-6 shadow-2xl max-w-sm w-full mx-4 flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <History className="text-primary animate-in spin-in-12 duration-500" size={20} />
+                <h3 className="font-headline-md text-base font-black text-on-surface">
+                  Save Custom Version
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsSnapshotModalOpen(false);
+                  setSnapshotLabel("");
+                }}
+                className="text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateSnapshot} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-[10px] text-outline uppercase font-bold tracking-wider">
+                  Version Label / Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Initial Draft, Sprint 1 Done"
+                  value={snapshotLabel}
+                  onChange={(e) => setSnapshotLabel(e.target.value)}
+                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3.5 py-2.5 text-xs text-on-surface placeholder:text-outline/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex items-center gap-2 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSnapshotModalOpen(false);
+                    setSnapshotLabel("");
+                  }}
+                  className="px-4 py-2 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors text-xs font-bold text-on-surface-variant cursor-pointer active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!snapshotLabel.trim() || isCreatingSnapshot}
+                  className="px-4 py-2 bg-primary hover:bg-primary/95 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all text-xs font-bold text-on-primary cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md"
+                >
+                  {isCreatingSnapshot ? "Saving..." : "Save Version"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

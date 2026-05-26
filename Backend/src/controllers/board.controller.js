@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import * as Y from "yjs";
 import boardModel from "../models/board.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -634,7 +635,42 @@ export const restore = asyncHandler(async (req, res) => {
   );
 
   board.activeVersion = snapshot.version;
+
+  const tempDoc = new Y.Doc();
+  const canvasMap = tempDoc.getMap("canvas");
+  const notesText = tempDoc.getText("notes");
+  
+  if (Array.isArray(snapshot.canvasJson)) {
+    snapshot.canvasJson.forEach((el) => {
+      if (el && el.id) {
+        canvasMap.set(el.id, el);
+      }
+    });
+  }
+  notesText.insert(0, board.meetingNotes || "");
+
+  const stateUpdate = Y.encodeStateAsUpdate(tempDoc);
+  board.yjsState = Buffer.from(stateUpdate);
+
   await board.save();
+
+  const activeDocs = req.app.get("activeDocs");
+  if (activeDocs && activeDocs.has(id)) {
+    const active = activeDocs.get(id);
+    if (active.saveTimeout) {
+      clearTimeout(active.saveTimeout);
+    }
+    activeDocs.delete(id);
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`board_${id}`).emit("board-restored", {
+      elements: snapshot.canvasJson,
+      meetingNotes: board.meetingNotes,
+      syncData: Array.from(stateUpdate),
+    });
+  }
 
   return res.status(200).json(
     new ApiResponse(
@@ -644,6 +680,82 @@ export const restore = asyncHandler(async (req, res) => {
         restoredToSnapshot: snapshot,
       },
       "Board restored to snapshot successfully",
+    ),
+  );
+});
+
+export const createSnapshot = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { label } = req.body;
+
+  if (!id) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const board = await boardModel.findById(id);
+  if (!board) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspace = await workSpaceModel.findById(board.workspace);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isOwner = workspace.owner.toString() === req.user._id.toString();
+  const member = workspace.members.find(
+    (m) => m.user && m.user.toString() === req.user._id.toString(),
+  );
+  const hasRequiredRole =
+    member && (member.role === "OWNER" || member.role === "EDITOR");
+
+  if (!isOwner && !hasRequiredRole) {
+    throw new ApiError(
+      403,
+      "You are not authorized to create snapshots for this board",
+    );
+  }
+
+  const activeDocs = req.app.get("activeDocs");
+  let elements = [];
+  if (activeDocs && activeDocs.has(id)) {
+    const doc = activeDocs.get(id).doc;
+    const canvasMap = doc.getMap("canvas");
+    elements = Array.from(canvasMap.values());
+  } else {
+    const sortedSnaps = board.boardSnapshot && board.boardSnapshot.length > 0
+      ? [...board.boardSnapshot].sort((a, b) => b.version - a.version)
+      : [];
+    elements = sortedSnaps.length > 0 ? sortedSnaps[0].canvasJson : [];
+  }
+
+  const version = Date.now();
+  const newSnapshot = {
+    version,
+    label: label || `Snapshot - ${new Date().toLocaleString()}`,
+    canvasJson: elements,
+    createdBy: req.user._id,
+  };
+
+  if (!board.boardSnapshot) {
+    board.boardSnapshot = [];
+  }
+  board.boardSnapshot.push(newSnapshot);
+  board.activeVersion = version;
+
+  await board.save();
+
+  const populatedBoard = await boardModel
+    .findById(board._id)
+    .populate("boardSnapshot.createdBy", "username email");
+
+  const createdSnap = populatedBoard.boardSnapshot.find((s) => s.version === version);
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      createdSnap,
+      "Snapshot created successfully",
     ),
   );
 });

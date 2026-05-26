@@ -6,6 +6,9 @@ const boardSnapshotSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    label: {
+      type: String,
+    },
     canvasJson: {
       type: Array,
       required: true,
@@ -105,6 +108,10 @@ const boardSchema = new mongoose.Schema(
     meetingNotes: {
       type: String,
       default: "",
+    },
+    yjsState: {
+      type: Buffer,
+      default: null,
     },
     comments: [
       {

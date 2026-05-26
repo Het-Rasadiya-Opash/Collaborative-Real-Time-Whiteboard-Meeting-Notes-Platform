@@ -10,6 +10,7 @@ import {
   restore,
   snapShotList,
   updateBoard,
+  createSnapshot,
 } from "../controllers/board.controller.js";
 import { authorizeRole } from "../middlewares/authRole.middleware.js";
 
@@ -33,6 +34,12 @@ router.post(
 );
 router.get("/share/:token", getPublicBoard);
 router.get("/:id/snapshots", authMiddleware, snapShotList);
+router.post(
+  "/:id/snapshots",
+  authMiddleware,
+  authorizeRole("OWNER", "EDITOR"),
+  createSnapshot,
+);
 router.post(
   "/:id/snapshots/:snapId/restore",
   authMiddleware,
