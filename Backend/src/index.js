@@ -36,7 +36,7 @@ async function getOrCreateYDoc(boardId) {
   }
 
   const doc = new Y.Doc();
-  activeDocs.set(boardId, { doc, saveTimeout: null });
+  activeDocs.set(boardId, { doc, saveTimeout: null, lastModifiedBy: null });
 
   try {
     const board = await boardModel.findById(boardId);
@@ -96,6 +96,7 @@ function queueSave(boardId, doc) {
           version: Date.now(),
           canvasJson: elements,
           createdAt: new Date(),
+          createdBy: active.lastModifiedBy || null,
         };
 
         if (!board.boardSnapshot) {
@@ -152,6 +153,11 @@ io.on("connection", (socket) => {
     Y.applyUpdate(doc, convertToUint8Array(update));
 
     socket.to(`board_${boardId}`).emit("yjs-update", update);
+
+    const active = activeDocs.get(boardId);
+    if (active && socket.userId) {
+      active.lastModifiedBy = socket.userId;
+    }
 
     queueSave(boardId, doc);
   });
