@@ -18,6 +18,7 @@ import {
   X,
   Clock,
   Grid,
+  Lock,
 } from "lucide-react";
 
 const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {

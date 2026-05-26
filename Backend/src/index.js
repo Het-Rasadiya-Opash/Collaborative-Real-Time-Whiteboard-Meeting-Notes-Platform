@@ -10,12 +10,12 @@ import boardModel from "./models/board.model.js";
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   },
 });
 
-const activeDocs = new Map(); 
+const activeDocs = new Map();
 app.set("activeDocs", activeDocs);
 app.set("io", io);
 
@@ -37,7 +37,9 @@ async function getOrCreateYDoc(boardId) {
           const canvasMap = doc.getMap("canvas");
           let legacyElements = [];
           if (board.boardSnapshot && board.boardSnapshot.length > 0) {
-            const sortedSnaps = [...board.boardSnapshot].sort((a, b) => b.version - a.version);
+            const sortedSnaps = [...board.boardSnapshot].sort(
+              (a, b) => b.version - a.version,
+            );
             legacyElements = sortedSnaps[0].canvasJson || [];
           }
           legacyElements.forEach((el) => {
@@ -89,9 +91,9 @@ function queueSave(boardId, doc) {
           board.boardSnapshot = [];
         }
 
-      const oneMinuteAgo = Date.now() - 60000;
+        const oneMinuteAgo = Date.now() - 60000;
         const recentSnapshot = board.boardSnapshot.find(
-          (s) => s.version > oneMinuteAgo
+          (s) => s.version > oneMinuteAgo,
         );
 
         if (recentSnapshot) {

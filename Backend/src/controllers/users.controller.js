@@ -61,7 +61,9 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
-  const verificationUrl = `${req.protocol}://${req.get("host")}/api/users/verify-email?token=${verificationToken}`;
+  const apiEndpoint = process.env.API_ENDPOINT || `${req.protocol}://${req.get("host")}/api`;
+  const cleanApiEndpoint = apiEndpoint.endsWith("/") ? apiEndpoint.slice(0, -1) : apiEndpoint;
+  const verificationUrl = `${cleanApiEndpoint}/users/verify-email?token=${verificationToken}`;
   await sendVerificationEmail(
     createdUser.email,
     createdUser.username,

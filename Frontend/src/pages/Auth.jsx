@@ -28,7 +28,7 @@ const Auth = ({ defaultMode = "login" }) => {
     username: "",
     email: "",
     password: "",
-    role: "user",
+    role: "OWNER",
   });
   const [isRegistered, setIsRegistered] = useState(false);
   const [registeredData, setRegisteredData] = useState(null);
@@ -161,7 +161,7 @@ const Auth = ({ defaultMode = "login" }) => {
       username: "",
       email: "",
       password: "",
-      role: "user",
+      role: "OWNER",
     });
     dispatch(clearError());
   };

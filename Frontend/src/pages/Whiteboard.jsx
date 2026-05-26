@@ -28,6 +28,7 @@ import toast from "react-hot-toast";
 import apiRequest from "../utils/apiRequest";
 import { io } from "socket.io-client";
 import * as Y from "yjs";
+import { Stage, Layer, Rect, Circle as KonvaCircle, Line, Group, Text, Transformer } from "react-konva";
 
 function getCaretCharacterOffsetWithin(element) {
   let caretOffset = 0;
@@ -250,6 +251,40 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
   const ydocRef = useRef(null);
   const canvasMapRef = useRef(null);
   const notesTextRef = useRef(null);
+
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const transformerRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        setDimensions({
+          width: canvasRef.current.clientWidth,
+          height: canvasRef.current.clientHeight,
+        });
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    setTimeout(handleResize, 100);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedElementId && selectedTool === "select" && transformerRef.current) {
+      const stage = transformerRef.current.getStage();
+      const selectedNode = stage.findOne("#" + selectedElementId);
+      if (selectedNode) {
+        transformerRef.current.nodes([selectedNode]);
+        transformerRef.current.getLayer().batchDraw();
+      } else {
+        transformerRef.current.nodes([]);
+      }
+    } else if (transformerRef.current) {
+      transformerRef.current.nodes([]);
+    }
+  }, [selectedElementId, selectedTool, elements]);
 
   const isCanvasBusy =
     isDragging || currentDrawingElement !== null || editingStickyId !== null;
@@ -657,99 +692,98 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
     triggerAutoSave(next);
   };
 
-  const handleMouseDown = (e) => {
+  const getStageMouseCoords = (e) => {
+    const stage = e.target.getStage();
+    const pos = stage.getPointerPosition();
+    if (!pos) return { x: 0, y: 0 };
+    const scale = zoom / 100;
+    return {
+      x: pos.x / scale,
+      y: pos.y / scale,
+    };
+  };
+
+  const handleStageMouseDown = (e) => {
     if (isReadOnly || previewSnapshot) return;
     if (editingStickyId) {
       finishStickyEditing();
       return;
     }
 
-    const { x, y } = getMouseCoords(e);
-
-    if (selectedTool === "select") {
-      const targetId = e.target.getAttribute("data-element-id");
-      if (targetId) {
-        setSelectedElementId(targetId);
-        const element = elements.find((el) => el.id === targetId);
-        if (element) {
-          setIsDragging(true);
-          if (element.type === "rectangle" || element.type === "sticky") {
-            setDragOffset({ x: x - element.x, y: y - element.y });
-          } else if (element.type === "circle") {
-            setDragOffset({ x: x - element.cx, y: y - element.cy });
-          } else if (element.type === "stroke") {
-            setDragOffset({ x, y });
-          }
-        }
-      } else {
-        setSelectedElementId(null);
-      }
-      return;
+    const clickedOnEmpty = e.target === e.target.getStage() || e.target.id() === "stage-background";
+    if (clickedOnEmpty) {
+      setSelectedElementId(null);
     }
 
-    const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    if (selectedTool !== "select") {
+      const { x, y } = getStageMouseCoords(e);
+      const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
-    if (selectedTool === "pencil") {
-      const newStroke = {
-        id,
-        type: "stroke",
-        points: [{ x, y }],
-        color: currentColor,
-      };
-      setIsDragging(true);
-      setCurrentDrawingElement(newStroke);
-    } else if (selectedTool === "rectangle") {
-      const newRect = {
-        id,
-        type: "rectangle",
-        x,
-        y,
-        width: 0,
-        height: 0,
-        color: currentColor,
-      };
-      setIsDragging(true);
-      setCurrentDrawingElement(newRect);
-    } else if (selectedTool === "circle") {
-      const newCircle = {
-        id,
-        type: "circle",
-        cx: x,
-        cy: y,
-        r: 0,
-        color: currentColor,
-      };
-      setIsDragging(true);
-      setCurrentDrawingElement(newCircle);
-    } else if (selectedTool === "sticky") {
-      const newSticky = {
-        id,
-        type: "sticky",
-        x: x - 80,
-        y: y - 80,
-        width: 160,
-        height: 160,
-        text: "Double-click to edit note",
-        color: currentColor === "#eff4ff" ? "#fef08a" : currentColor,
-      };
-      const newElements = [...elements, newSticky];
-      updateElementsAndHistory(newElements);
-      setSelectedTool("select");
-      setSelectedElementId(id);
+      if (selectedTool === "pencil") {
+        const newStroke = {
+          id,
+          type: "stroke",
+          points: [{ x, y }],
+          color: currentColor,
+        };
+        setIsDragging(true);
+        setCurrentDrawingElement(newStroke);
+      } else if (selectedTool === "rectangle") {
+        const newRect = {
+          id,
+          type: "rectangle",
+          x,
+          y,
+          width: 0,
+          height: 0,
+          color: currentColor,
+        };
+        setIsDragging(true);
+        setCurrentDrawingElement(newRect);
+      } else if (selectedTool === "circle") {
+        const newCircle = {
+          id,
+          type: "circle",
+          cx: x,
+          cy: y,
+          r: 0,
+          color: currentColor,
+        };
+        setIsDragging(true);
+        setCurrentDrawingElement(newCircle);
+      } else if (selectedTool === "sticky") {
+        const newSticky = {
+          id,
+          type: "sticky",
+          x: x - 80,
+          y: y - 80,
+          width: 160,
+          height: 160,
+          text: "Double-click to edit note",
+          color: currentColor === "#eff4ff" ? "#fef08a" : currentColor,
+        };
+        const newElements = [...elements, newSticky];
+        updateElementsAndHistory(newElements);
+        setSelectedTool("select");
+        setSelectedElementId(id);
+        setIsDragging(false);
+      }
     }
   };
 
-  const handleMouseMove = (e) => {
+  const handleStageMouseMove = (e) => {
     if (previewSnapshot) return;
-    const { x, y } = getMouseCoords(e);
+    const stage = e.target.getStage();
+    const pos = stage.getPointerPosition();
 
-    if (socketRef.current?.connected) {
+    if (pos && socketRef.current?.connected) {
       const now = Date.now();
       if (now - lastCursorEmitRef.current > 40) {
+        const scale = zoom / 100;
         socketRef.current.emit("cursor-move", {
           boardId: board._id,
-          x,
-          y,
+          x: pos.x / scale,
+          y: pos.y / scale,
           userId:
             currentUser?._id ||
             `guest_${Math.random().toString(36).substring(2, 6)}`,
@@ -762,6 +796,7 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
     if (!isDragging) return;
 
     if (currentDrawingElement) {
+      const { x, y } = getStageMouseCoords(e);
       const updated = { ...currentDrawingElement };
       if (updated.type === "stroke") {
         updated.points = [...updated.points, { x, y }];
@@ -775,51 +810,9 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       }
       setCurrentDrawingElement(updated);
     }
-
-    if (selectedTool === "select" && selectedElementId) {
-      setElements((prevElements) => {
-        let movedEl = null;
-        const updated = prevElements.map((el) => {
-          if (el.id !== selectedElementId) return el;
-          if (el.type === "rectangle" || el.type === "sticky") {
-            movedEl = { ...el, x: x - dragOffset.x, y: y - dragOffset.y };
-            return movedEl;
-          } else if (el.type === "circle") {
-            movedEl = { ...el, cx: x - dragOffset.x, cy: y - dragOffset.y };
-            return movedEl;
-          } else if (el.type === "stroke") {
-            const dx = x - dragOffset.x;
-            const dy = y - dragOffset.y;
-            const newPoints = el.points.map((pt) => ({
-              x: pt.x + dx,
-              y: pt.y + dy,
-            }));
-            setDragOffset({ x, y });
-            movedEl = { ...el, points: newPoints };
-            return movedEl;
-          }
-          return el;
-        });
-
-        if (movedEl && canvasMapRef.current) {
-          canvasMapRef.current.set(movedEl.id, movedEl);
-        }
-
-        triggerAutoSave(updated);
-
-        if (socketRef.current?.connected) {
-          socketRef.current.emit("canvas-change", {
-            boardId: board._id,
-            elements: updated,
-          });
-        }
-
-        return updated;
-      });
-    }
   };
 
-  const handleMouseUp = () => {
+  const handleStageMouseUp = () => {
     if (previewSnapshot) return;
     setIsDragging(false);
 
@@ -828,6 +821,94 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
       updateElementsAndHistory(newElements);
       setCurrentDrawingElement(null);
     }
+  };
+
+  const handleShapeSelect = (e, id) => {
+    if (selectedTool !== "select" || isReadOnly || previewSnapshot) return;
+    e.cancelBubble = true;
+    setSelectedElementId(id);
+  };
+
+  const handleTransformEnd = (e) => {
+    if (isReadOnly || previewSnapshot) return;
+    const node = e.target;
+    const id = node.id();
+    const scaleX = node.scaleX();
+    const scaleY = node.scaleY();
+
+    node.scaleX(1);
+    node.scaleY(1);
+
+    const updated = elements.map((el) => {
+      if (el.id === id) {
+        if (el.type === "rectangle" || el.type === "sticky") {
+          return {
+            ...el,
+            x: node.x(),
+            y: node.y(),
+            width: Math.max(5, el.width * scaleX),
+            height: Math.max(5, el.height * scaleY),
+          };
+        } else if (el.type === "circle") {
+          return {
+            ...el,
+            cx: node.x(),
+            cy: node.y(),
+            r: Math.max(5, el.r * Math.max(scaleX, scaleY)),
+          };
+        }
+      }
+      return el;
+    });
+
+    updateElementsAndHistory(updated);
+  };
+
+  const handleDragMove = (e) => {
+    if (isReadOnly || previewSnapshot) return;
+    const node = e.target;
+    const id = node.id();
+
+    setElements((prevElements) => {
+      let movedEl = null;
+      const updated = prevElements.map((el) => {
+        if (el.id !== id) return el;
+        if (el.type === "rectangle" || el.type === "sticky") {
+          movedEl = { ...el, x: node.x(), y: node.y() };
+          return movedEl;
+        } else if (el.type === "circle") {
+          movedEl = { ...el, cx: node.x(), cy: node.y() };
+          return movedEl;
+        } else if (el.type === "stroke") {
+          const dx = node.x();
+          const dy = node.y();
+          node.x(0);
+          node.y(0);
+          const newPoints = el.points.map((pt) => ({
+            x: pt.x + dx,
+            y: pt.y + dy,
+          }));
+          movedEl = { ...el, points: newPoints };
+          return movedEl;
+        }
+        return el;
+      });
+
+      if (movedEl && canvasMapRef.current) {
+        canvasMapRef.current.set(movedEl.id, movedEl);
+      }
+
+      triggerAutoSave(updated);
+
+      if (socketRef.current?.connected) {
+        socketRef.current.emit("canvas-change", {
+          boardId: board._id,
+          elements: updated,
+        });
+      }
+
+      return updated;
+    });
   };
 
   const handleDoubleClickSticky = (e, element) => {
@@ -1419,82 +1500,57 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
               </div>
             )}
 
-            <svg
-              ref={canvasRef}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              className="w-full h-full cursor-crosshair"
-            >
-              <g
-                style={{
-                  transform: `scale(${zoom / 100})`,
-                  transformOrigin: "0 0",
-                }}
+            <div ref={canvasRef} className="w-full h-full relative overflow-hidden" style={{ pointerEvents: "all" }}>
+              <Stage
+                width={dimensions.width}
+                height={dimensions.height}
+                onMouseDown={handleStageMouseDown}
+                onMouseMove={handleStageMouseMove}
+                onMouseUp={handleStageMouseUp}
+                onMouseLeave={handleStageMouseUp}
+                onTouchStart={handleStageMouseDown}
+                onTouchMove={handleStageMouseMove}
+                onTouchEnd={handleStageMouseUp}
+                style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%" }}
               >
-                {displayedElements.map((el) => {
-                  const isSelected = el.id === selectedElementId;
-                  const selectProps =
-                    selectedTool === "select"
-                      ? {
-                          "data-element-id": el.id,
-                        }
-                      : {};
+                <Layer>
+                  <Rect
+                    id="stage-background"
+                    x={0}
+                    y={0}
+                    width={dimensions.width * 4}
+                    height={dimensions.height * 4}
+                    fill="transparent"
+                  />
+                </Layer>
+                <Layer scaleX={zoom / 100} scaleY={zoom / 100}>
+                  {displayedElements.map((el) => {
+                    const isSelected = el.id === selectedElementId;
 
-                  if (el.type === "stroke") {
-                    const pathData = el.points
-                      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-                      .join(" ");
-                    return (
-                      <g key={el.id}>
-                        {isSelected && (
-                          <path
-                            d={pathData}
-                            fill="none"
-                            stroke="#712ae2"
-                            strokeWidth={
-                              el.strokeWidth ? el.strokeWidth + 4 : 8
-                            }
-                            strokeOpacity={0.25}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        )}
-                        <path
-                          d={pathData}
-                          fill="none"
+                    if (el.type === "stroke") {
+                      return (
+                        <Line
+                          key={el.id}
+                          id={el.id}
+                          points={el.points.flatMap((p) => [p.x, p.y])}
                           stroke={el.color}
                           strokeWidth={el.strokeWidth || 4}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={
-                            selectedTool === "select"
-                              ? "cursor-move hover:stroke-primary/40"
-                              : ""
-                          }
-                          {...selectProps}
+                          lineCap="round"
+                          lineJoin="round"
+                          opacity={0.8}
+                          draggable={selectedTool === "select" && !isReadOnly}
+                          onClick={(e) => handleShapeSelect(e, el.id)}
+                          onTap={(e) => handleShapeSelect(e, el.id)}
+                          onDragMove={handleDragMove}
                         />
-                      </g>
-                    );
-                  }
+                      );
+                    }
 
-                  if (el.type === "rectangle") {
-                    return (
-                      <g key={el.id}>
-                        {isSelected && (
-                          <rect
-                            x={el.x - 3}
-                            y={el.y - 3}
-                            width={el.width + 6}
-                            height={el.height + 6}
-                            fill="none"
-                            stroke="#712ae2"
-                            strokeWidth={1.5}
-                            strokeDasharray="4 3"
-                          />
-                        )}
-                        <rect
+                    if (el.type === "rectangle") {
+                      return (
+                        <Rect
+                          key={el.id}
+                          id={el.id}
                           x={el.x}
                           y={el.y}
                           width={el.width}
@@ -1502,165 +1558,195 @@ const Whiteboard = ({ board, onClose, workspace, isReadOnly: propIsReadOnly, pub
                           fill="transparent"
                           stroke={el.color}
                           strokeWidth={3}
-                          className={
-                            selectedTool === "select"
-                              ? "cursor-move hover:stroke-primary/40"
-                              : ""
-                          }
-                          {...selectProps}
+                          draggable={selectedTool === "select" && !isReadOnly}
+                          onClick={(e) => handleShapeSelect(e, el.id)}
+                          onTap={(e) => handleShapeSelect(e, el.id)}
+                          onDragMove={handleDragMove}
+                          onTransformEnd={handleTransformEnd}
                         />
-                      </g>
-                    );
-                  }
+                      );
+                    }
 
-                  if (el.type === "circle") {
-                    return (
-                      <g key={el.id}>
-                        {isSelected && (
-                          <circle
-                            cx={el.cx}
-                            cy={el.cy}
-                            r={el.r + 3}
-                            fill="none"
-                            stroke="#712ae2"
-                            strokeWidth={1.5}
-                            strokeDasharray="4 3"
-                          />
-                        )}
-                        <circle
-                          cx={el.cx}
-                          cy={el.cy}
-                          r={el.r}
+                    if (el.type === "circle") {
+                      return (
+                        <KonvaCircle
+                          key={el.id}
+                          id={el.id}
+                          x={el.cx}
+                          y={el.cy}
+                          radius={el.r}
                           fill="transparent"
                           stroke={el.color}
                           strokeWidth={3}
-                          className={
-                            selectedTool === "select"
-                              ? "cursor-move hover:stroke-primary/40"
-                              : ""
-                          }
-                          {...selectProps}
+                          draggable={selectedTool === "select" && !isReadOnly}
+                          onClick={(e) => handleShapeSelect(e, el.id)}
+                          onTap={(e) => handleShapeSelect(e, el.id)}
+                          onDragMove={handleDragMove}
+                          onTransformEnd={handleTransformEnd}
                         />
-                      </g>
-                    );
-                  }
+                      );
+                    }
 
-                  if (el.type === "sticky") {
-                    const isStickyEditing = el.id === editingStickyId;
-                    return (
-                      <g key={el.id}>
-                        <foreignObject
+                    if (el.type === "sticky") {
+                      return (
+                        <Group
+                          key={el.id}
+                          id={el.id}
                           x={el.x}
                           y={el.y}
                           width={el.width}
                           height={el.height}
-                          style={{ pointerEvents: "all" }}
+                          draggable={selectedTool === "select" && !isReadOnly}
+                          onClick={(e) => handleShapeSelect(e, el.id)}
+                          onTap={(e) => handleShapeSelect(e, el.id)}
+                          onDblClick={(e) => handleDoubleClickSticky(e, el)}
+                          onDblTap={(e) => handleDoubleClickSticky(e, el)}
+                          onDragMove={handleDragMove}
+                          onTransformEnd={handleTransformEnd}
                         >
-                          <div
-                            onDoubleClick={(e) =>
-                              handleDoubleClickSticky(e, el)
-                            }
-                            className={`w-full h-full p-4 rounded-xl flex flex-col justify-between shadow-md transition-all cursor-move select-none glass-card ${
-                              isSelected
-                                ? "ring-2 ring-primary border-primary"
-                                : "border-outline-variant"
-                            }`}
-                            style={{
-                              backgroundColor: el.color,
-                              transform: isSelected ? "scale(1.02)" : "none",
-                              zIndex: isSelected ? 50 : 10,
-                            }}
-                            {...selectProps}
-                          >
-                            <div className="flex justify-between items-center select-none pointer-events-none mb-1">
-                              <span className="text-[10px] font-bold tracking-wider opacity-60 uppercase text-on-surface">
-                                {el.color === "#fef08a" ||
-                                el.color === "#eff4ff"
-                                  ? "STICKY NOTE"
-                                  : "IDEA"}
-                              </span>
-                              <span className="material-symbols-outlined text-outline text-[16px]">
-                                push_pin
-                              </span>
-                            </div>
+                          <Rect
+                            width={el.width}
+                            height={el.height}
+                            fill={el.color === "#eff4ff" ? "#fef08a" : el.color}
+                            stroke={isSelected ? "#2563eb" : "#e2e8f0"}
+                            strokeWidth={isSelected ? 2 : 1}
+                            cornerRadius={12}
+                            shadowColor="#0f172a"
+                            shadowBlur={10}
+                            shadowOpacity={0.15}
+                            shadowOffset={{ x: 0, y: 4 }}
+                          />
+                          <Text
+                            x={12}
+                            y={12}
+                            text={el.color === "#fef08a" || el.color === "#eff4ff" ? "STICKY NOTE" : "IDEA"}
+                            fontSize={9}
+                            fontFamily="sans-serif"
+                            fontWeight="bold"
+                            fill="#64748b"
+                            letterSpacing={0.5}
+                          />
+                          {editingStickyId !== el.id && (
+                            <Text
+                              x={12}
+                              y={28}
+                              width={el.width - 24}
+                              height={el.height - 40}
+                              text={el.text}
+                              fontSize={13}
+                              fontFamily="sans-serif"
+                              fontWeight="bold"
+                              fill="#1e293b"
+                              align="center"
+                              verticalAlign="middle"
+                              wrap="char"
+                            />
+                          )}
+                        </Group>
+                      );
+                    }
 
-                            <div className="flex-1 w-full h-full flex items-center justify-center text-center overflow-hidden text-sm font-semibold leading-relaxed text-on-surface">
-                              {isStickyEditing ? (
-                                <textarea
-                                  value={editingStickyText}
-                                  onChange={(e) =>
-                                    setEditingStickyText(e.target.value)
-                                  }
-                                  onBlur={finishStickyEditing}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault();
-                                      finishStickyEditing();
-                                    }
-                                  }}
-                                  className="w-full h-full bg-black/5 text-[#0b1c30] border-none outline-none resize-none text-center focus:ring-0 p-0 text-sm font-semibold placeholder-[#0b1c30]/40"
-                                  placeholder="Type something..."
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="w-full break-words max-h-full overflow-hidden text-ellipsis px-1 select-text">
-                                  {el.text}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </foreignObject>
-                      </g>
-                    );
-                  }
+                    return null;
+                  })}
 
-                  return null;
-                })}
+                  {currentDrawingElement && (
+                    <Group>
+                      {currentDrawingElement.type === "stroke" && (
+                        <Line
+                          points={currentDrawingElement.points.flatMap((p) => [p.x, p.y])}
+                          stroke={currentDrawingElement.color}
+                          strokeWidth={4}
+                          lineCap="round"
+                          lineJoin="round"
+                          opacity={0.8}
+                        />
+                      )}
+                      {currentDrawingElement.type === "rectangle" && (
+                        <Rect
+                          x={currentDrawingElement.x}
+                          y={currentDrawingElement.y}
+                          width={currentDrawingElement.width}
+                          height={currentDrawingElement.height}
+                          fill="transparent"
+                          stroke={currentDrawingElement.color}
+                          strokeWidth={3}
+                          dash={[5, 3]}
+                          opacity={0.8}
+                        />
+                      )}
+                      {currentDrawingElement.type === "circle" && (
+                        <KonvaCircle
+                          x={currentDrawingElement.cx}
+                          y={currentDrawingElement.cy}
+                          radius={currentDrawingElement.r}
+                          fill="transparent"
+                          stroke={currentDrawingElement.color}
+                          strokeWidth={3}
+                          dash={[5, 3]}
+                          opacity={0.8}
+                        />
+                      )}
+                    </Group>
+                  )}
 
-                {currentDrawingElement && (
-                  <g>
-                    {currentDrawingElement.type === "stroke" && (
-                      <path
-                        d={currentDrawingElement.points
-                          .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-                          .join(" ")}
-                        fill="none"
-                        stroke={currentDrawingElement.color}
-                        strokeWidth={4}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        opacity={0.8}
-                      />
-                    )}
-                    {currentDrawingElement.type === "rectangle" && (
-                      <rect
-                        x={currentDrawingElement.x}
-                        y={currentDrawingElement.y}
-                        width={currentDrawingElement.width}
-                        height={currentDrawingElement.height}
-                        fill="transparent"
-                        stroke={currentDrawingElement.color}
-                        strokeWidth={3}
-                        strokeDasharray="5 3"
-                        opacity={0.8}
-                      />
-                    )}
-                    {currentDrawingElement.type === "circle" && (
-                      <circle
-                        cx={currentDrawingElement.cx}
-                        cy={currentDrawingElement.cy}
-                        r={currentDrawingElement.r}
-                        fill="transparent"
-                        stroke={currentDrawingElement.color}
-                        strokeWidth={3}
-                        strokeDasharray="5 3"
-                        opacity={0.8}
-                      />
-                    )}
-                  </g>
-                )}
-              </g>
-            </svg>
+                  {selectedTool === "select" && !isReadOnly && (
+                    <Transformer
+                      ref={transformerRef}
+                      boundBoxFunc={(oldBox, newBox) => {
+                        if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
+                          return oldBox;
+                        }
+                        return newBox;
+                      }}
+                      rotateEnabled={false}
+                    />
+                  )}
+                </Layer>
+              </Stage>
+
+              {editingStickyId && (
+                (() => {
+                  const el = elements.find(item => item.id === editingStickyId);
+                  if (!el) return null;
+                  const scale = zoom / 100;
+                  return (
+                    <textarea
+                      value={editingStickyText}
+                      onChange={(e) => setEditingStickyText(e.target.value)}
+                      onBlur={finishStickyEditing}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          finishStickyEditing();
+                        }
+                      }}
+                      style={{
+                        position: "absolute",
+                        left: `${el.x * scale}px`,
+                        top: `${el.y * scale}px`,
+                        width: `${el.width * scale}px`,
+                        height: `${el.height * scale}px`,
+                        backgroundColor: el.color === "#eff4ff" ? "#fef08a" : el.color,
+                        fontSize: `${13 * scale}px`,
+                        zIndex: 100,
+                        border: "2px solid #2563eb",
+                        borderRadius: "12px",
+                        resize: "none",
+                        padding: `${16 * scale}px`,
+                        boxSizing: "border-box",
+                        outline: "none",
+                        textAlign: "center",
+                        fontFamily: "sans-serif",
+                        fontWeight: "bold",
+                        color: "#1e293b",
+                        overflow: "hidden"
+                      }}
+                      autoFocus
+                    />
+                  );
+                })()
+              )}
+            </div>
 
             {collaborators.map((collab, index) => {
               const colors = [
