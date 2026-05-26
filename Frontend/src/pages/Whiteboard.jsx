@@ -1429,7 +1429,6 @@ const Whiteboard = ({ board, onClose, workspace }) => {
                     Collaborative Notes
                   </h3>
 
-                  {/* Rich-Text Formatting Toolbar */}
                   {!isReadOnly && (
                     <div className="flex items-center gap-1 bg-surface-container/60 p-1 rounded-lg border border-outline-variant/50">
                       <button

@@ -279,7 +279,6 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
         </div>
       </div>
 
-      {/* Search Input */}
       <div className="mb-6">
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -295,7 +294,6 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
         </div>
       </div>
 
-      {/* Tab Navigation Controls */}
       <div className="flex border-b border-outline-variant/60 mb-8 gap-6 overflow-x-auto select-none">
         <button
           onClick={() => setActiveTab("all")}
@@ -393,7 +391,6 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                 onClick={() => onOpenBoard(board)}
                 className="glass-card bg-surface/50 border border-outline-variant/60 rounded-xl overflow-hidden group cursor-pointer flex flex-col justify-between h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative min-h-[260px]"
               >
-                {/* Visual Header */}
                 <div
                   className={`h-32 bg-gradient-to-br ${visual.gradient} flex items-center justify-center relative overflow-hidden border-b border-outline-variant/40`}
                 >
@@ -418,13 +415,11 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                   </div>
                 </div>
 
-                {/* Content body */}
                 <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
                   <div>
                     <h4 className="font-bold text-base text-on-surface mb-2.5 truncate group-hover:text-primary transition-colors">
                       {board.title}
                     </h4>
-                    {/* Owner Badge */}
                     <div className="flex items-center gap-2 mb-3">
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black uppercase ${getAvatarBg(board.owner?.username)}`}
@@ -437,7 +432,6 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     </div>
                   </div>
 
-                  {/* Timestamps footer */}
                   <div className="flex justify-between items-center text-outline text-[11px] font-medium border-t border-outline-variant/35 pt-3">
                     <span className="truncate max-w-[200px]">
                       {board.lastOpenedAt ? (
@@ -465,7 +459,6 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
             );
           })}
 
-          {/* New Board Card inside 'All Boards' Tab */}
           {activeTab === "all" && canModify && (
             <div
               onClick={() => setIsModalOpen(true)}
@@ -485,7 +478,6 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
         </div>
       )}
 
-      {/* Modal dialog */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-surface border border-outline-variant/60 rounded-xl w-full max-w-md shadow-2xl p-6 overflow-hidden animate-in zoom-in-95 duration-200">
