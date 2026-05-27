@@ -236,7 +236,6 @@ export const extractActions = asyncHandler(async (req, res) => {
     actionItems.push(...mockTasks);
   }
 
-  // Persist extracted action items to Notes model in MongoDB
   let notesDoc = await notesModel.findOne({ board: boardId });
   if (!notesDoc) {
     notesDoc = await notesModel.create({

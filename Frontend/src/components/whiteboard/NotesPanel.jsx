@@ -96,7 +96,6 @@ const NotesPanel = ({
     const item = actionItems[idx];
     const newStatus = item.status === "Completed" ? "Pending" : "Completed";
 
-    // Optimistic update
     const updated = [...actionItems];
     updated[idx] = { ...item, status: newStatus };
     setActionItems(updated);
@@ -111,7 +110,6 @@ const NotesPanel = ({
         );
       } catch (error) {
         console.error("Failed to update action item status:", error);
-        // Rollback
         const rollbacked = [...actionItems];
         rollbacked[idx] = item;
         setActionItems(rollbacked);
