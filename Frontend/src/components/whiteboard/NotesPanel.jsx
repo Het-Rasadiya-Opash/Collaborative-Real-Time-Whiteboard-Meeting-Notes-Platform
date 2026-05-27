@@ -125,7 +125,11 @@ const NotesPanel = ({
   };
 
   React.useEffect(() => {
-    if (isNotesOpen && editorRef.current && editorRef.current.innerHTML !== agendaText) {
+    if (
+      isNotesOpen &&
+      editorRef.current &&
+      editorRef.current.innerHTML !== agendaText
+    ) {
       editorRef.current.innerHTML = agendaText || "";
     }
   }, [isNotesOpen, board?._id]);
@@ -175,8 +179,9 @@ const NotesPanel = ({
         <button
           onClick={toggleNotes}
           className="text-secondary hover:text-on-background transition-colors cursor-pointer flex items-center justify-center"
+          title="Collapse Panel"
         >
-          <ChevronsRight size={20} />
+          <X size={20} />
         </button>
       </div>
 
@@ -298,7 +303,9 @@ const NotesPanel = ({
 
             <div className="flex-1 flex flex-col min-h-[300px]">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-primary font-headline-sm">Collaborative Notes</h4>
+                <h4 className="text-primary font-headline-sm">
+                  Collaborative Notes
+                </h4>
                 {!isReadOnly && (
                   <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                     <button
@@ -365,7 +372,10 @@ const NotesPanel = ({
                 {typingCollaborators.length > 0 && (
                   <div className="flex items-center gap-1.5 text-primary bg-primary/5 border border-primary/10 rounded-lg px-2 py-1.5 animate-pulse mt-2 select-none self-start">
                     <span className="text-[10px] font-bold">
-                      {typingCollaborators.map((c) => c.username || "Collaborator").join(", ")} is typing...
+                      {typingCollaborators
+                        .map((c) => c.username || "Collaborator")
+                        .join(", ")}{" "}
+                      is typing...
                     </span>
                   </div>
                 )}
@@ -378,14 +388,24 @@ const NotesPanel = ({
               </h4>
               <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1">
                 {comments.map((comment, index) => (
-                  <div key={comment._id || comment.id || index} className="flex gap-3">
+                  <div
+                    key={comment._id || comment.id || index}
+                    className="flex gap-3"
+                  >
                     <div className="w-8 h-8 rounded-full bg-note-purple flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-purple-700">
                       {comment.author.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-outline-variant/30 flex-1">
-                      <p className="text-body-sm mb-1 text-on-surface font-semibold">{comment.text}</p>
+                      <p className="text-body-sm mb-1 text-on-surface font-semibold">
+                        {comment.text}
+                      </p>
                       <span className="text-[10px] text-slate-400">
-                        {comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now"}
+                        {comment.createdAt
+                          ? new Date(comment.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Just now"}
                       </span>
                     </div>
                   </div>
@@ -424,13 +444,23 @@ const NotesPanel = ({
 
             {isLoadingActions ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl animate-pulse">
-                <Loader2 className="mx-auto text-primary mb-3 animate-spin" size={36} />
-                <p className="text-xs text-on-surface-variant font-bold">Scanning meeting notes...</p>
+                <Loader2
+                  className="mx-auto text-primary mb-3 animate-spin"
+                  size={36}
+                />
+                <p className="text-xs text-on-surface-variant font-bold">
+                  Scanning meeting notes...
+                </p>
               </div>
             ) : actionItems.length === 0 ? (
               <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                <ClipboardCheck className="mx-auto text-outline/50 mb-3 opacity-75" size={32} />
-                <p className="text-xs text-on-surface-variant font-medium">No action items extracted yet.</p>
+                <ClipboardCheck
+                  className="mx-auto text-outline/50 mb-3 opacity-75"
+                  size={32}
+                />
+                <p className="text-xs text-on-surface-variant font-medium">
+                  No action items extracted yet.
+                </p>
               </div>
             ) : (
               <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
@@ -453,17 +483,23 @@ const NotesPanel = ({
                       <div
                         key={item._id || idx}
                         className={`p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5 bg-white shadow-sm hover:shadow-md ${
-                          isCompleted ? "border-outline-variant/30 opacity-70" : "border-outline-variant/60"
+                          isCompleted
+                            ? "border-outline-variant/30 opacity-70"
+                            : "border-outline-variant/60"
                         }`}
                       >
                         <div className="flex items-start gap-2.5">
                           <input
                             type="checkbox"
                             checked={isCompleted}
-                            onChange={() => handleToggleActionItem(idx, item._id)}
+                            onChange={() =>
+                              handleToggleActionItem(idx, item._id)
+                            }
                             className="mt-0.5 h-3.5 w-3.5 rounded text-primary border-outline-variant focus:ring-primary/20 cursor-pointer"
                           />
-                          <span className={`text-xs text-on-surface leading-relaxed font-sans font-medium flex-1 ${isCompleted ? "line-through text-on-surface-variant opacity-60" : ""}`}>
+                          <span
+                            className={`text-xs text-on-surface leading-relaxed font-sans font-medium flex-1 ${isCompleted ? "line-through text-on-surface-variant opacity-60" : ""}`}
+                          >
                             {item.task}
                           </span>
                         </div>
@@ -531,43 +567,63 @@ const NotesPanel = ({
 
               {snapshots.length === 0 ? (
                 <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                  <History className="mx-auto text-outline/50 mb-3 opacity-70" size={32} />
-                  <p className="text-xs text-on-surface-variant font-medium">No snapshots saved yet.</p>
+                  <History
+                    className="mx-auto text-outline/50 mb-3 opacity-70"
+                    size={32}
+                  />
+                  <p className="text-xs text-on-surface-variant font-medium">
+                    No snapshots saved yet.
+                  </p>
                 </div>
               ) : (
                 snapshots.map((snap) => {
-                  const dateStr = new Date(snap.createdAt || snap.version).toLocaleString();
-                  const creatorName = snap.createdBy?.username || "System Auto-save";
-                  const isCurrentlyPreviewed = previewSnapshot && previewSnapshot._id === snap._id;
+                  const dateStr = new Date(
+                    snap.createdAt || snap.version,
+                  ).toLocaleString();
+                  const creatorName =
+                    snap.createdBy?.username || "System Auto-save";
+                  const isCurrentlyPreviewed =
+                    previewSnapshot && previewSnapshot._id === snap._id;
 
                   return (
                     <div
                       key={snap._id || snap.version}
                       className={`p-4 rounded-2xl border transition-all relative flex flex-col gap-3.5 bg-white shadow-sm hover:shadow-md ${
-                        isCurrentlyPreviewed ? "border-amber-400 bg-amber-50/10 shadow-amber-100/20" : "border-outline-variant/60"
+                        isCurrentlyPreviewed
+                          ? "border-amber-400 bg-amber-50/10 shadow-amber-100/20"
+                          : "border-outline-variant/60"
                       }`}
                     >
                       <div className="flex flex-col text-left">
                         <h4 className="text-xs font-bold text-on-surface line-clamp-2">
-                          {snap.label || `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
+                          {snap.label ||
+                            `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
                         </h4>
                         <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-on-surface-variant opacity-75">
                           <Clock size={11} />
                           <span>{dateStr}</span>
                         </div>
-                        <div className="text-[10px] text-primary/80 font-bold mt-1">by {creatorName}</div>
+                        <div className="text-[10px] text-primary/80 font-bold mt-1">
+                          by {creatorName}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 w-full mt-1 border-t border-outline-variant/30 pt-2.5">
                         <button
-                          onClick={() => setPreviewSnapshot(isCurrentlyPreviewed ? null : snap)}
+                          onClick={() =>
+                            setPreviewSnapshot(
+                              isCurrentlyPreviewed ? null : snap,
+                            )
+                          }
                           className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all active:scale-95 cursor-pointer text-center ${
                             isCurrentlyPreviewed
                               ? "bg-amber-500 text-white hover:bg-amber-600"
                               : "bg-slate-100 hover:bg-slate-200 text-on-surface-variant"
                           }`}
                         >
-                          {isCurrentlyPreviewed ? "Viewing Preview" : "Preview Version"}
+                          {isCurrentlyPreviewed
+                            ? "Viewing Preview"
+                            : "Preview Version"}
                         </button>
                         {!isReadOnly && (
                           <button
@@ -602,7 +658,10 @@ const NotesPanel = ({
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <MessageSquare size={16} />
               </span>
-              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-primary font-label-md hover:underline font-bold">
+              <button
+                type="submit"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary font-label-md hover:underline font-bold"
+              >
                 Send
               </button>
             </form>

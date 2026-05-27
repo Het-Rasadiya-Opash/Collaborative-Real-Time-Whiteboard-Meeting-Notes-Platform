@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   CheckCircle,
   ChevronDown,
+  Menu,
 } from "lucide-react";
 
 export const WhiteboardHeader = ({
@@ -22,10 +23,21 @@ export const WhiteboardHeader = ({
   setIsExportDropdownOpen,
   handleExportPNG,
   handleExportPDF,
+  isSidebarOpen,
+  onToggleSidebar,
 }) => {
   return (
-    <header className="fixed top-0 right-0 left-[280px] z-50 flex justify-between items-center h-14 px-6 bg-white border-b border-outline-variant/30 shadow-sm shadow-primary/5">
+    <header className={`fixed top-0 right-0 ${isSidebarOpen ? "lg:left-[280px]" : "left-0"} z-50 flex justify-between items-center h-14 px-6 bg-white border-b border-outline-variant/30 shadow-sm shadow-primary/5 transition-all duration-300`}>
       <div className="flex items-center gap-3">
+        {!isSidebarOpen && (
+          <button
+            onClick={onToggleSidebar}
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 transition-colors text-slate-600 cursor-pointer mr-1"
+            title="Expand Sidebar"
+          >
+            <Menu size={20} />
+          </button>
+        )}
         <h2 className="font-headline-sm text-sm font-bold text-slate-800 flex items-center gap-2 select-text">
           {isEditingTitle ? (
             <input

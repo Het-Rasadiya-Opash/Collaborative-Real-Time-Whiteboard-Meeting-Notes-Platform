@@ -11,17 +11,26 @@ import {
   StickyNotes,
 } from "lucide-react";
 
-export const WhiteboardSidebar = ({ onClose }) => {
+export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
   return (
-    <aside className="fixed left-0 top-0 h-full w-[280px] bg-slate-50 border-r border-outline-variant shadow-sm z-50 flex flex-col justify-between py-6">
+    <aside className={`fixed left-0 top-0 h-full w-[280px] bg-slate-50 border-r border-outline-variant shadow-sm z-50 flex flex-col justify-between py-6 transition-all duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div>
-        <div className="px-6 mb-8 flex flex-col gap-1">
-          <h1 className="font-bold text-lg text-primary font-headline-md tracking-tight">
-            Workspace
-          </h1>
-          <p className="text-[11px] text-on-surface-variant/70 font-semibold select-none">
-            Collaborative Canvas
-          </p>
+        <div className="px-6 mb-8 flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="font-bold text-lg text-primary font-headline-md tracking-tight">
+              Workspace
+            </h1>
+            <p className="text-[11px] text-on-surface-variant/70 font-semibold select-none">
+              Collaborative Canvas
+            </p>
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-1.5 hover:bg-slate-200/60 rounded-lg text-on-surface-variant transition-colors cursor-pointer flex items-center justify-center"
+            title="Collapse Sidebar"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <nav className="space-y-1 px-3">
@@ -41,7 +50,7 @@ export const WhiteboardSidebar = ({ onClose }) => {
             onClick={onClose}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
           >
-            <StickyNotes size={20} className="select-none" />
+            <FileText size={20} className="select-none" />
             <span className="text-sm font-semibold">Notes</span>
           </a>
           <a

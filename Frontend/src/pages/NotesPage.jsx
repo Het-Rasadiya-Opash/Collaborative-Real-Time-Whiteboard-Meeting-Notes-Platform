@@ -246,10 +246,10 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     style={{ transform: "none" }}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className={`font-bold text-sm line-clamp-1 ${isSelected ? "text-primary" : "text-on-surface"}`}>
+                      <h4 className={`font-bold text-base line-clamp-1 ${isSelected ? "text-primary" : "text-on-surface"}`}>
                         {board.title}
                       </h4>
-                      <span className="text-[10px] text-on-surface-variant whitespace-nowrap ml-2">
+                      <span className="text-xs text-on-surface-variant whitespace-nowrap ml-2">
                         {formatTimeAgo(board.updatedAt)}
                       </span>
                     </div>
@@ -258,7 +258,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     </p>
                     {stats.total > 0 && (
                       <div className="space-y-1.5">
-                        <div className="flex justify-between items-center text-[10px] font-bold">
+                        <div className="flex justify-between items-center text-xs font-bold">
                           <span className="text-primary">AI Action Items</span>
                           <span className="text-on-surface-variant">
                             {stats.completed}/{stats.total} ({stats.percent}%)
@@ -289,7 +289,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
               <div className="glass-card rounded-2xl overflow-hidden" style={{ transform: "none" }}>
                 <div className="p-6 border-b border-outline-variant bg-white/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <h2 className="text-lg font-black text-on-surface">{selectedBoard.title}</h2>
+                    <h2 className="text-xl font-bold text-on-surface">{selectedBoard.title}</h2>
                     <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-1">
                       <Clock size={13} />
                       <span>Last updated {formatTimeAgo(selectedBoard.updatedAt)}</span>
@@ -297,38 +297,38 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                   </div>
                   <button
                     onClick={() => onOpenBoard(selectedBoard)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-bold rounded-xl text-xs hover:brightness-105 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary font-bold rounded-xl shadow-lg hover:shadow-xl hover:brightness-110 transition-all active:scale-95 cursor-pointer text-sm w-full sm:w-auto"
                   >
-                    <PenTool size={14} />
+                    <PenTool size={18} />
                     Open Whiteboard
-                    <ExternalLink size={12} />
+                    <ExternalLink size={14} />
                   </button>
                 </div>
 
                 <div className="flex gap-8 px-6 border-b border-outline-variant bg-white/40">
                   <button
                     onClick={() => setActiveTab("notes")}
-                    className={`py-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                    className={`py-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                       activeTab === "notes"
                         ? "text-primary border-primary"
                         : "text-on-surface-variant border-transparent hover:text-on-surface"
                     }`}
                   >
-                    <FileText size={15} />
+                    <FileText size={16} />
                     Meeting Notes
                   </button>
                   <button
                     onClick={() => setActiveTab("actions")}
-                    className={`py-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                    className={`py-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                       activeTab === "actions"
                         ? "text-primary border-primary"
                         : "text-on-surface-variant border-transparent hover:text-on-surface"
                     }`}
                   >
-                    <ListTodo size={15} />
+                    <ListTodo size={16} />
                     AI Action Items
                     {selectedStats.total > 0 && (
-                      <span className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                      <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full font-bold">
                         {selectedStats.completed}/{selectedStats.total}
                       </span>
                     )}
@@ -342,7 +342,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                         {selectedNotes?.textContent || selectedBoard.meetingNotes ? (
                           <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm">
                             <article
-                              className="text-xs text-on-surface-variant leading-relaxed"
+                              className="text-sm text-on-surface-variant leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: selectedNotes?.textContent || selectedBoard.meetingNotes,
                               }}
@@ -351,8 +351,8 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                         ) : (
                           <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-white/50">
                             <FileText className="mx-auto text-outline/50 mb-3" size={32} />
-                            <p className="text-xs text-on-surface-variant font-medium">No notes for this board.</p>
-                            <p className="text-[10px] text-outline mt-1">Open the whiteboard to start writing.</p>
+                            <p className="text-sm text-on-surface-variant font-medium">No notes for this board.</p>
+                            <p className="text-xs text-outline mt-1">Open the whiteboard to start writing.</p>
                           </div>
                         )}
                       </div>
@@ -363,12 +363,12 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-outline-variant/40">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                            <span className="font-bold text-xs uppercase tracking-wider text-on-surface-variant">
+                            <span className="font-bold text-sm uppercase tracking-wider text-on-surface-variant">
                               Centralized Task Checklist ({selectedStats.total})
                             </span>
                           </div>
                           {!canModify ? (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container border border-outline-variant rounded-lg text-[10px] font-bold text-on-surface-variant">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container border border-outline-variant rounded-lg text-xs font-bold text-on-surface-variant">
                               <Lock size={12} />
                               Viewer Mode (Read-Only)
                             </div>
@@ -377,7 +377,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                               {selectedStats.total > 0 && (
                                 <button
                                   onClick={() => handleCopyMarkdown(selectedBoardId)}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-outline-variant hover:bg-surface-container rounded-lg text-[11px] font-bold text-on-surface transition-colors cursor-pointer"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold text-on-surface transition-colors cursor-pointer"
                                 >
                                   <Copy size={12} />
                                   Copy Markdown
@@ -386,7 +386,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                               <button
                                 onClick={() => handleExtractActions(selectedBoardId)}
                                 disabled={isLoadingActions}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white font-bold rounded-lg text-[11px] hover:brightness-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white font-bold rounded-lg text-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                               >
                                 {isLoadingActions ? (
                                   <><Loader2 size={12} className="animate-spin" /> Analyzing...</>
@@ -418,21 +418,21 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                                       className="mt-0.5 h-4 w-4 rounded text-primary border-outline-variant focus:ring-primary/20 cursor-pointer disabled:pointer-events-none"
                                     />
                                     <div className="flex-1 space-y-2.5">
-                                      <p className={`text-xs font-medium text-on-surface leading-relaxed ${isCompleted ? "line-through opacity-60" : ""}`}>
+                                      <p className={`text-sm font-medium text-on-surface leading-relaxed ${isCompleted ? "line-through opacity-60" : ""}`}>
                                         {item.task}
                                       </p>
                                       <div className="flex flex-wrap gap-2">
                                         {item.assignee && (
-                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/10">
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/10">
                                             <User size={10} />{item.assignee}
                                           </span>
                                         )}
                                         {item.dueDate && (
-                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-on-surface-variant border border-outline-variant">
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant border border-outline-variant">
                                             <Calendar size={10} />{item.dueDate}
                                           </span>
                                         )}
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
                                           isCompleted
                                             ? "bg-green-500/10 text-green-600 border border-green-500/10"
                                             : "bg-amber-500/10 text-amber-600 border border-amber-500/10"
@@ -465,12 +465,12 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     <div className="border-t border-outline-variant/40 pt-5 mt-4">
                       <div className="flex justify-between items-center mb-2">
                         <div>
-                          <p className="text-xs font-bold text-on-surface">Workspace Session Progress</p>
-                          <p className="text-[11px] text-on-surface-variant">
+                          <p className="text-sm font-bold text-on-surface">Workspace Session Progress</p>
+                          <p className="text-xs text-on-surface-variant">
                             Completed {selectedStats.completed} of {selectedStats.total} total extracted tasks.
                           </p>
                         </div>
-                        <span className="text-sm font-black text-primary">{selectedStats.percent}%</span>
+                        <span className="text-base font-black text-primary">{selectedStats.percent}%</span>
                       </div>
                       <div className="w-full h-2.5 bg-outline-variant/30 rounded-full overflow-hidden border border-outline-variant/20">
                         <div

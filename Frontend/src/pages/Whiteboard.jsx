@@ -70,6 +70,16 @@ const Whiteboard = ({
 
   const [zoom, setZoom] = useState(85);
   const [isNotesOpen, setIsNotesOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarOpen(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
 
@@ -382,9 +392,20 @@ const Whiteboard = ({
     <div className="fixed inset-0 w-full h-full flex z-50 bg-background text-on-background font-sans overflow-hidden select-none animate-in fade-in duration-200 whiteboard-root">
       <WhiteboardStyles />
 
-      <WhiteboardSidebar onClose={onClose} />
+      <WhiteboardSidebar
+        onClose={onClose}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+      />
 
-      <main className="ml-[280px] flex-1 flex flex-col relative overflow-hidden">
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-45 lg:hidden animate-in fade-in duration-200"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <main className={`flex-1 flex flex-col relative overflow-hidden transition-all duration-300 ${isSidebarOpen ? "lg:ml-[280px]" : "ml-0"}`}>
         <WhiteboardHeader
           isEditingTitle={isEditingTitle}
           boardTitle={boardTitle}
@@ -400,6 +421,8 @@ const Whiteboard = ({
           setIsExportDropdownOpen={setIsExportDropdownOpen}
           handleExportPNG={handleExportPNG}
           handleExportPDF={handleExportPDF}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         <div className="mt-14 flex-1 bg-surface-bright relative canvas-dot-grid overflow-hidden flex">
