@@ -11,7 +11,6 @@ export const SnapshotModal = ({
   return (
     <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-200">
       <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-2xl max-w-md w-full mx-4 flex flex-col gap-5 animate-in zoom-in-95 duration-200 text-slate-800">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-600">
@@ -41,7 +40,6 @@ export const SnapshotModal = ({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleCreateSnapshot} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5 text-left">
             <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
@@ -58,7 +56,6 @@ export const SnapshotModal = ({
             />
           </div>
 
-          {/* Action Buttons */}
           <div className="flex items-center gap-2.5 justify-end mt-1">
             <button
               type="button"

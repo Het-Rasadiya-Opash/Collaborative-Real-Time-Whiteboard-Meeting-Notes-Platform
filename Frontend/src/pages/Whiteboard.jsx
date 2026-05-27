@@ -166,6 +166,7 @@ const Whiteboard = ({
     pan,
     setPan,
     isPanning,
+    updateElementsAndHistory,
   } = useWhiteboardCanvas({
     elements,
     setElements,
@@ -502,6 +503,7 @@ const Whiteboard = ({
               pan={pan}
               setPan={setPan}
               isPanning={isPanning}
+              updateElementsAndHistory={updateElementsAndHistory}
             />
 
             <PresenceLayer

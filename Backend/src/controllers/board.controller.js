@@ -952,16 +952,31 @@ const drawElementsOnCanvas = (elements) => {
         if (p.x > maxX) maxX = p.x;
         if (p.y > maxY) maxY = p.y;
       });
-    } else if (el.type === "rectangle" || el.type === "sticky") {
+    } else if (el.type === "rectangle" || el.type === "sticky" || el.type === "text") {
+      const w = el.width || (el.type === "text" ? 120 : 160);
+      const h = el.height || (el.type === "text" ? 30 : 160);
       if (el.x < minX) minX = el.x;
       if (el.y < minY) minY = el.y;
-      if (el.x + el.width > maxX) maxX = el.x + el.width;
-      if (el.y + el.height > maxY) maxY = el.y + el.height;
+      if (el.x + w > maxX) maxX = el.x + w;
+      if (el.y + h > maxY) maxY = el.y + h;
     } else if (el.type === "circle") {
       if (el.cx - el.r < minX) minX = el.cx - el.r;
       if (el.cy - el.r < minY) minY = el.cy - el.r;
       if (el.cx + el.r > maxX) maxX = el.cx + el.r;
       if (el.cy + el.r > maxY) maxY = el.cy + el.r;
+    } else if (el.type === "arrow" && Array.isArray(el.points) && el.points.length >= 4) {
+      const x1 = el.points[0];
+      const y1 = el.points[1];
+      const x2 = el.points[2];
+      const y2 = el.points[3];
+      if (x1 < minX) minX = x1;
+      if (x2 < minX) minX = x2;
+      if (y1 < minY) minY = y1;
+      if (y2 < minY) minY = y2;
+      if (x1 > maxX) maxX = x1;
+      if (x2 > maxX) maxX = x2;
+      if (y1 > maxY) maxY = y1;
+      if (y2 > maxY) maxY = y2;
     }
   });
 
@@ -1017,6 +1032,39 @@ const drawElementsOnCanvas = (elements) => {
       ctx.strokeStyle = el.color || "#2563eb";
       ctx.lineWidth = 3;
       ctx.stroke();
+    } else if (el.type === "arrow" && Array.isArray(el.points) && el.points.length >= 4) {
+      ctx.beginPath();
+      ctx.strokeStyle = el.color || "#2563eb";
+      ctx.lineWidth = el.strokeWidth || 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      const startX = el.points[0];
+      const startY = el.points[1];
+      const endX = el.points[2];
+      const endY = el.points[3];
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      const angle = Math.atan2(endY - startY, endX - startX);
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(
+        endX - 12 * Math.cos(angle - Math.PI / 6),
+        endY - 12 * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        endX - 12 * Math.cos(angle + Math.PI / 6),
+        endY - 12 * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.fillStyle = el.color || "#2563eb";
+      ctx.fill();
+    } else if (el.type === "text") {
+      ctx.fillStyle = el.color || "#1e293b";
+      ctx.font = `bold ${el.fontSize || 20}px sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText(el.text || "", el.x, el.y);
     } else if (el.type === "sticky") {
       const rx = el.x;
       const ry = el.y;

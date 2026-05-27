@@ -112,12 +112,13 @@ export const useWhiteboardCanvas = ({
 
     const updated = elementsRef.current.map((el) => {
       if (el.id === editingStickyId) {
+        const defaultText = el.type === "text" ? "Double-click to edit text" : "Double-click to edit note";
         return {
           ...el,
           text:
             finalVal && finalVal.trim() !== ""
               ? finalVal
-              : "Double-click to edit note",
+              : defaultText,
         };
       }
       return el;
@@ -135,15 +136,20 @@ export const useWhiteboardCanvas = ({
       finishStickyEditing();
     }
 
-    if (e.button === 1 || e.button === 2) {
-      e.preventDefault();
+    const evt = e.evt || e;
+
+    if (evt.button === 1 || evt.evt?.button === 1 || evt.button === 2 || evt.evt?.button === 2) {
+      if (evt.preventDefault) evt.preventDefault();
       setIsPanning(true);
-      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      setPanStart({ x: evt.clientX - pan.x, y: evt.clientY - pan.y });
       return;
     }
 
     const clickedOnBg =
-      e.target === e.currentTarget || e.target.id === "canvas-grid";
+      e.target === e.currentTarget ||
+      e.target.id === "canvas-grid" ||
+      (e.target && typeof e.target.getStage === "function" && e.target === e.target.getStage());
+
     if (clickedOnBg) {
       setSelectedElementId(null);
     }
@@ -151,23 +157,37 @@ export const useWhiteboardCanvas = ({
     if (selectedTool === "select") {
       if (clickedOnBg) {
         setIsPanning(true);
-        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+        setPanStart({ x: evt.clientX - pan.x, y: evt.clientY - pan.y });
       }
     } else if (selectedTool === "eraser") {
-      const { x, y } = getRelativeCoords(e.clientX, e.clientY);
+      const { x, y } = getRelativeCoords(evt.clientX, evt.clientY);
       const updated = elementsRef.current.filter((el) => {
-        if (el.type === "sticky" || el.type === "rectangle") {
+        if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
+          const w = el.width || (el.type === "text" ? 120 : 160);
+          const h = el.height || (el.type === "text" ? 30 : 160);
           return !(
             x >= el.x &&
-            x <= el.x + el.width &&
+            x <= el.x + w &&
             y >= el.y &&
-            y <= el.y + el.height
+            y <= el.y + h
           );
         }
         if (el.type === "circle") {
           const dx = x - el.cx;
           const dy = y - el.cy;
           return Math.sqrt(dx * dx + dy * dy) > el.r;
+        }
+        if (el.type === "arrow" && Array.isArray(el.points) && el.points.length >= 4) {
+          const startX = el.points[0];
+          const startY = el.points[1];
+          const endX = el.points[2];
+          const endY = el.points[3];
+          const l2 = (startX - endX) ** 2 + (startY - endY) ** 2;
+          if (l2 === 0) return Math.sqrt((x - startX) ** 2 + (y - startY) ** 2) > 15;
+          let t = ((x - startX) * (endX - startX) + (y - startY) * (endY - startY)) / l2;
+          t = Math.max(0, Math.min(1, t));
+          const dist = Math.sqrt((x - (startX + t * (endX - startX))) ** 2 + (y - (startY + t * (endY - startY))) ** 2);
+          return dist > 15;
         }
         if (el.type === "stroke") {
           return !el.points.some((p) => {
@@ -182,7 +202,7 @@ export const useWhiteboardCanvas = ({
         updateElementsAndHistory(updated);
       }
     } else {
-      const { x, y } = getRelativeCoords(e.clientX, e.clientY);
+      const { x, y } = getRelativeCoords(evt.clientX, evt.clientY);
       const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
       if (selectedTool === "pencil") {
@@ -218,6 +238,31 @@ export const useWhiteboardCanvas = ({
         };
         setIsDragging(true);
         setCurrentDrawingElement(newCircle);
+      } else if (selectedTool === "arrow") {
+        const newArrow = {
+          id,
+          type: "arrow",
+          points: [x, y, x, y],
+          color: currentColor,
+          strokeWidth: 4,
+        };
+        setIsDragging(true);
+        setCurrentDrawingElement(newArrow);
+      } else if (selectedTool === "text") {
+        const newText = {
+          id,
+          type: "text",
+          x: x - 60,
+          y: y - 15,
+          text: "Double-click to edit text",
+          color: currentColor,
+          fontSize: 20,
+        };
+        const newElements = [...elementsRef.current, newText];
+        updateElementsAndHistory(newElements);
+        setSelectedTool("select");
+        setSelectedElementId(id);
+        setIsDragging(false);
       } else if (selectedTool === "sticky") {
         const newSticky = {
           id,
@@ -241,10 +286,12 @@ export const useWhiteboardCanvas = ({
   const handleStageMouseMove = (e) => {
     if (previewSnapshot) return;
 
+    const evt = e.evt || e;
+
     if (socketRef?.current?.connected) {
       const now = Date.now();
       if (now - lastCursorEmitRef.current > 40) {
-        const { x, y } = getRelativeCoords(e.clientX, e.clientY);
+        const { x, y } = getRelativeCoords(evt.clientX, evt.clientY);
         socketRef.current.emit("cursor-move", {
           boardId: board._id,
           x,
@@ -259,18 +306,18 @@ export const useWhiteboardCanvas = ({
     }
 
     if (isPanning) {
-      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+      setPan({ x: evt.clientX - panStart.x, y: evt.clientY - panStart.y });
       return;
     }
 
     if (draggedElementId) {
       const scale = zoom / 100;
-      const dx = (e.clientX - dragStart.x) / scale;
-      const dy = (e.clientY - dragStart.y) / scale;
+      const dx = (evt.clientX - dragStart.x) / scale;
+      const dy = (evt.clientY - dragStart.y) / scale;
 
       const updated = elementsRef.current.map((el) => {
         if (el.id === draggedElementId) {
-          if (el.type === "sticky" || el.type === "rectangle") {
+          if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
             return {
               ...el,
               x: dragInitialCoords.x + dx,
@@ -289,6 +336,16 @@ export const useWhiteboardCanvas = ({
                 x: dragInitialCoords.points[idx].x + dx,
                 y: dragInitialCoords.points[idx].y + dy,
               })),
+            };
+          } else if (el.type === "arrow" && Array.isArray(dragInitialCoords.points)) {
+            return {
+              ...el,
+              points: [
+                dragInitialCoords.points[0] + dx,
+                dragInitialCoords.points[1] + dy,
+                dragInitialCoords.points[2] + dx,
+                dragInitialCoords.points[3] + dy,
+              ],
             };
           }
         }
@@ -309,7 +366,7 @@ export const useWhiteboardCanvas = ({
     if (!isDragging) return;
 
     if (currentDrawingElement) {
-      const { x, y } = getRelativeCoords(e.clientX, e.clientY);
+      const { x, y } = getRelativeCoords(evt.clientX, evt.clientY);
       const updated = { ...currentDrawingElement };
       if (updated.type === "stroke") {
         updated.points = [...updated.points, { x, y }];
@@ -320,6 +377,8 @@ export const useWhiteboardCanvas = ({
         const dx = x - updated.cx;
         const dy = y - updated.cy;
         updated.r = Math.sqrt(dx * dx + dy * dy);
+      } else if (updated.type === "arrow") {
+        updated.points = [updated.points[0], updated.points[1], x, y];
       }
       setCurrentDrawingElement(updated);
     }
@@ -357,6 +416,16 @@ export const useWhiteboardCanvas = ({
           h = Math.abs(h);
         }
         el = { ...el, x, y, width: w, height: h };
+      } else if (el.type === "arrow") {
+        const dx = el.points[2] - el.points[0];
+        const dy = el.points[3] - el.points[1];
+        if (Math.sqrt(dx * dx + dy * dy) < 5) {
+          setCurrentDrawingElement(null);
+          return;
+        }
+      } else if (el.type === "circle" && el.r < 3) {
+        setCurrentDrawingElement(null);
+        return;
       }
 
       const newElements = [...elementsRef.current, el];
@@ -367,7 +436,8 @@ export const useWhiteboardCanvas = ({
 
   const handleShapeSelect = (e, id) => {
     if (selectedTool !== "select" || isReadOnly || previewSnapshot) return;
-    e.stopPropagation();
+    const evt = e.evt || e;
+    if (typeof e.stopPropagation === "function") e.stopPropagation();
     setSelectedElementId(id);
 
     if (editingStickyId === id) return;
@@ -375,24 +445,26 @@ export const useWhiteboardCanvas = ({
     const el = elementsRef.current.find((item) => item.id === id);
     if (el) {
       setDraggedElementId(id);
-      setDragStart({ x: e.clientX, y: e.clientY });
-      if (el.type === "sticky" || el.type === "rectangle") {
+      setDragStart({ x: evt.clientX, y: evt.clientY });
+      if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
         setDragInitialCoords({ x: el.x, y: el.y });
       } else if (el.type === "circle") {
         setDragInitialCoords({ x: el.cx, y: el.cy });
       } else if (el.type === "stroke") {
+        setDragInitialCoords({ points: [...el.points] });
+      } else if (el.type === "arrow") {
         setDragInitialCoords({ points: [...el.points] });
       }
     }
   };
 
   const handleDoubleClickSticky = (e, element) => {
-    e.stopPropagation();
+    if (typeof e.stopPropagation === "function") e.stopPropagation();
     if (isReadOnly) return;
-    if (element.type === "sticky") {
+    if (element.type === "sticky" || element.type === "text") {
       setEditingStickyId(element.id);
       setEditingStickyText(
-        element.text === "Double-click to edit note" ? "" : element.text,
+        element.text === "Double-click to edit note" || element.text === "Double-click to edit text" ? "" : element.text,
       );
       setDraggedElementId(null);
     }
@@ -449,5 +521,6 @@ export const useWhiteboardCanvas = ({
     handleUndo,
     handleRedo,
     isCanvasBusy,
+    updateElementsAndHistory,
   };
 };

@@ -7,6 +7,8 @@ import {
   Circle,
   Trash2,
   Eraser,
+  MoveRight,
+  Type,
 } from "lucide-react";
 
 const DEFAULT_COLOR_PALETTE = [
@@ -101,6 +103,34 @@ const WhiteboardToolbar = ({
             title="Circle Shape"
           >
             <Circle size={18} />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedTool("arrow");
+              setSelectedElementId(null);
+            }}
+            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+              selectedTool === "arrow"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Arrow Shape"
+          >
+            <MoveRight size={18} />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedTool("text");
+              setSelectedElementId(null);
+            }}
+            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+              selectedTool === "text"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Text Tool"
+          >
+            <Type size={18} />
           </button>
  
           <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
