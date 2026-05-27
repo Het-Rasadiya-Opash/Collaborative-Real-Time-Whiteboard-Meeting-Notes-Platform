@@ -42,7 +42,9 @@ const Auth = ({ defaultMode = "login" }) => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("verified") === "true") {
-      toast.success("Email verified successfully! You can now log in.", { id: "email-verified" });
+      toast.success("Email verified successfully! You can now log in.", {
+        id: "email-verified",
+      });
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -110,9 +112,13 @@ const Auth = ({ defaultMode = "login" }) => {
     dispatch(clearError());
 
     try {
-      await apiRequest.get(`/users/verify-email?token=${registeredData.verificationToken}&json=true`);
-      toast.success("Account verified successfully! Redirecting in 1 second...");
-      
+      await apiRequest.get(
+        `/users/verify-email?token=${registeredData.verificationToken}&json=true`,
+      );
+      toast.success(
+        "Account verified successfully! Redirecting in 1 second...",
+      );
+
       setTimeout(async () => {
         try {
           const loginData = {
@@ -390,7 +396,9 @@ const Auth = ({ defaultMode = "login" }) => {
                       Local Dev Assistant
                     </div>
                     <p className="text-xs text-on-surface-variant mb-3 leading-relaxed">
-                      Since this is a local development environment, you can instantly verify this account bypassing configuration restrictions.
+                      Since this is a local development environment, you can
+                      instantly verify this account bypassing configuration
+                      restrictions.
                     </p>
                     <button
                       type="button"
@@ -447,8 +455,6 @@ const Auth = ({ defaultMode = "login" }) => {
           </p>
         )}
       </main>
-
-    
     </div>
   );
 };

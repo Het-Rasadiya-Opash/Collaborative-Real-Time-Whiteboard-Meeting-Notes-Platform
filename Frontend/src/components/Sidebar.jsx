@@ -51,7 +51,6 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, setIsOpen }) => {
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "boards", label: "Boards", icon: PenTool },
           { id: "notes", label: "Notes", icon: FileText },
-          { id: "members", label: "Members", icon: Users },
           { id: "settings", label: "Settings", icon: Settings },
         ].map((item) => {
           const isActive = activeNav === item.id;

@@ -7,6 +7,7 @@ export const app = express();
 import userRoutes from "./routes/users.route.js";
 import workspaceRoutes from "./routes/workspace.route.js";
 import boardRoutes from "./routes/board.route.js";
+import notesRoutes from "./routes/notes.route.js";
 
 app.use(
   cors({
@@ -23,6 +24,7 @@ app.use(express.static("public"));
 app.use("/api/users", userRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/boards", boardRoutes);
+app.use("/api/notes", notesRoutes);
 
 //error handler
 app.use(errorHandler);

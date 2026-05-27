@@ -19,7 +19,7 @@ export const useWhiteboardCanvas = ({
   ydocRef,
   lastCursorEmitRef,
   triggerAutoSave,
-  canvasRef, 
+  canvasRef,
 }) => {
   const [pan, setPan] = useState({ x: 100, y: 20 });
   const [isPanning, setIsPanning] = useState(false);
@@ -107,13 +107,17 @@ export const useWhiteboardCanvas = ({
   const finishStickyEditing = (textOverride) => {
     if (!editingStickyId) return;
 
-    const finalVal = textOverride !== undefined ? textOverride : editingStickyText;
+    const finalVal =
+      textOverride !== undefined ? textOverride : editingStickyText;
 
     const updated = elementsRef.current.map((el) => {
       if (el.id === editingStickyId) {
         return {
           ...el,
-          text: finalVal && finalVal.trim() !== "" ? finalVal : "Double-click to edit note",
+          text:
+            finalVal && finalVal.trim() !== ""
+              ? finalVal
+              : "Double-click to edit note",
         };
       }
       return el;
@@ -138,7 +142,8 @@ export const useWhiteboardCanvas = ({
       return;
     }
 
-    const clickedOnBg = e.target === e.currentTarget || e.target.id === "canvas-grid";
+    const clickedOnBg =
+      e.target === e.currentTarget || e.target.id === "canvas-grid";
     if (clickedOnBg) {
       setSelectedElementId(null);
     }
@@ -152,7 +157,12 @@ export const useWhiteboardCanvas = ({
       const { x, y } = getRelativeCoords(e.clientX, e.clientY);
       const updated = elementsRef.current.filter((el) => {
         if (el.type === "sticky" || el.type === "rectangle") {
-          return !(x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height);
+          return !(
+            x >= el.x &&
+            x <= el.x + el.width &&
+            y >= el.y &&
+            y <= el.y + el.height
+          );
         }
         if (el.type === "circle") {
           const dx = x - el.cx;
@@ -239,7 +249,9 @@ export const useWhiteboardCanvas = ({
           boardId: board._id,
           x,
           y,
-          userId: currentUser?._id || `guest_${Math.random().toString(36).substring(2, 6)}`,
+          userId:
+            currentUser?._id ||
+            `guest_${Math.random().toString(36).substring(2, 6)}`,
           username: currentUser?.username || "Guest Collaborator",
         });
         lastCursorEmitRef.current = now;
@@ -380,22 +392,28 @@ export const useWhiteboardCanvas = ({
     if (element.type === "sticky") {
       setEditingStickyId(element.id);
       setEditingStickyText(
-        element.text === "Double-click to edit note" ? "" : element.text
+        element.text === "Double-click to edit note" ? "" : element.text,
       );
-      setDraggedElementId(null);  
+      setDraggedElementId(null);
     }
   };
 
   const handleDeleteSelected = () => {
     if (!selectedElementId) return;
-    const updated = elementsRef.current.filter((el) => el.id !== selectedElementId);
+    const updated = elementsRef.current.filter(
+      (el) => el.id !== selectedElementId,
+    );
     updateElementsAndHistory(updated);
     setSelectedElementId(null);
     toast.success("Element deleted");
   };
 
   const handleClearCanvas = () => {
-    if (window.confirm("Are you sure you want to clear the entire whiteboard canvas?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to clear the entire whiteboard canvas?",
+      )
+    ) {
       updateElementsAndHistory([]);
       setSelectedElementId(null);
       toast.success("Canvas cleared");
@@ -403,7 +421,10 @@ export const useWhiteboardCanvas = ({
   };
 
   const isCanvasBusy =
-    isDragging || currentDrawingElement !== null || editingStickyId !== null || isPanning;
+    isDragging ||
+    currentDrawingElement !== null ||
+    editingStickyId !== null ||
+    isPanning;
 
   return {
     pan,

@@ -1,6 +1,11 @@
 import React from "react";
 
-const PresenceLayer = ({ collaborators, currentUser, zoom, pan = { x: 0, y: 0 } }) => {
+const PresenceLayer = ({
+  collaborators,
+  currentUser,
+  zoom,
+  pan = { x: 0, y: 0 },
+}) => {
   const cursorColors = ["#7c3aed", "#166534", "#b45309", "#b91c1c", "#2563eb"];
 
   return (

@@ -22,7 +22,8 @@ const getSvgPathFromPoints = (points) => {
 };
 
 const getStrokeBounds = (points) => {
-  if (!points || points.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+  if (!points || points.length === 0)
+    return { x: 0, y: 0, width: 0, height: 0 };
   const xs = points.map((p) => p.x);
   const ys = points.map((p) => p.y);
   const minX = Math.min(...xs);
@@ -38,7 +39,9 @@ const getStrokeBounds = (points) => {
 };
 
 const StickyNoteEditor = ({ initialText, onSave }) => {
-  const [text, setText] = useState(initialText === "Double-click to edit note" ? "" : initialText);
+  const [text, setText] = useState(
+    initialText === "Double-click to edit note" ? "" : initialText,
+  );
   const ref = useRef(null);
 
   useEffect(() => {
@@ -148,7 +151,11 @@ const WhiteboardCanvas = ({
       }}
       className="w-full h-full relative overflow-hidden select-none bg-slate-50 canvas-grid"
       style={{
-        cursor: isPanning ? "grabbing" : selectedTool === "select" ? "default" : "crosshair",
+        cursor: isPanning
+          ? "grabbing"
+          : selectedTool === "select"
+            ? "default"
+            : "crosshair",
         backgroundImage: `radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px)`,
         backgroundSize: `${24 * (zoom / 100)}px ${24 * (zoom / 100)}px`,
         backgroundPosition: `${pan.x}px ${pan.y}px`,
@@ -179,21 +186,22 @@ const WhiteboardCanvas = ({
                     strokeLinejoin="round"
                     onPointerDown={(e) => handleShapeSelect(e, el.id)}
                   />
-                  {isSelected && (() => {
-                    const bounds = getStrokeBounds(el.points);
-                    return (
-                      <rect
-                        x={bounds.x}
-                        y={bounds.y}
-                        width={bounds.width}
-                        height={bounds.height}
-                        fill="none"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        strokeDasharray="4,4"
-                      />
-                    );
-                  })()}
+                  {isSelected &&
+                    (() => {
+                      const bounds = getStrokeBounds(el.points);
+                      return (
+                        <rect
+                          x={bounds.x}
+                          y={bounds.y}
+                          width={bounds.width}
+                          height={bounds.height}
+                          fill="none"
+                          stroke="#ef4444"
+                          strokeWidth={2}
+                          strokeDasharray="4,4"
+                        />
+                      );
+                    })()}
                 </g>
               );
             }
