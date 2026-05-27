@@ -4,7 +4,7 @@ import { BarChart3, Calendar, User, Briefcase } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatDate } from "../utils/utilities";
 
-const GetBoards = () => {
+const GetBoards = ({ onViewAllBoards }) => {
   const [boards, setBoards] = useState([]);
   useEffect(() => {
     const fetchBoards = async () => {
@@ -19,8 +19,6 @@ const GetBoards = () => {
     fetchBoards();
   }, []);
 
-  
-
   return (
     <div>
       <section className="mt-12 sm:mt-16">
@@ -29,11 +27,15 @@ const GetBoards = () => {
             Recent Boards
           </h3>
           <button
-            onClick={() =>
-              toast.success(
-                "Select and launch a workspace to manage its active boards!",
-              )
-            }
+            onClick={() => {
+              if (onViewAllBoards) {
+                onViewAllBoards();
+              } else {
+                toast.success(
+                  "Select and launch a workspace to manage its active boards!",
+                );
+              }
+            }}
             className="text-primary font-bold text-xs hover:underline cursor-pointer"
           >
             View all boards
@@ -44,9 +46,7 @@ const GetBoards = () => {
             <div
               key={board._id}
               onClick={() =>
-                toast.success(
-                  "Launch a workspace to open the board!",
-                )
+                toast.success("Launch a workspace to open the board!")
               }
               className="glass-card p-4 rounded-xl flex flex-col justify-between cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 min-h-[140px]"
             >
@@ -55,7 +55,10 @@ const GetBoards = () => {
                   <BarChart3 size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold text-sm text-on-surface truncate" title={board.title}>
+                  <p
+                    className="font-bold text-sm text-on-surface truncate"
+                    title={board.title}
+                  >
                     {board.title}
                   </p>
                   {board.workspace?.name && (
@@ -66,7 +69,7 @@ const GetBoards = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="mt-4 pt-3 border-t border-outline-variant/40 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-[10px] text-on-surface-variant/80">
                   <div className="flex items-center gap-1 min-w-0">

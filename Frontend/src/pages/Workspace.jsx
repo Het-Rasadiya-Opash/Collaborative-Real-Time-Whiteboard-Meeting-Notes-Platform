@@ -17,7 +17,7 @@ import GetWorkSpace from "../components/GetWorkSpace";
 import apiRequest from "../utils/apiRequest";
 import GetBoards from "../components/GetBoards";
 
-const Workspace = ({ onLaunchWorkspace }) => {
+const Workspace = ({ onLaunchWorkspace, onViewAllBoards }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -82,7 +82,7 @@ const Workspace = ({ onLaunchWorkspace }) => {
         onLaunchWorkspace={onLaunchWorkspace}
       />
 
-      <GetBoards />
+      <GetBoards onViewAllBoards={onViewAllBoards} />
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">

@@ -89,7 +89,10 @@ const Home = () => {
 
       <main className="lg:ml-[280px] pt-20 min-h-screen px-4 sm:px-6 pb-4 sm:pb-6 bg-background transition-all duration-300">
         {activeNav === "dashboard" ? (
-          <Workspace onLaunchWorkspace={handleLaunchWorkspace} />
+          <Workspace 
+            onLaunchWorkspace={handleLaunchWorkspace} 
+            onViewAllBoards={() => setActiveNav("boards")} 
+          />
         ) : activeNav === "boards" ? (
           <Boards
             workspace={selectedWorkspace}
