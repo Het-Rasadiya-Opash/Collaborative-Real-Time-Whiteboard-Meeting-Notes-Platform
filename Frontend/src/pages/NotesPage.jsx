@@ -42,7 +42,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
       : myMember?.role || "VIEWER";
   const canModify = myRole === "OWNER" || myRole === "EDITOR";
 
-  // Fetch boards and then fetch notes in parallel
   useEffect(() => {
     if (!workspace) return;
 
@@ -61,7 +60,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           setSelectedBoardId(boardList[0]._id);
         }
 
-        // Fetch notes details for all boards in parallel to show summary / progress
         const notePromises = boardList.map((b) =>
           apiRequest
             .get(`/notes/${b._id}`)
@@ -96,7 +94,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     };
   }, [workspace]);
 
-  // Handle checking/unchecking action items
   const handleToggleActionItem = async (boardId, idx, itemId) => {
     const boardNotes = notesData[boardId];
     if (!boardNotes) return;
@@ -105,7 +102,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     const newStatus =
       actionItem.status === "Completed" ? "Pending" : "Completed";
 
-    // Optimistic Update
     const updatedActionItems = [...boardNotes.actionItems];
     updatedActionItems[idx] = { ...actionItem, status: newStatus };
 
@@ -124,7 +120,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
         });
       } catch (err) {
         toast.error("Failed to update status on server.");
-        // Rollback
         const rolledBackItems = [...boardNotes.actionItems];
         rolledBackItems[idx] = actionItem;
         setNotesData((prev) => ({
@@ -138,7 +133,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     }
   };
 
-  // Centralized AI extraction trigger
   const handleExtractActions = async (boardId) => {
     if (isLoadingActions) return;
     const boardNotes = notesData[boardId];
@@ -209,7 +203,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     });
   };
 
-  // Workspace validation
   if (!workspace) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 animate-in fade-in duration-300">
@@ -236,7 +229,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     );
   }
 
-  // Filter boards
   const filteredBoards = boards.filter((board) => {
     const titleMatch = board.title
       .toLowerCase()
@@ -251,7 +243,6 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const selectedBoard = boards.find((b) => b._id === selectedBoardId);
   const selectedNotes = selectedBoardId ? notesData[selectedBoardId] : null;
 
-  // Calculate action item stats
   const getActionItemStats = (boardId) => {
     const note = notesData[boardId];
     if (!note || !note.actionItems?.length)

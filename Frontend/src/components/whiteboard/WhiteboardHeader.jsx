@@ -1,5 +1,11 @@
 import React from "react";
-import { Share2, Download, AlertTriangle } from "lucide-react";
+import {
+  Share2,
+  Download,
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+} from "lucide-react";
 
 export const WhiteboardHeader = ({
   isEditingTitle,
@@ -18,9 +24,9 @@ export const WhiteboardHeader = ({
   handleExportPDF,
 }) => {
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-14 bg-surface-glass backdrop-blur-md border-b border-outline-variant z-40 flex justify-between items-center px-5">
+    <header className="fixed top-0 right-0 left-[280px] z-50 flex justify-between items-center h-14 px-6 bg-white border-b border-outline-variant/30 shadow-sm shadow-primary/5">
       <div className="flex items-center gap-3">
-        <h1 className="font-headline-md text-sm font-bold text-primary flex items-center gap-2 select-text">
+        <h2 className="font-headline-sm text-sm font-bold text-slate-800 flex items-center gap-2 select-text">
           {isEditingTitle ? (
             <input
               type="text"
@@ -44,105 +50,82 @@ export const WhiteboardHeader = ({
               Board: {boardTitle}
             </span>
           )}
-        </h1>
-        <div className="flex -space-x-1.5 ml-2">
-          {(workspace?.members || []).slice(0, 3).map((member, mIdx) => {
+        </h2>
+
+        <div className="flex items-center -space-x-2">
+          {(workspace?.members || []).slice(0, 4).map((member, mIdx) => {
             const username = member.user?.username || "?";
             const firstChar = username.charAt(0).toUpperCase();
-            const colors = [
-              "bg-brand-100 text-primary border-white",
-              "bg-purple-100 text-purple-700 border-white",
-              "bg-amber-100 text-amber-700 border-white",
-              "bg-emerald-100 text-emerald-700 border-white",
+            const palettes = [
+              { bg: "#dbeafe", text: "#1d4ed8" }, // blue
+              { bg: "#ede9fe", text: "#7c3aed" }, // purple
+              { bg: "#d1fae5", text: "#065f46" }, // green
+              { bg: "#fef3c7", text: "#92400e" }, // amber
             ];
-            const colorClass = colors[mIdx % colors.length];
+            const palette = palettes[mIdx % palettes.length];
             return (
               <div
                 key={member._id || mIdx}
-                className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold ${colorClass}`}
+                style={{ backgroundColor: palette.bg, color: palette.text }}
+                className="w-8 h-8 rounded-full ring-2 ring-white flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0 select-none"
                 title={username}
               >
                 {firstChar}
               </div>
             );
           })}
-          {(workspace?.members || []).length > 3 && (
-            <div className="w-6 h-6 rounded-full border border-white bg-surface-container flex items-center justify-center text-[9px] font-bold text-primary">
-              +{(workspace?.members || []).length - 3}
+          {(workspace?.members || []).length > 4 && (
+            <div
+              className="w-8 h-8 rounded-full ring-2 ring-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-sm flex-shrink-0"
+              title={`+${(workspace?.members || []).length - 4} more`}
+            >
+              +{(workspace?.members || []).length - 4}
             </div>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
           {saveStatus === "saved" && (
-            <span className="flex items-center gap-1 text-success-emerald bg-success-emerald/10 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-              <span className="material-symbols-outlined text-[12px]">
-                check_circle
-              </span>
+            <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
+              <CheckCircle size={15} />
               Saved
             </span>
           )}
           {saveStatus === "saving" && (
-            <span className="flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded-full text-[10px] font-semibold animate-pulse">
-              <svg
-                className="animate-spin h-3 w-3 text-primary"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
+            <span className="flex items-center gap-1.5 text-primary font-semibold text-xs animate-pulse">
+              <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               Saving...
             </span>
           )}
           {saveStatus === "unsaved" && (
-            <span className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-              <AlertTriangle size={11} />
+            <span className="flex items-center gap-1.5 text-amber-500 font-semibold text-xs">
+              <AlertTriangle size={15} />
               Unsaved
             </span>
           )}
         </div>
-        <div className="h-6 w-[1px] bg-outline-variant mx-0.5"></div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-3 border-l border-outline-variant/40 pl-6">
           {!publicShareToken && (
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 border border-outline-variant rounded-md hover:bg-surface-container-low transition-all text-[10px] font-bold text-primary active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-4 py-1.5 border border-primary text-primary font-bold rounded-lg hover:bg-primary-fixed-dim transition-all cursor-pointer text-xs"
             >
-              <Share2 size={13} />
-              <span className="uppercase tracking-wider">
-                Share
-              </span>
+              <Share2 size={15} />
+              SHARE
             </button>
           )}
           <div className="relative">
             <button
               onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1 border border-outline-variant rounded-md hover:bg-surface-container-low transition-all text-[10px] font-bold text-on-surface-variant active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all cursor-pointer text-xs"
             >
-              <Download size={13} />
-              <span className="uppercase tracking-wider">
-                Export
-              </span>
-              <span className="material-symbols-outlined text-[13px] font-bold">
-                keyboard_arrow_down
-              </span>
+              <Download size={15} />
+              EXPORT
+              <ChevronDown size={14} />
             </button>
             {isExportDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-outline-variant/60 rounded-xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-2 text-[10px] font-bold text-outline uppercase tracking-wider border-b border-outline-variant/40 mb-1">
                   Export Options
                 </div>
@@ -153,9 +136,9 @@ export const WhiteboardHeader = ({
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-primary text-[20px]">
-                    image
-                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-note-blue flex items-center justify-center text-primary">
+                    <Download size={18} />
+                  </div>
                   <div className="flex flex-col">
                     <span>Export Board (PNG)</span>
                     <span className="text-[9px] text-outline font-medium normal-case">
@@ -170,9 +153,9 @@ export const WhiteboardHeader = ({
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-secondary text-[20px]">
-                    picture_as_pdf
-                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-note-purple flex items-center justify-center text-purple-600">
+                    <Download size={18} />
+                  </div>
                   <div className="flex flex-col">
                     <span>Export Notes (PDF)</span>
                     <span className="text-[9px] text-outline font-medium normal-case">

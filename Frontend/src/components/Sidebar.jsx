@@ -34,16 +34,21 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, setIsOpen }) => {
     <aside className={`fixed left-0 top-0 h-screen w-sidebar-width flex flex-col py-6 border-r border-outline-variant z-40 bg-surface transition-transform duration-300 lg:translate-x-0 ${
       isOpen ? "translate-x-0" : "-translate-x-full"
     }`}>
-      <div className="px-6 mb-8 flex justify-between items-center">
-        <h1 className="font-bold text-lg text-primary tracking-tight">
-          Workspace
-        </h1>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="lg:hidden p-1.5 text-on-surface-variant hover:bg-surface-container rounded-xl cursor-pointer transition-colors"
-        >
-          <X size={18} />
-        </button>
+      <div className="px-6 py-4 flex flex-col gap-1 relative mb-4">
+        <div className="flex justify-between items-center">
+          <h1 className="font-bold text-lg text-primary tracking-tight font-headline-md">
+            Workspace
+          </h1>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="lg:hidden p-1.5 text-on-surface-variant hover:bg-surface-container rounded-xl cursor-pointer transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-[11px] text-on-surface-variant/70 font-semibold select-none">
+          Collaborative Canvas
+        </p>
       </div>
 
       <nav className="flex-1 space-y-1 px-3">

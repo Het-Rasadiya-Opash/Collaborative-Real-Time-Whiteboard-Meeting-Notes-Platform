@@ -122,7 +122,6 @@ function queueSave(boardId, doc) {
         await board.save();
         console.log(`Saved Yjs state for board ${boardId} successfully.`);
 
-        // Sync to Notes model textContent
         await notesModel.findOneAndUpdate(
           { board: boardId },
           { $set: { textContent: meetingNotesText } },

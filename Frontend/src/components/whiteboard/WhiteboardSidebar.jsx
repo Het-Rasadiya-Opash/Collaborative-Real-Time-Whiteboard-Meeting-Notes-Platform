@@ -1,51 +1,84 @@
 import React from "react";
+import {
+  LayoutDashboard,
+  PenTool,
+  FileText,
+  Users,
+  Settings,
+  X,
+  HelpCircle,
+  LogOut,
+  StickyNotes,
+} from "lucide-react";
 
 export const WhiteboardSidebar = ({ onClose }) => {
   return (
-    <aside className="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant shadow-sm z-50 flex flex-col py-6">
-      <div className="px-6 mb-6 flex flex-col gap-1">
-        <span className="font-headline-md text-lg font-black text-primary">
-          Workspace
-        </span>
-        <span className="text-[10px] font-bold text-on-surface-variant opacity-70 uppercase tracking-wider">
-          Enterprise Plan
-        </span>
+    <aside className="fixed left-0 top-0 h-full w-[280px] bg-slate-50 border-r border-outline-variant shadow-sm z-50 flex flex-col justify-between py-6">
+      <div>
+        <div className="px-6 mb-8 flex flex-col gap-1">
+          <h1 className="font-bold text-lg text-primary font-headline-md tracking-tight">
+            Workspace
+          </h1>
+          <p className="text-[11px] text-on-surface-variant/70 font-semibold select-none">
+            Collaborative Canvas
+          </p>
+        </div>
+
+        <nav className="space-y-1 px-3">
+          <a
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
+          >
+            <LayoutDashboard size={20} className="select-none" />
+            <span className="text-sm font-semibold">Dashboard</span>
+          </a>
+          <a className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-primary font-bold bg-surface-container border-l-4 border-primary shadow-sm cursor-pointer">
+            <PenTool size={20} className="select-none" />
+            <span className="text-sm font-semibold">Boards</span>
+          </a>
+
+          <a
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
+          >
+            <StickyNotes size={20} className="select-none" />
+            <span className="text-sm font-semibold">Notes</span>
+          </a>
+          <a
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
+          >
+            <Settings size={20} className="select-none" />
+            <span className="text-sm font-semibold">Settings</span>
+          </a>
+        </nav>
       </div>
-      <nav className="flex-1 px-3 space-y-0.5">
-        <a
-          onClick={onClose}
-          className="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 py-2.5 px-4 rounded-lg cursor-pointer text-xs font-semibold"
-        >
-          <span className="material-symbols-outlined text-[18px]">dashboard</span>
-          <span>Dashboards</span>
-        </a>
-        <a className="flex items-center gap-3 bg-surface-container text-primary border-l-4 border-active-indicator py-2.5 px-4 rounded-r-lg cursor-pointer text-xs font-bold">
-          <span className="material-symbols-outlined text-[18px]">draw</span>
-          <span>Boards</span>
-        </a>
-        <a
-          onClick={onClose}
-          className="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 py-2.5 px-4 rounded-lg cursor-pointer text-xs font-semibold"
-        >
-          <span className="material-symbols-outlined text-[18px]">description</span>
-          <span>Notes</span>
-        </a>
-        <a
-          onClick={onClose}
-          className="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 py-2.5 px-4 rounded-lg cursor-pointer text-xs font-semibold"
-        >
-          <span className="material-symbols-outlined text-[18px]">settings</span>
-          <span>Settings</span>
-        </a>
-      </nav>
-      <div className="px-3 mt-auto">
+
+      <div className="mt-auto px-4 space-y-4">
         <button
           onClick={onClose}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-2.5 px-4 rounded-xl shadow-md hover:bg-primary-container transition-all active:scale-95 text-xs font-bold cursor-pointer"
+          className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-outline text-primary font-bold text-xs hover:bg-primary/5 transition-colors cursor-pointer flex items-center justify-center gap-2"
         >
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-          <span>Close Board</span>
+          <X size={16} />
+          Close Board
         </button>
+
+        <div className="pt-4 border-t border-outline-variant space-y-1">
+          <a
+            onClick={onClose}
+            className="flex items-center gap-3 text-on-surface-variant py-2 px-4 hover:bg-surface-container-low rounded-lg transition-all cursor-pointer"
+          >
+            <HelpCircle size={18} className="select-none" />
+            <span className="text-xs font-semibold">Help Center</span>
+          </a>
+          <a
+            onClick={onClose}
+            className="flex items-center gap-3 text-on-surface-variant py-2 px-4 hover:bg-error-container/20 hover:text-error rounded-lg transition-all cursor-pointer"
+          >
+            <LogOut size={18} className="select-none" />
+            <span className="text-xs font-semibold">Sign Out</span>
+          </a>
+        </div>
       </div>
     </aside>
   );

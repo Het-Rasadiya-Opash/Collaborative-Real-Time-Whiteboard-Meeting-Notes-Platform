@@ -193,28 +193,24 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const getBoardVisual = (title, index) => {
     const visuals = [
       {
-        gradient: "from-blue-500/10 to-indigo-500/10",
-        textGradient: "from-blue-600 to-indigo-600",
+        bgClass: "bg-note-blue",
         icon: PenTool,
-        accent: "text-blue-500",
+        accent: "text-primary",
       },
       {
-        gradient: "from-emerald-500/10 to-teal-500/10",
-        textGradient: "from-emerald-600 to-teal-600",
+        bgClass: "bg-note-green",
         icon: Brush,
-        accent: "text-emerald-500",
+        accent: "text-emerald-600",
       },
       {
-        gradient: "from-purple-500/10 to-pink-500/10",
-        textGradient: "from-purple-600 to-pink-600",
+        bgClass: "bg-note-purple",
         icon: Workflow,
-        accent: "text-purple-500",
+        accent: "text-purple-600",
       },
       {
-        gradient: "from-amber-500/10 to-orange-500/10",
-        textGradient: "from-amber-600 to-orange-600",
+        bgClass: "bg-note-yellow",
         icon: LayoutDashboard,
-        accent: "text-amber-500",
+        accent: "text-amber-600",
       },
     ];
     return visuals[index % visuals.length];
@@ -242,98 +238,98 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
 
   return (
     <div className="max-w-6xl mx-auto py-6 md:py-8 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-on-surface mb-2">
+          <h2 className="font-headline-lg text-headline-lg text-on-background">
             {workspace.name} Boards
           </h2>
-          <p className="text-base text-on-surface-variant">
+          <p className="text-on-surface-variant font-body-md mt-2">
             Visualize your ideas and collaborate in real-time.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-3">
           <button
             onClick={() =>
               setSortBy((prev) =>
                 prev === "updatedAt" ? "title" : "updatedAt",
               )
             }
-            className="px-4 py-2.5 bg-surface border border-outline-variant rounded-lg font-semibold text-sm hover:bg-surface-container-low active:scale-98 transition-all flex items-center gap-2 cursor-pointer text-on-surface shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline-variant rounded-xl text-on-surface font-semibold text-xs shadow-sm hover:shadow-md transition-all hover:bg-surface-container-low active:scale-[0.98] cursor-pointer"
           >
-            <Filter size={15} className="select-none" />
+            <Filter size={16} className="select-none" />
             Sort: {sortBy === "updatedAt" ? "Recent" : "Alphabetical"}
           </button>
           {canModify ? (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2.5 bg-primary text-white rounded-lg font-bold text-sm shadow-md hover:brightness-105 active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
             >
               <Plus size={16} className="select-none" />
               Create New Board
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-xs bg-surface-container-high border border-outline-variant text-on-surface-variant px-4 py-2.5 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 text-xs bg-surface-container-high border border-outline-variant text-on-surface-variant px-4 py-2.5 rounded-xl shadow-sm">
               <Lock size={14} className="text-outline" />
-              <span className="font-bold">Viewer Mode (Read-Only)</span>
+              <span className="font-bold">Viewer Mode</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="text-outline select-none" size={18} />
+      <div className="mb-8">
+        <div className="relative w-full mb-6">
+          <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
+            <Search size={20} />
           </span>
           <input
             type="text"
             placeholder="Search boards by title or owner..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-11 pr-4 py-3 bg-surface border border-outline-variant/60 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all text-on-surface shadow-sm"
+            className="w-full pl-12 pr-4 py-4 bg-surface border border-outline-variant rounded-2xl text-body-md focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm text-on-surface"
           />
         </div>
-      </div>
 
-      <div className="flex border-b border-outline-variant/60 mb-8 gap-6 overflow-x-auto select-none">
-        <button
-          onClick={() => setActiveTab("all")}
-          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
-            activeTab === "all"
-              ? "text-primary border-b-2 border-primary"
-              : "text-on-surface-variant/75 hover:text-on-surface"
-          }`}
-        >
-          <Grid size={15} />
-          All Boards
-        </button>
-        <button
-          onClick={() => setActiveTab("recent")}
-          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
-            activeTab === "recent"
-              ? "text-primary border-b-2 border-primary"
-              : "text-on-surface-variant/75 hover:text-on-surface"
-          }`}
-        >
-          <Clock size={15} />
-          Last Opened
-        </button>
-        <button
-          onClick={() => setActiveTab("starred")}
-          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer ${
-            activeTab === "starred"
-              ? "text-primary border-b-2 border-primary"
-              : "text-on-surface-variant/75 hover:text-on-surface"
-          }`}
-        >
-          <Star size={15} />
-          Starred
-          {boards.filter((b) => b.isStarred).length > 0 && (
-            <span className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">
-              {boards.filter((b) => b.isStarred).length}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-8 border-b border-outline-variant">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`flex items-center gap-2 pb-3 font-bold cursor-pointer transition-all border-b-2 ${
+              activeTab === "all"
+                ? "text-primary border-primary"
+                : "text-on-surface-variant hover:text-primary border-transparent"
+            }`}
+          >
+            <Grid size={18} />
+            All Boards
+          </button>
+          <button
+            onClick={() => setActiveTab("recent")}
+            className={`flex items-center gap-2 pb-3 font-bold cursor-pointer transition-all border-b-2 ${
+              activeTab === "recent"
+                ? "text-primary border-primary"
+                : "text-on-surface-variant hover:text-primary border-transparent"
+            }`}
+          >
+            <Clock size={18} />
+            Last Opened
+          </button>
+          <button
+            onClick={() => setActiveTab("starred")}
+            className={`flex items-center gap-2 pb-3 font-bold cursor-pointer transition-all border-b-2 ${
+              activeTab === "starred"
+                ? "text-primary border-primary"
+                : "text-on-surface-variant hover:text-primary border-transparent"
+            }`}
+          >
+            <Star size={18} />
+            Starred
+            {boards.filter((b) => b.isStarred).length > 0 && (
+              <span className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">
+                {boards.filter((b) => b.isStarred).length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -381,8 +377,8 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           )}
         </div>
       ) : (
-        /* Board Card Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 animate-in fade-in duration-300">
+        /* Bento-style Grid for Boards */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300">
           {sortedBoards.map((board, index) => {
             const visual = getBoardVisual(board.title, index);
             const VisualIcon = visual.icon;
@@ -390,70 +386,44 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
               <div
                 key={board._id}
                 onClick={() => onOpenBoard(board)}
-                className="glass-card bg-surface/50 border border-outline-variant/60 rounded-xl overflow-hidden group cursor-pointer flex flex-col justify-between h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative min-h-[260px]"
+                className="glass-card rounded-2xl overflow-hidden flex flex-col h-[320px] group cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
               >
-                <div
-                  className={`h-32 bg-gradient-to-br ${visual.gradient} flex items-center justify-center relative overflow-hidden border-b border-outline-variant/40`}
-                >
-                  <VisualIcon
-                    className={`w-16 h-16 ${visual.accent} select-none transition-transform duration-500 group-hover:scale-110`}
-                    size={64}
-                  />
-                  <div className="absolute top-3 right-3">
-                    <button
-                      onClick={(e) => handleToggleStar(e, board._id)}
-                      className="p-1.5 rounded-full bg-white/95 hover:bg-white shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer text-outline hover:text-amber-500"
-                    >
-                      <Star
-                        className={
-                          board.isStarred
-                            ? "fill-amber-500 text-amber-500 select-none"
-                            : "select-none text-outline"
-                        }
-                        size={16}
-                      />
-                    </button>
+                <div className={`flex-1 ${visual.bgClass} flex items-center justify-center relative p-8`}>
+                  <button
+                    type="button"
+                    onClick={(e) => handleToggleStar(e, board._id)}
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-amber-500 transition-colors border border-white/20 hover:scale-105 active:scale-95 shadow-sm"
+                  >
+                    <Star
+                      className={board.isStarred ? "fill-amber-500 text-amber-500" : "text-outline"}
+                      size={18}
+                    />
+                  </button>
+                  <div className="w-24 h-24 bg-surface border border-outline-variant/30 rounded-2xl shadow-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+                    <VisualIcon className={`${visual.accent}`} size={44} />
                   </div>
                 </div>
-
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h4 className="font-bold text-base text-on-surface mb-2.5 truncate group-hover:text-primary transition-colors">
-                      {board.title}
-                    </h4>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black uppercase ${getAvatarBg(board.owner?.username)}`}
-                      >
+                <div className="p-6 bg-surface border-t border-outline-variant/30">
+                  <h3 className="font-bold text-base text-on-surface mb-4 truncate group-hover:text-primary transition-colors font-headline-sm">
+                    {board.title}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 truncate">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black uppercase shadow-inner shrink-0 ${getAvatarBg(board.owner?.username)}`}>
                         {getInitials(board.owner?.username)}
                       </div>
-                      <span className="text-xs text-on-surface-variant font-semibold truncate max-w-[150px]">
-                        {board.owner?.username || "Workspace Member"}
+                      <span className="text-xs text-on-surface-variant font-semibold truncate max-w-[100px]">
+                        {board.owner?.username || "Member"}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="flex justify-between items-center text-outline text-[11px] font-medium border-t border-outline-variant/35 pt-3">
-                    <span className="truncate max-w-[200px]">
-                      {board.lastOpenedAt ? (
-                        <span className="flex items-center gap-1 text-primary font-semibold truncate">
-                          <Clock size={11} className="flex-shrink-0" />
-                          <span className="truncate">
-                            {board.lastOpenedUser?._id === currentUser?._id ||
-                            board.lastOpenedUser?.username ===
-                              currentUser?.username
-                              ? `Opened by you ${formatTimeAgo(board.lastOpenedAt)}`
-                              : `Opened by ${board.lastOpenedUser?.username || "Member"} ${formatTimeAgo(board.lastOpenedAt)}`}
-                          </span>
-                        </span>
-                      ) : (
-                        `Edited ${formatTimeAgo(board.updatedAt)}`
-                      )}
-                    </span>
-                    <MoreVertical
-                      className="select-none text-outline-variant opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      size={16}
-                    />
+                    <div className="flex items-center gap-1 text-on-surface-variant text-[11px] font-medium shrink-0">
+                      <Clock size={12} className="select-none text-outline" />
+                      <span className="truncate">
+                        {board.lastOpenedAt
+                          ? `Opened ${formatTimeAgo(board.lastOpenedAt)}`
+                          : `Edited ${formatTimeAgo(board.updatedAt)}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -461,20 +431,20 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           })}
 
           {activeTab === "all" && canModify && (
-            <div
+            /* Card: New Board Placeholder */
+            <button
+              type="button"
               onClick={() => setIsModalOpen(true)}
-              className="border-2 border-dashed border-outline-variant/80 rounded-xl flex flex-col items-center justify-center p-8 hover:bg-surface-container-low hover:border-primary/50 transition-all cursor-pointer group min-h-[260px] animate-in fade-in duration-300"
+              className="group border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center gap-4 h-[320px] bg-surface-container-low/30 hover:bg-primary/5 hover:border-primary/40 hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 cursor-pointer text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-4 shadow-sm border border-outline-variant/30">
-                <PlusCircle size={28} className="select-none" />
+              <div className="w-16 h-16 rounded-full bg-surface shadow-sm flex items-center justify-center text-primary border border-outline-variant group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all duration-300">
+                <Plus size={32} />
               </div>
-              <p className="font-bold text-on-surface-variant text-base">
-                New Board
-              </p>
-              <p className="text-xs text-outline text-center mt-1">
-                Start a blank canvas or choose a template
-              </p>
-            </div>
+              <div className="text-center px-8">
+                <h3 className="font-bold text-base text-on-surface mb-1 font-headline-sm">New Board</h3>
+                <p className="text-xs text-on-surface-variant max-w-[180px]">Start a blank canvas or choose a template</p>
+              </div>
+            </button>
           )}
         </div>
       )}

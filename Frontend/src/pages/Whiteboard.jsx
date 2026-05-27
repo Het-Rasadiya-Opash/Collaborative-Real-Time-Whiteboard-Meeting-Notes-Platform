@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { FileText } from "lucide-react";
 import apiRequest from "../utils/apiRequest";
 
 import PresenceLayer from "../components/whiteboard/PresenceLayer";
@@ -178,7 +179,10 @@ const Whiteboard = ({
 
   useEffect(() => {
     isCanvasBusyRef.current =
-      isDragging || currentDrawingElement !== null || editingStickyId !== null || isPanning;
+      isDragging ||
+      currentDrawingElement !== null ||
+      editingStickyId !== null ||
+      isPanning;
   }, [isDragging, currentDrawingElement, editingStickyId, isPanning]);
 
   const handleCreateSnapshot = (e) => {
@@ -380,7 +384,7 @@ const Whiteboard = ({
 
       <WhiteboardSidebar onClose={onClose} />
 
-      <main className="ml-[240px] flex-1 flex flex-col relative overflow-hidden">
+      <main className="ml-[280px] flex-1 flex flex-col relative overflow-hidden">
         <WhiteboardHeader
           isEditingTitle={isEditingTitle}
           boardTitle={boardTitle}
@@ -524,9 +528,7 @@ const Whiteboard = ({
               className="absolute right-6 top-6 glass-card border border-outline-variant rounded-xl p-3 shadow-lg flex items-center justify-center text-on-surface-variant hover:text-primary z-30 transition-all active:scale-95 cursor-pointer"
               title="Open Meeting Notes"
             >
-              <span className="material-symbols-outlined block">
-                description
-              </span>
+              <FileText size={18} />
             </button>
           )}
         </div>
@@ -562,4 +564,3 @@ const Whiteboard = ({
 };
 
 export default Whiteboard;
-

@@ -363,7 +363,7 @@ const WhiteboardCanvas = ({
         )}
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 glass-card border border-outline-variant rounded-full px-4 py-2 shadow-md flex items-center gap-4 z-30 animate-in fade-in slide-in-from-bottom duration-300 pointer-events-auto">
+      <div className="absolute bottom-8 left-1/2 -translate-x-[calc(50%+180px)] glass-panel rounded-full px-6 py-2 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-bottom duration-300 pointer-events-auto shadow-lg">
         <button
           onClick={() => setZoom(Math.max(25, zoom - 10))}
           className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center text-on-surface-variant"
@@ -371,7 +371,7 @@ const WhiteboardCanvas = ({
         >
           <ZoomOut size={18} />
         </button>
-        <span className="font-body-md font-bold text-on-surface-variant w-12 text-center select-none text-xs">
+        <span className="font-body-md font-bold text-on-surface-variant w-10 text-center select-none text-xs">
           {zoom}%
         </span>
         <button
@@ -381,9 +381,9 @@ const WhiteboardCanvas = ({
         >
           <ZoomIn size={18} />
         </button>
-
-        <div className="w-[1px] h-4 bg-outline-variant"></div>
-
+ 
+        <div className="w-[1px] h-4 bg-outline-variant/60"></div>
+ 
         <button
           onClick={handleUndo}
           disabled={historyCount === 0}

@@ -17,6 +17,13 @@ import {
   Calendar,
   Copy,
   Wand2,
+  FileText,
+  ChevronsRight,
+  MessageSquare,
+  Image,
+  FileDown,
+  Trash2,
+  RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import apiRequest from "../../utils/apiRequest";
@@ -157,89 +164,79 @@ const NotesPanel = ({
   };
 
   return (
-    <section
-      className={`bg-surface-container-lowest border-l border-outline-variant flex flex-col sidebar-transition z-30 w-[330px] opacity-100`}
+    <aside
+      className="fixed right-0 top-14 h-[calc(100%-56px)] w-[360px] bg-white border-l border-outline-variant z-40 flex flex-col sidebar-transition"
       id="notes-panel"
     >
-      <div className="border-b border-outline-variant flex flex-col">
-        <div className="p-3 px-5 flex justify-between items-center border-b border-outline-variant/40">
-          <h2 className="font-headline-md text-sm font-bold text-on-surface tracking-tight">
-            Board Workspace
-          </h2>
-          <button
-            onClick={toggleNotes}
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined block text-[20px]">
-              keyboard_double_arrow_right
-            </span>
-          </button>
-        </div>
-        <div className="flex w-full bg-surface-container-low p-1">
-          <button
-            onClick={() => setActiveRightTab("notes")}
-            className={`flex-1 py-1.5 text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
-              activeRightTab === "notes"
-                ? "bg-white text-primary shadow-sm"
-                : "text-on-surface-variant hover:bg-white/40"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              description
-            </span>
-            Notes
-          </button>
-          <button
-            onClick={() => setActiveRightTab("ai")}
-            className={`flex-1 py-1.5 text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
-              activeRightTab === "ai"
-                ? "bg-white text-primary shadow-sm"
-                : "text-on-surface-variant hover:bg-white/40"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              auto_awesome
-            </span>
-            AI
-          </button>
-          <button
-            onClick={() => {
-              setActiveRightTab("history");
-              fetchSnapshots();
-            }}
-            className={`flex-1 py-1.5 text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
-              activeRightTab === "history"
-                ? "bg-white text-primary shadow-sm"
-                : "text-on-surface-variant hover:bg-white/40"
-            }`}
-          >
-            <History size={16} />
-            History
-          </button>
-        </div>
+      <div className="p-6 flex items-center justify-between border-b border-outline-variant">
+        <h3 className="font-headline-sm text-headline-sm font-bold text-on-background">
+          Board Workspace
+        </h3>
+        <button
+          onClick={toggleNotes}
+          className="text-secondary hover:text-on-background transition-colors cursor-pointer flex items-center justify-center"
+        >
+          <ChevronsRight size={20} />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="p-2 flex bg-slate-50 border-b border-outline-variant gap-1.5">
+        <button
+          onClick={() => setActiveRightTab("notes")}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeRightTab === "notes"
+              ? "bg-white text-primary shadow-sm"
+              : "text-secondary hover:bg-white/50"
+          }`}
+        >
+          <FileText size={16} />
+          Notes
+        </button>
+        <button
+          onClick={() => setActiveRightTab("ai")}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeRightTab === "ai"
+              ? "bg-white text-primary shadow-sm"
+              : "text-secondary hover:bg-white/50"
+          }`}
+        >
+          <Sparkles size={16} />
+          AI
+        </button>
+        <button
+          onClick={() => {
+            setActiveRightTab("history");
+            fetchSnapshots();
+          }}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeRightTab === "history"
+              ? "bg-white text-primary shadow-sm"
+              : "text-secondary hover:bg-white/50"
+          }`}
+        >
+          <History size={16} />
+          History
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
         {activeRightTab === "notes" && (
           <>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
-                  Active Editors
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
+            <div>
+              <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
+                Active Editors
+              </h4>
+              <div className="flex flex-wrap gap-3">
                 {(workspace?.members || []).map((member, mIdx) => {
                   const username = member.user?.username || "?";
                   const initials = username.slice(0, 2).toUpperCase();
                   const colors = [
-                    "ring-primary text-primary",
-                    "ring-secondary text-secondary",
-                    "ring-success-emerald text-success-emerald",
-                    "ring-amber-500 text-amber-500",
+                    "bg-note-blue text-primary border-primary",
+                    "bg-note-purple text-purple-700 border-purple-300",
+                    "bg-note-green text-emerald-700 border-emerald-300",
+                    "bg-note-yellow text-amber-700 border-amber-300",
                   ];
-                  const ringColorClass = colors[mIdx % colors.length];
+                  const colorClass = colors[mIdx % colors.length];
 
                   const isOnline =
                     (currentUser?._id &&
@@ -259,19 +256,15 @@ const NotesPanel = ({
                   const isTyping = typingCollab?.isTypingNotes;
 
                   return (
-                    <div
-                      key={member._id || mIdx}
-                      className={`w-8 h-8 rounded-full ring-2 ${ringColorClass} bg-surface-variant flex items-center justify-center font-bold text-[10px] relative transition-transform duration-200 ${isTyping ? "animate-bounce shadow-md" : ""}`}
-                      title={`${username} ${isOnline ? "(Online)" : "(Offline)"} ${isTyping ? "- Typing notes..." : ""}`}
-                    >
-                      {initials}
+                    <div key={member._id || mIdx} className="relative">
+                      <div
+                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-xs ${colorClass} ${isTyping ? "animate-bounce shadow-md" : ""}`}
+                        title={`${username} ${isOnline ? "(Online)" : "(Offline)"}`}
+                      >
+                        {initials}
+                      </div>
                       {isOnline && (
-                        <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-green-500" />
-                      )}
-                      {isTyping && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 shadow-sm animate-pulse">
-                          <Pencil size={8} />
-                        </span>
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-status-online border-2 border-white rounded-full"></div>
                       )}
                     </div>
                   );
@@ -291,84 +284,64 @@ const NotesPanel = ({
                     const initials = (collab.username || "Guest")
                       .slice(0, 2)
                       .toUpperCase();
-                    const isGuestTyping = collab.isTypingNotes;
                     return (
-                      <div
-                        key={collab.userId || gIdx}
-                        className={`w-8 h-8 rounded-full ring-2 ring-dashed ring-outline bg-surface-container flex items-center justify-center font-bold text-[10px] relative text-outline transition-transform duration-200 ${isGuestTyping ? "animate-bounce shadow-md" : ""}`}
-                        title={`${collab.username || "Guest"} (Guest - Online) ${isGuestTyping ? "- Typing notes..." : ""}`}
-                      >
-                        {initials}
-                        <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-green-500" />
-                        {isGuestTyping && (
-                          <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 shadow-sm animate-pulse">
-                            <Pencil size={8} />
-                          </span>
-                        )}
+                      <div key={collab.userId || gIdx} className="relative">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center font-bold text-xs text-secondary">
+                          {initials}
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-status-online border-2 border-white rounded-full"></div>
                       </div>
                     );
                   })}
-
-                {(workspace?.members || []).length === 0 &&
-                  collaborators.length === 0 && (
-                    <div className="text-xs text-on-surface-variant opacity-60">
-                      No active editors
-                    </div>
-                  )}
               </div>
             </div>
 
-            <div className="bg-surface-bright rounded-xl border border-outline-variant p-3 min-h-[360px] shadow-sm relative flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <h3 className="font-headline-md text-primary font-bold text-xs">
-                  Collaborative Notes
-                </h3>
-
+            <div className="flex-1 flex flex-col min-h-[300px]">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-primary font-headline-sm">Collaborative Notes</h4>
                 {!isReadOnly && (
-                  <div className="flex items-center gap-1 bg-surface-container/60 p-1 rounded-lg border border-outline-variant/50">
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                     <button
                       onClick={() => handleFormatCommand("bold")}
-                      className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-1 hover:bg-white rounded transition-all text-secondary"
                       title="Bold"
                     >
                       <Bold size={14} />
                     </button>
                     <button
                       onClick={() => handleFormatCommand("italic")}
-                      className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-1 hover:bg-white rounded transition-all text-secondary"
                       title="Italic"
                     >
                       <Italic size={14} />
                     </button>
                     <button
                       onClick={() => handleFormatCommand("underline")}
-                      className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-1 hover:bg-white rounded transition-all text-secondary"
                       title="Underline"
                     >
                       <Underline size={14} />
                     </button>
-                    <div className="w-[1px] h-3 bg-outline-variant/60 mx-0.5"></div>
+                    <div className="w-[1px] h-4 bg-outline-variant mx-1"></div>
                     <button
                       onClick={() => handleFormatCommand("insertUnorderedList")}
-                      className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-1 hover:bg-white rounded transition-all text-secondary"
                       title="Bullet List"
                     >
                       <List size={14} />
                     </button>
                     <button
                       onClick={() => handleFormatCommand("removeFormat")}
-                      className="p-1 hover:bg-primary/10 hover:text-primary rounded text-on-surface-variant transition-colors cursor-pointer"
+                      className="p-1 hover:bg-white rounded transition-all text-secondary"
                       title="Clear Formatting"
                     >
-                      <span className="material-symbols-outlined text-[14px] font-bold block">
-                        format_clear
-                      </span>
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="flex-1 flex flex-col overflow-hidden min-h-[220px]">
+              <div className="flex-1 border border-outline-variant rounded-xl p-4 text-secondary font-body-md bg-slate-50/30 overflow-y-auto relative flex flex-col">
                 <div
                   ref={editorRef}
                   contentEditable={!isReadOnly}
@@ -380,7 +353,7 @@ const NotesPanel = ({
                     handleSaveNotes(html);
                     handleNotesTyping();
                   }}
-                  className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-[11px] rich-text-editor font-sans"
+                  className="w-full flex-1 outline-none text-xs text-on-surface-variant leading-relaxed"
                   placeholder={
                     isReadOnly
                       ? "Notes are read-only for viewer role..."
@@ -390,87 +363,33 @@ const NotesPanel = ({
                 />
 
                 {typingCollaborators.length > 0 && (
-                  <div className="flex items-center gap-2 text-primary bg-primary/5 border border-primary/10 rounded-xl px-3.5 py-2 animate-pulse mt-2 select-none self-start">
-                    <div className="flex gap-1 items-center">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      ></span>
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                        style={{ animationDelay: "150ms" }}
-                      ></span>
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                        style={{ animationDelay: "300ms" }}
-                      ></span>
-                    </div>
-                    <span className="text-[11px] font-bold tracking-wide">
-                      {typingCollaborators
-                        .map((c) => c.username || "Collaborator")
-                        .join(", ")}{" "}
-                      {typingCollaborators.length === 1
-                        ? "is typing notes..."
-                        : "are typing notes..."}
+                  <div className="flex items-center gap-1.5 text-primary bg-primary/5 border border-primary/10 rounded-lg px-2 py-1.5 animate-pulse mt-2 select-none self-start">
+                    <span className="text-[10px] font-bold">
+                      {typingCollaborators.map((c) => c.username || "Collaborator").join(", ")} is typing...
                     </span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-primary"></span>
-                <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
-                  Recent Comments
-                </span>
-              </div>
-              <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
+            <div>
+              <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
+                Recent Comments
+              </h4>
+              <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1">
                 {comments.map((comment, index) => (
-                  <div
-                    key={comment._id || comment.id || index}
-                    className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/30 text-xs"
-                  >
-                    <div className="flex justify-between items-center mb-1 font-bold text-primary">
-                      <span>{comment.author}</span>
-                      <span className="text-[10px] font-normal text-on-surface-variant opacity-60 font-sans">
-                        {comment.createdAt
-                          ? new Date(comment.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Just now"}
+                  <div key={comment._id || comment.id || index} className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-note-purple flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-purple-700">
+                      {comment.author.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-outline-variant/30 flex-1">
+                      <p className="text-body-sm mb-1 text-on-surface font-semibold">{comment.text}</p>
+                      <span className="text-[10px] text-slate-400">
+                        {comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now"}
                       </span>
                     </div>
-                    <p className="text-on-surface-variant">{comment.text}</p>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div className="glass-card border border-outline-variant rounded-xl p-4">
-              <h4 className="font-label-md text-xs font-bold text-outline mb-3 uppercase tracking-wider">
-                Export Options
-              </h4>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={handleExportPNG}
-                  className="flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    image
-                  </span>
-                  <span className="font-body-md">PNG</span>
-                </button>
-                <button
-                  onClick={handleExportPDF}
-                  className="flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    picture_as_pdf
-                  </span>
-                  <span className="font-body-md">PDF</span>
-                </button>
               </div>
             </div>
           </>
@@ -505,40 +424,20 @@ const NotesPanel = ({
 
             {isLoadingActions ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl animate-pulse">
-                <Loader2
-                  className="mx-auto text-primary/50 mb-3 animate-spin text-primary"
-                  size={36}
-                />
-                <p className="text-xs text-on-surface-variant font-bold">
-                  Scanning meeting notes...
-                </p>
-                <p className="text-[10px] text-outline/80 mt-1">
-                  This will take a few seconds.
-                </p>
+                <Loader2 className="mx-auto text-primary mb-3 animate-spin" size={36} />
+                <p className="text-xs text-on-surface-variant font-bold">Scanning meeting notes...</p>
               </div>
             ) : actionItems.length === 0 ? (
               <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                <ClipboardCheck
-                  className="mx-auto text-outline/50 mb-3 opacity-75"
-                  size={32}
-                />
-                <p className="text-xs text-on-surface-variant font-medium">
-                  No action items extracted yet.
-                </p>
-                <p className="text-[10px] text-outline/80 mt-1">
-                  Write some notes in the editor and click "Extract Action
-                  Items" to begin.
-                </p>
+                <ClipboardCheck className="mx-auto text-outline/50 mb-3 opacity-75" size={32} />
+                <p className="text-xs text-on-surface-variant font-medium">No action items extracted yet.</p>
               </div>
             ) : (
               <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
-                      Extracted Tasks ({actionItems.length})
-                    </span>
-                  </div>
+                  <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
+                    Extracted Tasks ({actionItems.length})
+                  </span>
                   <button
                     onClick={() => setActionItems([])}
                     className="text-[10px] text-outline hover:text-red-500 font-bold transition-colors cursor-pointer"
@@ -553,28 +452,18 @@ const NotesPanel = ({
                     return (
                       <div
                         key={item._id || idx}
-                        className={`p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5 bg-surface-bright shadow-sm hover:shadow-md ${
-                          isCompleted
-                            ? "border-outline-variant/30 opacity-70"
-                            : "border-outline-variant/60"
+                        className={`p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5 bg-white shadow-sm hover:shadow-md ${
+                          isCompleted ? "border-outline-variant/30 opacity-70" : "border-outline-variant/60"
                         }`}
                       >
                         <div className="flex items-start gap-2.5">
                           <input
                             type="checkbox"
                             checked={isCompleted}
-                            onChange={() =>
-                              handleToggleActionItem(idx, item._id)
-                            }
+                            onChange={() => handleToggleActionItem(idx, item._id)}
                             className="mt-0.5 h-3.5 w-3.5 rounded text-primary border-outline-variant focus:ring-primary/20 cursor-pointer"
                           />
-                          <span
-                            className={`text-xs text-on-surface leading-relaxed font-sans font-medium flex-1 ${
-                              isCompleted
-                                ? "line-through text-on-surface-variant opacity-60"
-                                : ""
-                            }`}
-                          >
+                          <span className={`text-xs text-on-surface leading-relaxed font-sans font-medium flex-1 ${isCompleted ? "line-through text-on-surface-variant opacity-60" : ""}`}>
                             {item.task}
                           </span>
                         </div>
@@ -592,15 +481,6 @@ const NotesPanel = ({
                               {item.dueDate}
                             </span>
                           )}
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              isCompleted
-                                ? "bg-green-500/10 text-green-600 border border-green-500/5"
-                                : "bg-amber-500/10 text-amber-600 border border-amber-500/5"
-                            }`}
-                          >
-                            {item.status}
-                          </span>
                         </div>
                       </div>
                     );
@@ -608,9 +488,6 @@ const NotesPanel = ({
                 </div>
 
                 <div className="glass-card border border-outline-variant rounded-xl p-4 shadow-sm">
-                  <h4 className="font-label-md text-xs font-bold text-outline mb-3 uppercase tracking-wider">
-                    Utility Options
-                  </h4>
                   <button
                     onClick={() => {
                       const markdown = actionItems
@@ -647,7 +524,6 @@ const NotesPanel = ({
 
             <div className="flex-1 overflow-y-auto space-y-3 pr-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 rounded-full bg-primary"></span>
                 <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
                   Saved Versions ({snapshots.length})
                 </span>
@@ -655,76 +531,50 @@ const NotesPanel = ({
 
               {snapshots.length === 0 ? (
                 <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                  <History
-                    className="mx-auto text-outline/50 mb-3 opacity-70"
-                    size={32}
-                  />
-                  <p className="text-xs text-on-surface-variant font-medium">
-                    No snapshots saved yet.
-                  </p>
-                  <p className="text-[10px] text-outline/80 mt-1">
-                    Automatic version snapshots are taken periodically during
-                    edits.
-                  </p>
+                  <History className="mx-auto text-outline/50 mb-3 opacity-70" size={32} />
+                  <p className="text-xs text-on-surface-variant font-medium">No snapshots saved yet.</p>
                 </div>
               ) : (
                 snapshots.map((snap) => {
-                  const dateStr = new Date(
-                    snap.createdAt || snap.version,
-                  ).toLocaleString();
-                  const creatorName =
-                    snap.createdBy?.username || "System Auto-save";
-                  const isCurrentlyPreviewed =
-                    previewSnapshot && previewSnapshot._id === snap._id;
+                  const dateStr = new Date(snap.createdAt || snap.version).toLocaleString();
+                  const creatorName = snap.createdBy?.username || "System Auto-save";
+                  const isCurrentlyPreviewed = previewSnapshot && previewSnapshot._id === snap._id;
 
                   return (
                     <div
                       key={snap._id || snap.version}
-                      className={`p-4 rounded-2xl border transition-all relative flex flex-col gap-3.5 bg-surface-bright shadow-sm hover:shadow-md ${
-                        isCurrentlyPreviewed
-                          ? "border-amber-400 bg-amber-50/10 shadow-amber-100/20"
-                          : "border-outline-variant/60"
+                      className={`p-4 rounded-2xl border transition-all relative flex flex-col gap-3.5 bg-white shadow-sm hover:shadow-md ${
+                        isCurrentlyPreviewed ? "border-amber-400 bg-amber-50/10 shadow-amber-100/20" : "border-outline-variant/60"
                       }`}
                     >
                       <div className="flex flex-col text-left">
                         <h4 className="text-xs font-bold text-on-surface line-clamp-2">
-                          {snap.label ||
-                            `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
+                          {snap.label || `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
                         </h4>
                         <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-on-surface-variant opacity-75">
                           <Clock size={11} />
                           <span>{dateStr}</span>
                         </div>
-                        <div className="text-[10px] text-primary/80 font-bold mt-1">
-                          by {creatorName}
-                        </div>
+                        <div className="text-[10px] text-primary/80 font-bold mt-1">by {creatorName}</div>
                       </div>
 
                       <div className="flex items-center gap-2 w-full mt-1 border-t border-outline-variant/30 pt-2.5">
                         <button
-                          onClick={() =>
-                            setPreviewSnapshot(
-                              isCurrentlyPreviewed ? null : snap,
-                            )
-                          }
+                          onClick={() => setPreviewSnapshot(isCurrentlyPreviewed ? null : snap)}
                           className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all active:scale-95 cursor-pointer text-center ${
                             isCurrentlyPreviewed
                               ? "bg-amber-500 text-white hover:bg-amber-600"
-                              : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                              : "bg-slate-100 hover:bg-slate-200 text-on-surface-variant"
                           }`}
                         >
-                          {isCurrentlyPreviewed
-                            ? "Viewing Preview"
-                            : "Preview Version"}
+                          {isCurrentlyPreviewed ? "Viewing Preview" : "Preview Version"}
                         </button>
                         {!isReadOnly && (
                           <button
                             onClick={() => handleRestoreSnapshot(snap)}
                             className="py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all bg-primary/10 hover:bg-primary/20 text-primary active:scale-95 cursor-pointer text-center flex items-center gap-1"
                           >
-                            <span className="material-symbols-outlined text-[12px] font-bold">
-                              restore
-                            </span>
+                            <RotateCcw size={12} />
                             Restore
                           </button>
                         )}
@@ -739,40 +589,32 @@ const NotesPanel = ({
       </div>
 
       {activeRightTab === "notes" && (
-        <div className="p-4 border-t border-outline-variant bg-surface-container-low">
+        <div className="p-4 border-t border-outline-variant bg-slate-50">
           {!isReadOnly ? (
-            <form
-              onSubmit={handleCommentSubmit}
-              className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
-            >
-              <span className="material-symbols-outlined text-outline text-[16px]">
-                add_comment
-              </span>
+            <form onSubmit={handleCommentSubmit} className="relative">
               <input
-                className="bg-transparent border-none focus:ring-0 w-full text-xs text-on-surface outline-none font-sans"
+                className="w-full pl-10 pr-16 py-3 border border-outline-variant rounded-xl focus:ring-primary focus:border-primary font-body-sm bg-white"
                 placeholder="Write a comment..."
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
               />
-              <button
-                type="submit"
-                className="text-primary font-bold text-xs hover:opacity-80 active:scale-95 transition-all cursor-pointer"
-              >
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <MessageSquare size={16} />
+              </span>
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-primary font-label-md hover:underline font-bold">
                 Send
               </button>
             </form>
           ) : (
             <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant/70 bg-surface-container-high border border-outline-variant/65 py-2.5 rounded-full shadow-inner font-bold text-center">
-              <span className="material-symbols-outlined text-[14px]">
-                lock
-              </span>
+              <Lock size={14} />
               <span>Viewer mode is read-only.</span>
             </div>
           )}
         </div>
       )}
-    </section>
+    </aside>
   );
 };
 

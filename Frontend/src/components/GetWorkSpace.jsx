@@ -14,6 +14,7 @@ import {
   Palette,
   Megaphone,
   PlusSquare,
+  TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -172,7 +173,7 @@ const GetWorkSpace = ({
         </div>
       ) : (
         <div className="space-y-12 animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {workspaces.map((workspace, index) => {
               const userRoleInWorkspace =
                 workspace.members?.find((m) => m.user?._id === currentUser?._id)
@@ -210,7 +211,7 @@ const GetWorkSpace = ({
                 <div
                   key={workspace._id}
                   onClick={() => setSelectedWorkspaceId(workspace._id)}
-                  className="glass-card p-5 rounded-2xl relative group cursor-pointer flex flex-col justify-between min-h-[220px] animate-in fade-in duration-200"
+                  className="glass-card p-5 rounded-2xl relative group cursor-pointer flex flex-col justify-between min-h-[220px] animate-in fade-in duration-200 hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
                 >
                   <div>
                     <div className="flex justify-between items-start mb-4">
@@ -277,7 +278,7 @@ const GetWorkSpace = ({
                   toast.error("Only Owners can create new workspaces");
                 }
               }}
-              className="border-2 border-dashed border-outline-variant rounded-2xl p-5 flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary hover:bg-primary-container/5 transition-all group min-h-[220px] cursor-pointer text-center"
+              className="border-2 border-dashed border-outline-variant rounded-2xl p-5 flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary hover:bg-primary-container/5 transition-all group min-h-[220px] cursor-pointer text-center hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
             >
               <PlusSquare className="mb-3 group-hover:scale-115 transition-transform text-outline group-hover:text-primary select-none" size={36} />
               <span className="font-bold text-base text-on-surface group-hover:text-primary transition-colors font-headline-md">
@@ -287,6 +288,40 @@ const GetWorkSpace = ({
                 Initialize a new secure environment for your team's collaboration.
               </p>
             </button>
+
+            <div className="glass-card rounded-2xl p-6 flex flex-col hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 min-h-[220px]">
+              <div className="flex items-center gap-2.5 mb-6">
+                <TrendingUp size={20} className="text-amber-500" />
+                <h3 className="font-bold text-sm text-on-surface">Activity Overview</h3>
+              </div>
+              <div className="space-y-4 flex-1">
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs text-on-surface-variant font-medium">Active Sessions</span>
+                    <span className="font-mono text-xs text-primary font-bold">12</span>
+                  </div>
+                  <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full w-[65%] rounded-full"></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-xs text-on-surface-variant font-medium">Storage Used</span>
+                    <span className="font-mono text-xs text-primary font-bold">4.2 GB</span>
+                  </div>
+                  <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+                    <div className="bg-amber-500 h-full w-[40%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.success("Analytics dashboard coming soon!")}
+                className="mt-6 text-primary text-xs font-bold flex items-center gap-1 hover:gap-2 transition-all cursor-pointer text-left self-start"
+              >
+                View analytics <ArrowRight size={14} />
+              </button>
+            </div>
           </div>
         </div>
       )}
