@@ -19,6 +19,7 @@ import {
   Clock,
   Grid,
   Lock,
+  PlusSquare,
 } from "lucide-react";
 
 const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
@@ -377,53 +378,72 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           )}
         </div>
       ) : (
-        /* Bento-style Grid for Boards */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300">
           {sortedBoards.map((board, index) => {
             const visual = getBoardVisual(board.title, index);
             const VisualIcon = visual.icon;
+            
+            const cardThemes = [
+              { bg: "bg-brand-100/80 text-primary", icon: PenTool },
+              { bg: "bg-purple-100/80 text-purple-700", icon: Brush },
+              { bg: "bg-amber-100/80 text-amber-700", icon: Workflow },
+              { bg: "bg-emerald-100/80 text-emerald-700", icon: LayoutDashboard },
+            ];
+            const theme = cardThemes[index % cardThemes.length];
+            const ThemeIcon = theme.icon;
+
             return (
               <div
                 key={board._id}
                 onClick={() => onOpenBoard(board)}
-                className="glass-card rounded-2xl overflow-hidden flex flex-col h-[320px] group cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
+                className="glass-card p-5 rounded-2xl relative group cursor-pointer flex flex-col justify-between min-h-[220px] animate-in fade-in duration-200 hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
               >
-                <div className={`flex-1 ${visual.bgClass} flex items-center justify-center relative p-8`}>
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggleStar(e, board._id)}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/60 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-amber-500 transition-colors border border-white/20 hover:scale-105 active:scale-95 shadow-sm"
-                  >
-                    <Star
-                      className={board.isStarred ? "fill-amber-500 text-amber-500" : "text-outline"}
-                      size={18}
-                    />
-                  </button>
-                  <div className="w-24 h-24 bg-surface border border-outline-variant/30 rounded-2xl shadow-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
-                    <VisualIcon className={`${visual.accent}`} size={44} />
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-2.5 rounded-xl ${theme.bg}`}>
+                      <ThemeIcon className="select-none" size={28} />
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleStar(e, board._id)}
+                      className="w-9 h-9 rounded-xl bg-surface border border-outline-variant/60 flex items-center justify-center text-on-surface-variant hover:text-amber-500 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                    >
+                      <Star
+                        className={board.isStarred ? "fill-amber-500 text-amber-500" : "text-outline"}
+                        size={18}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="font-bold text-lg text-on-surface mb-1.5 group-hover:text-primary transition-colors truncate">
+                      {board.title}
+                    </h3>
+                    <p className="text-xs text-on-surface-variant/75 truncate">
+                      <span className="font-medium text-on-surface-variant/60">Owner: </span>
+                      {board.owner?.username || "Member"}
+                    </p>
                   </div>
                 </div>
-                <div className="p-6 bg-surface border-t border-outline-variant/30">
-                  <h3 className="font-bold text-base text-on-surface mb-4 truncate group-hover:text-primary transition-colors font-headline-sm">
-                    {board.title}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 truncate">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black uppercase shadow-inner shrink-0 ${getAvatarBg(board.owner?.username)}`}>
-                        {getInitials(board.owner?.username)}
-                      </div>
-                      <span className="text-xs text-on-surface-variant font-semibold truncate max-w-[100px]">
-                        {board.owner?.username || "Member"}
-                      </span>
+
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/40">
+                  <div className="flex items-center gap-2 truncate">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black uppercase shadow-inner shrink-0 ${getAvatarBg(board.owner?.username)}`}>
+                      {getInitials(board.owner?.username)}
                     </div>
-                    <div className="flex items-center gap-1 text-on-surface-variant text-[11px] font-medium shrink-0">
-                      <Clock size={12} className="select-none text-outline" />
-                      <span className="truncate">
-                        {board.lastOpenedAt
-                          ? `Opened ${formatTimeAgo(board.lastOpenedAt)}`
-                          : `Edited ${formatTimeAgo(board.updatedAt)}`}
-                      </span>
-                    </div>
+                    <span className="text-xs text-on-surface-variant font-semibold truncate max-w-[100px]">
+                      {board.owner?.username || "Member"}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 text-on-surface-variant text-[11px] font-bold shrink-0">
+                    <Clock size={12} className="select-none text-outline" />
+                    <span className="truncate">
+                      {board.lastOpenedAt
+                        ? `Opened ${formatTimeAgo(board.lastOpenedAt)}`
+                        : `Edited ${formatTimeAgo(board.updatedAt)}`}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -431,19 +451,19 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           })}
 
           {activeTab === "all" && canModify && (
-            /* Card: New Board Placeholder */
+            /* Card: New Board Placeholder matching Workspace Card */
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="group border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center gap-4 h-[320px] bg-surface-container-low/30 hover:bg-primary/5 hover:border-primary/40 hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 cursor-pointer text-center"
+              className="border-2 border-dashed border-outline-variant rounded-2xl p-5 flex flex-col items-center justify-center text-outline hover:border-primary hover:text-primary hover:bg-primary-container/5 transition-all group min-h-[220px] cursor-pointer text-center hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
             >
-              <div className="w-16 h-16 rounded-full bg-surface shadow-sm flex items-center justify-center text-primary border border-outline-variant group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all duration-300">
-                <Plus size={32} />
-              </div>
-              <div className="text-center px-8">
-                <h3 className="font-bold text-base text-on-surface mb-1 font-headline-sm">New Board</h3>
-                <p className="text-xs text-on-surface-variant max-w-[180px]">Start a blank canvas or choose a template</p>
-              </div>
+              <PlusSquare className="mb-3 group-hover:scale-115 transition-transform text-outline group-hover:text-primary select-none" size={36} />
+              <span className="font-bold text-base text-on-surface group-hover:text-primary transition-colors font-headline-md">
+                New Board
+              </span>
+              <p className="text-xs text-on-surface-variant/70 mt-2 px-4 leading-relaxed max-w-[200px]">
+                Start a blank canvas or select templates for your whiteboard session.
+              </p>
             </button>
           )}
         </div>
