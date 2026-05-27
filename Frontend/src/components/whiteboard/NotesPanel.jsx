@@ -99,6 +99,68 @@ const NotesPanel = ({
     }
   };
 
+  const [isAddingItem, setIsAddingItem] = React.useState(false);
+  const [newTaskText, setNewTaskText] = React.useState("");
+  const [newAssigneeText, setNewAssigneeText] = React.useState("Unassigned");
+  const [newDueDateText, setNewDueDateText] = React.useState("");
+  const [isSubmittingItem, setIsSubmittingItem] = React.useState(false);
+
+  const workspaceMembers = React.useMemo(() => {
+    const list = [];
+    if (workspace?.owner) {
+      list.push(workspace.owner);
+    }
+    if (workspace?.members) {
+      workspace.members.forEach((m) => {
+        if (m.user) {
+          list.push(m.user);
+        }
+      });
+    }
+    const seen = new Set();
+    return list.filter((m) => {
+      const id = m._id || m.id || m;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [workspace]);
+
+  const handleCreateManualActionItem = async (e) => {
+    e.preventDefault();
+    if (!newTaskText.trim()) {
+      toast.error("Task description is required");
+      return;
+    }
+
+    setIsSubmittingItem(true);
+    try {
+      const response = await apiRequest.post(
+        `/notes/${board._id}/action-items`,
+        {
+          task: newTaskText.trim(),
+          assignee: newAssigneeText,
+          dueDate: newDueDateText.trim(),
+        },
+      );
+
+      const updatedNotes = response.data?.data?.notes || {};
+      setActionItems(updatedNotes.actionItems || []);
+      toast.success("Action item created successfully");
+      setNewTaskText("");
+      setNewAssigneeText("Unassigned");
+      setNewDueDateText("");
+      setIsAddingItem(false);
+    } catch (error) {
+      console.error("Failed to create manual action item:", error);
+      const errMsg =
+        error.response?.data?.message || "Failed to create action item";
+      toast.error(errMsg);
+    } finally {
+      setIsSubmittingItem(false);
+    }
+  };
+
   const handleToggleActionItem = async (idx, itemId) => {
     const item = actionItems[idx];
     const newStatus = item.status === "Completed" ? "Pending" : "Completed";
@@ -418,23 +480,125 @@ const NotesPanel = ({
         {activeRightTab === "ai" && (
           <div className="space-y-6 flex flex-col h-full overflow-hidden">
             {!isReadOnly ? (
-              <button
-                onClick={handleExtractActions}
-                disabled={isLoadingActions}
-                className="w-full bg-primary hover:bg-primary/95 text-on-primary font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-md disabled:opacity-50"
-              >
-                {isLoadingActions ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Extracting Action Items...
-                  </>
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={handleExtractActions}
+                  disabled={isLoadingActions}
+                  className="w-full bg-primary hover:bg-primary/95 text-on-primary font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  {isLoadingActions ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Extracting Action Items...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 size={16} />
+                      Extract Action Items
+                    </>
+                  )}
+                </button>
+                {!isAddingItem ? (
+                  <button
+                    onClick={() => setIsAddingItem(true)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer border border-slate-200"
+                  >
+                    <Plus size={14} />
+                    Add Manual Task
+                  </button>
                 ) : (
-                  <>
-                    <Wand2 size={16} />
-                    Extract Action Items
-                  </>
+                  <form
+                    onSubmit={handleCreateManualActionItem}
+                    className="bg-slate-50 p-4 border border-outline-variant/60 rounded-2xl space-y-3.5 animate-in slide-in-from-top-3 duration-200"
+                  >
+                    <div className="flex justify-between items-center pb-2 border-b border-outline-variant/40">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                        New Action Item
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingItem(false)}
+                        className="text-secondary hover:text-on-background"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        Task Description
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Implement payment integration"
+                        value={newTaskText}
+                        onChange={(e) => setNewTaskText(e.target.value)}
+                        className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                          Assignee
+                        </label>
+                        <select
+                          value={newAssigneeText}
+                          onChange={(e) => setNewAssigneeText(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800 cursor-pointer"
+                        >
+                          <option value="Unassigned">Unassigned</option>
+                          {workspaceMembers.map((m) => {
+                            const name =
+                              m.username || m.email || "Unknown User";
+                            return (
+                              <option key={m._id} value={m._id}>
+                                {name}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                          Due Date
+                        </label>
+                        <input
+                          type="date"
+                          value={newDueDateText}
+                          onChange={(e) => setNewDueDateText(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingItem(false)}
+                        className="px-3 py-1.5 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold rounded-lg text-slate-600 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingItem}
+                        className="px-3 py-1.5 bg-primary text-white text-[11px] font-bold rounded-lg hover:bg-primary/95 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        {isSubmittingItem ? (
+                          <>
+                            <Loader2 size={12} className="animate-spin" />
+                            <span>Adding...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={12} />
+                            <span>Add Item</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 )}
-              </button>
+              </div>
             ) : (
               <div className="bg-surface-container-high border border-outline-variant/65 py-2.5 px-4 rounded-xl shadow-inner font-bold text-center text-xs text-on-surface-variant/70 flex items-center justify-center gap-2">
                 <Lock size={14} />
@@ -521,25 +685,6 @@ const NotesPanel = ({
                       </div>
                     );
                   })}
-                </div>
-
-                <div className="glass-card border border-outline-variant rounded-xl p-4 shadow-sm">
-                  <button
-                    onClick={() => {
-                      const markdown = actionItems
-                        .map(
-                          (item) =>
-                            `- [${item.status === "Completed" ? "x" : " "}] ${item.task} (Assignee: ${item.assignee}, Due: ${item.dueDate || "N/A"})`,
-                        )
-                        .join("\n");
-                      navigator.clipboard.writeText(markdown);
-                      toast.success("AI Action Items copied as Markdown!");
-                    }}
-                    className="w-full flex items-center justify-center gap-2 p-2 bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors text-xs font-bold text-on-surface cursor-pointer border border-outline-variant/40"
-                  >
-                    <Copy size={18} />
-                    <span>Copy List as Markdown</span>
-                  </button>
                 </div>
               </div>
             )}

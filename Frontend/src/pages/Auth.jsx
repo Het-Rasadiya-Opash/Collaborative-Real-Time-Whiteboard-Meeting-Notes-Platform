@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Loader2,
   MailCheck,
+  Layers,
 } from "lucide-react";
 import {
   clearError,
@@ -189,11 +190,19 @@ const Auth = ({ defaultMode = "login" }) => {
       </div>
 
       <main className="w-full max-w-[440px] z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <h1 className="text-2xl font-bold text-primary tracking-tight font-sans">
-              Workspace
-            </h1>
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/10">
+              <Layers size={24} className="text-white" />
+            </div>
+            <div className="flex flex-col text-left">
+              <h1 className="font-bold text-2xl text-primary tracking-tight font-headline-md leading-tight">
+                Workspace
+              </h1>
+              <p className="text-xs text-on-surface-variant/70 font-semibold select-none">
+                Collaborative Canvas
+              </p>
+            </div>
           </div>
         </div>
 

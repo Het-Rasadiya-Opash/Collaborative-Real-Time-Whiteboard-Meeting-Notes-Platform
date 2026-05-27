@@ -69,7 +69,7 @@ export const extractActions = asyncHandler(async (req, res) => {
 
   const isOwner = workspace.owner.toString() === req.user._id.toString();
   const member = workspace.members.find(
-    (m) => m.user && m.user.toString() === req.user._id.toString()
+    (m) => m.user && m.user.toString() === req.user._id.toString(),
   );
   const hasRequiredRole =
     member && (member.role === "OWNER" || member.role === "EDITOR");
@@ -77,7 +77,7 @@ export const extractActions = asyncHandler(async (req, res) => {
   if (!isOwner && !hasRequiredRole) {
     throw new ApiError(
       403,
-      "You are not authorized to perform AI actions on this board"
+      "You are not authorized to perform AI actions on this board",
     );
   }
 
@@ -131,9 +131,26 @@ export const extractActions = asyncHandler(async (req, res) => {
     }
 
     const taskKeywords = [
-      "todo", "task", "action item", "action-item", "should", "must",
-      "needs to", "need to", "will", "please", "assign", "draft", "create",
-      "implement", "review", "update", "fix", "send", "prepare", "schedule"
+      "todo",
+      "task",
+      "action item",
+      "action-item",
+      "should",
+      "must",
+      "needs to",
+      "need to",
+      "will",
+      "please",
+      "assign",
+      "draft",
+      "create",
+      "implement",
+      "review",
+      "update",
+      "fix",
+      "send",
+      "prepare",
+      "schedule",
     ];
 
     lines.forEach((line) => {
@@ -142,10 +159,16 @@ export const extractActions = asyncHandler(async (req, res) => {
 
       if (isAction) {
         let assignee = "Unassigned";
-        const assignedToMatch = line.match(/assign(?:ed)?\s+to\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
-        const willMatch = line.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+will\b/);
-        
-        const toMatch = line.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:needs?\s+to|should|must|will|to)\s+(?:implement|create|review|update|fix|send|prepare|schedule|do|draft|design|code)/);
+        const assignedToMatch = line.match(
+          /assign(?:ed)?\s+to\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/,
+        );
+        const willMatch = line.match(
+          /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+will\b/,
+        );
+
+        const toMatch = line.match(
+          /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:needs?\s+to|should|must|will|to)\s+(?:implement|create|review|update|fix|send|prepare|schedule|do|draft|design|code)/,
+        );
 
         if (assignedToMatch) {
           assignee = assignedToMatch[1];
@@ -156,16 +179,18 @@ export const extractActions = asyncHandler(async (req, res) => {
         }
 
         let dueDate = "";
-        const dueMatch = line.match(/(?:by|due|before|deadline)\s+([A-Za-z0-9\s\/-]+?)(?:\s+and|\s+for|\s+to|\.|$)/i);
+        const dueMatch = line.match(
+          /(?:by|due|before|deadline)\s+([A-Za-z0-9\s\/-]+?)(?:\s+and|\s+for|\s+to|\.|$)/i,
+        );
         if (dueMatch) {
           dueDate = dueMatch[1].trim();
         }
 
         let task = line
-          .replace(/\[\s*\]/g, "") 
-          .replace(/todo:?/gi, "")  
-          .replace(/task:?/gi, "")  
-          .replace(/action\s+item:?/gi, "") 
+          .replace(/\[\s*\]/g, "")
+          .replace(/todo:?/gi, "")
+          .replace(/task:?/gi, "")
+          .replace(/action\s+item:?/gi, "")
           .replace(/\s+/g, " ")
           .trim();
 
@@ -175,7 +200,7 @@ export const extractActions = asyncHandler(async (req, res) => {
             task,
             assignee,
             dueDate,
-            status: "Pending"
+            status: "Pending",
           });
         }
       }
@@ -186,36 +211,53 @@ export const extractActions = asyncHandler(async (req, res) => {
     const textLower = (text || "").toLowerCase();
     const mockTasks = [];
 
-    if (textLower.includes("api") || textLower.includes("backend") || textLower.includes("server")) {
+    if (
+      textLower.includes("api") ||
+      textLower.includes("backend") ||
+      textLower.includes("server")
+    ) {
       mockTasks.push({
         task: "Implement the secure API endpoints for collaborative notes integration",
         assignee: "Backend Developer",
         dueDate: "By Next Wednesday",
-        status: "Pending"
+        status: "Pending",
       });
     }
-    if (textLower.includes("design") || textLower.includes("ui") || textLower.includes("frontend") || textLower.includes("style")) {
+    if (
+      textLower.includes("design") ||
+      textLower.includes("ui") ||
+      textLower.includes("frontend") ||
+      textLower.includes("style")
+    ) {
       mockTasks.push({
         task: "Refine the whiteboard canvas styling and responsiveness across devices",
         assignee: "UI/UX Designer",
         dueDate: "By Friday EOD",
-        status: "Pending"
+        status: "Pending",
       });
     }
-    if (textLower.includes("database") || textLower.includes("mongo") || textLower.includes("schema")) {
+    if (
+      textLower.includes("database") ||
+      textLower.includes("mongo") ||
+      textLower.includes("schema")
+    ) {
       mockTasks.push({
         task: "Update database indexes and optimize queries for faster real-time sync",
         assignee: "Database Administrator",
         dueDate: "In 3 days",
-        status: "Pending"
+        status: "Pending",
       });
     }
-    if (textLower.includes("test") || textLower.includes("bug") || textLower.includes("error")) {
+    if (
+      textLower.includes("test") ||
+      textLower.includes("bug") ||
+      textLower.includes("error")
+    ) {
       mockTasks.push({
         task: "Write unit tests for the newly added Notes and AI extraction controllers",
         assignee: "QA Engineer",
         dueDate: "Next Monday",
-        status: "Pending"
+        status: "Pending",
       });
     }
 
@@ -225,14 +267,14 @@ export const extractActions = asyncHandler(async (req, res) => {
           task: "Review the whiteboard meeting notes and finalize next sprint objectives",
           assignee: "Project Manager",
           dueDate: "Tomorrow by 10 AM",
-          status: "Pending"
+          status: "Pending",
         },
         {
           task: "Share the updated whiteboard board link with all external stakeholders",
           assignee: "Meeting Facilitator",
           dueDate: "EOD today",
-          status: "Pending"
-        }
+          status: "Pending",
+        },
       );
     }
 
@@ -256,13 +298,15 @@ export const extractActions = asyncHandler(async (req, res) => {
 
   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      notesDoc,
-      "AI Action Items extracted and saved successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        notesDoc,
+        "AI Action Items extracted and saved successfully",
+      ),
+    );
 });
 
 export const updateActionItemStatus = asyncHandler(async (req, res) => {
@@ -286,11 +330,90 @@ export const updateActionItemStatus = asyncHandler(async (req, res) => {
   actionItem.status = status;
   await notesDoc.save();
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      notesDoc,
-      "Action item status updated successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, notesDoc, "Action item status updated successfully"),
+    );
+});
+
+export const createActionItem = asyncHandler(async (req, res) => {
+  const { boardId } = req.params;
+  const { task, assignee, dueDate } = req.body;
+
+  if (!task || !task.trim()) {
+    throw new ApiError(400, "Task name is required");
+  }
+
+  const boardDoc = await boardModel.findById(boardId);
+  if (!boardDoc) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspaceDoc = await workSpaceModel
+    .findById(boardDoc.workspace)
+    .populate("members.user")
+    .populate("owner");
+
+  if (!workspaceDoc) {
+    throw new ApiError(404, "Workspace not found");
+  }
+
+  const validMembers = [];
+  if (workspaceDoc.owner) {
+    validMembers.push(workspaceDoc.owner);
+  }
+  if (workspaceDoc.members) {
+    workspaceDoc.members.forEach((m) => {
+      if (m.user) {
+        validMembers.push(m.user);
+      }
+    });
+  }
+
+  let finalAssignee = "Unassigned";
+  if (assignee && assignee.trim() && assignee !== "Unassigned") {
+    const matchedUser = validMembers.find(
+      (u) =>
+        u._id.toString() === assignee ||
+        u.username?.toLowerCase() === assignee.trim().toLowerCase() ||
+        u.email?.toLowerCase() === assignee.trim().toLowerCase()
+    );
+
+    if (!matchedUser) {
+      throw new ApiError(400, "Assignee must be a member of the workspace");
+    }
+    finalAssignee = matchedUser.username || matchedUser.email;
+  }
+
+  let notesDoc = await notesModel.findOne({ board: boardId });
+  if (!notesDoc) {
+    notesDoc = await notesModel.create({
+      board: boardId,
+      textContent: "",
+      actionItems: [],
+    });
+  }
+
+  const newItem = {
+    task: task.trim(),
+    assignee: finalAssignee,
+    dueDate: dueDate ? dueDate.trim() : "",
+    status: "Pending",
+  };
+
+  notesDoc.actionItems.push(newItem);
+  await notesDoc.save();
+
+  const addedItem = notesDoc.actionItems[notesDoc.actionItems.length - 1];
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        { notes: notesDoc, addedItem },
+        "Action item created successfully"
+      )
+    );
 });

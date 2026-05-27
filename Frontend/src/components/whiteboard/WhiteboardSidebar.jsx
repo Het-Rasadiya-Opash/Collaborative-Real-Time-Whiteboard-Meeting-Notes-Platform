@@ -9,20 +9,26 @@ import {
   HelpCircle,
   LogOut,
   StickyNotes,
+  Layers,
 } from "lucide-react";
 
 export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
   return (
     <aside className={`fixed left-0 top-0 h-full w-[280px] bg-slate-50 border-r border-outline-variant shadow-sm z-50 flex flex-col justify-between py-6 transition-all duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div>
-        <div className="px-6 mb-8 flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="font-bold text-lg text-primary font-headline-md tracking-tight">
-              Workspace
-            </h1>
-            <p className="text-[11px] text-on-surface-variant/70 font-semibold select-none">
-              Collaborative Canvas
-            </p>
+        <div className="px-6 py-4 mb-8 flex items-center justify-between relative">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/10">
+              <Layers size={20} className="text-white" />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="font-bold text-base text-primary tracking-tight font-headline-md leading-tight">
+                Workspace
+              </h1>
+              <p className="text-[10px] text-on-surface-variant/70 font-semibold select-none">
+                Collaborative Canvas
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setIsOpen(false)}
