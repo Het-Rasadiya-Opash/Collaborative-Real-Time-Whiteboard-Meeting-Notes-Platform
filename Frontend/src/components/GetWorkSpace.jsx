@@ -289,7 +289,7 @@ const GetWorkSpace = ({
               </p>
             </button>
 
-            <div className="glass-card rounded-2xl p-6 flex flex-col hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 min-h-[220px]">
+            {/* <div className="glass-card rounded-2xl p-6 flex flex-col hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 min-h-[220px]">
               <div className="flex items-center gap-2.5 mb-6">
                 <TrendingUp size={20} className="text-amber-500" />
                 <h3 className="font-bold text-sm text-on-surface">Activity Overview</h3>
@@ -321,7 +321,7 @@ const GetWorkSpace = ({
               >
                 View analytics <ArrowRight size={14} />
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       )}
