@@ -12,10 +12,9 @@ import {
 const DEFAULT_COLOR_PALETTE = [
   { name: "Blue", hex: "#2563eb" },
   { name: "Purple", hex: "#7c3aed" },
-  { name: "Emerald", hex: "#166534" },
-  { name: "Amber", hex: "#b45309" },
+  { name: "Green", hex: "#166534" },
+  { name: "Orange", hex: "#b45309" },
   { name: "Red", hex: "#b91c1c" },
-  { name: "White", hex: "#ffffff" },
 ];
 
 const WhiteboardToolbar = ({

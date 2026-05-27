@@ -1,6 +1,6 @@
 import React from "react";
 
-const PresenceLayer = ({ collaborators, currentUser, zoom }) => {
+const PresenceLayer = ({ collaborators, currentUser, zoom, pan = { x: 0, y: 0 } }) => {
   const cursorColors = ["#7c3aed", "#166534", "#b45309", "#b91c1c", "#2563eb"];
 
   return (
@@ -10,8 +10,8 @@ const PresenceLayer = ({ collaborators, currentUser, zoom }) => {
         .map((collab, index) => {
           const cursorColor = cursorColors[index % cursorColors.length];
           const scale = zoom / 100;
-          const leftPos = collab.cursorX * scale;
-          const topPos = collab.cursorY * scale;
+          const leftPos = collab.cursorX * scale + pan.x;
+          const topPos = collab.cursorY * scale + pan.y;
 
           return (
             <div

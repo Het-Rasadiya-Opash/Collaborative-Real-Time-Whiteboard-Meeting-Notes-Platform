@@ -30,7 +30,7 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sortBy, setSortBy] = useState("updatedAt");
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "recent" | "starred"
+  const [activeTab, setActiveTab] = useState("all");
 
   const { currentUser } = useSelector((state) => state.users);
 

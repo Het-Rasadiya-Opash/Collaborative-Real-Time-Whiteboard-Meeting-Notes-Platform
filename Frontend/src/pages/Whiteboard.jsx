@@ -8,7 +8,6 @@ import WhiteboardToolbar from "../components/whiteboard/WhiteboardToolbar";
 import WhiteboardCanvas from "../components/whiteboard/WhiteboardCanvas";
 import NotesPanel from "../components/whiteboard/NotesPanel";
 
-// Sleek and clean UI subcomponents!
 import { WhiteboardStyles } from "../components/whiteboard/WhiteboardStyles";
 import { WhiteboardSidebar } from "../components/whiteboard/WhiteboardSidebar";
 import { WhiteboardHeader } from "../components/whiteboard/WhiteboardHeader";
@@ -21,10 +20,9 @@ import { useWhiteboardCanvas } from "../hooks/useWhiteboardCanvas";
 const COLOR_PALETTE = [
   { name: "Blue", hex: "#2563eb" },
   { name: "Purple", hex: "#7c3aed" },
-  { name: "Emerald", hex: "#166534" },
-  { name: "Amber", hex: "#b45309" },
+  { name: "Green", hex: "#166534" },
+  { name: "Orange", hex: "#b45309" },
   { name: "Red", hex: "#b91c1c" },
-  { name: "White", hex: "#ffffff" },
 ];
 
 const Whiteboard = ({
@@ -148,14 +146,15 @@ const Whiteboard = ({
     handleStageMouseMove,
     handleStageMouseUp,
     handleShapeSelect,
-    handleTransformEnd,
-    handleDragMove,
     handleDoubleClickSticky,
     finishStickyEditing,
     handleDeleteSelected,
     handleClearCanvas,
     handleUndo,
     handleRedo,
+    pan,
+    setPan,
+    isPanning,
   } = useWhiteboardCanvas({
     elements,
     setElements,
@@ -174,13 +173,13 @@ const Whiteboard = ({
     ydocRef,
     lastCursorEmitRef,
     triggerAutoSave,
+    canvasRef,
   });
 
-  // Keep isCanvasBusyRef updated dynamically
   useEffect(() => {
     isCanvasBusyRef.current =
-      isDragging || currentDrawingElement !== null || editingStickyId !== null;
-  }, [isDragging, currentDrawingElement, editingStickyId]);
+      isDragging || currentDrawingElement !== null || editingStickyId !== null || isPanning;
+  }, [isDragging, currentDrawingElement, editingStickyId, isPanning]);
 
   const handleCreateSnapshot = (e) => {
     e.preventDefault();
@@ -453,8 +452,6 @@ const Whiteboard = ({
 
             <WhiteboardCanvas
               canvasRef={canvasRef}
-              transformerRef={transformerRef}
-              dimensions={dimensions}
               zoom={zoom}
               setZoom={setZoom}
               isReadOnly={isReadOnly}
@@ -469,20 +466,22 @@ const Whiteboard = ({
               handleStageMouseMove={handleStageMouseMove}
               handleStageMouseUp={handleStageMouseUp}
               handleShapeSelect={handleShapeSelect}
-              handleDragMove={handleDragMove}
-              handleTransformEnd={handleTransformEnd}
               handleDoubleClickSticky={handleDoubleClickSticky}
               finishStickyEditing={finishStickyEditing}
               handleUndo={handleUndo}
               handleRedo={handleRedo}
               historyCount={history.length}
               redoCount={redoStack.length}
+              pan={pan}
+              setPan={setPan}
+              isPanning={isPanning}
             />
 
             <PresenceLayer
               collaborators={collaborators}
               currentUser={currentUser}
               zoom={zoom}
+              pan={pan}
             />
           </div>
 

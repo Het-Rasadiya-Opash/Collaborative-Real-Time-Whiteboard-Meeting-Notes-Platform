@@ -1,34 +1,102 @@
-import React from "react";
-import {
-  Stage,
-  Layer,
-  Rect,
-  Circle as KonvaCircle,
-  Line,
-  Group,
-  Text,
-  Transformer,
-} from "react-konva";
+import React, { useRef, useState, useEffect } from "react";
 import { ZoomIn, ZoomOut, Undo2, Redo2 } from "lucide-react";
 
-const getStickyTextColor = (bgColor) => {
-  if (!bgColor) return "#1e293b";
-  const hex = bgColor.toLowerCase();
-  if (
-    hex === "#ffffff" ||
-    hex === "#fef08a" ||
-    hex === "#eff4ff" ||
-    hex === "#fdf08a"
-  ) {
-    return "#1e293b";
+const getStickyLabel = (color) => {
+  if (!color) return "IDEA";
+  const hex = color.toLowerCase();
+  if (hex === "#2563eb") return "IDEA";
+  if (hex === "#7c3aed") return "NOTE";
+  if (hex === "#166534") return "TODO";
+  if (hex === "#b45309") return "DECISION";
+  if (hex === "#b91c1c") return "IMPORTANT";
+  return "IDEA";
+};
+
+const getSvgPathFromPoints = (points) => {
+  if (!points || points.length === 0) return "";
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L ${points[i].x} ${points[i].y}`;
   }
-  return "#ffffff";
+  return d;
+};
+
+const getStrokeBounds = (points) => {
+  if (!points || points.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return {
+    x: minX - 8,
+    y: minY - 8,
+    width: maxX - minX + 16,
+    height: maxY - minY + 16,
+  };
+};
+
+const StickyNoteEditor = ({ initialText, onSave }) => {
+  const [text, setText] = useState(initialText === "Double-click to edit note" ? "" : initialText);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.focus();
+      ref.current.selectionStart = ref.current.value.length;
+      ref.current.selectionEnd = ref.current.value.length;
+    }
+  }, []);
+
+  const handleKeyDown = (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSave(text);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onSave(initialText);
+    }
+  };
+
+  return (
+    <textarea
+      ref={ref}
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => onSave(text)}
+      onKeyDown={handleKeyDown}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundColor: "transparent",
+        border: "none",
+        outline: "none",
+        boxShadow: "none",
+        resize: "none",
+        color: "#ffffff",
+        fontSize: "14px",
+        fontWeight: "bold",
+        textAlign: "left",
+        fontFamily: "sans-serif",
+        cursor: "text",
+        userSelect: "text",
+        WebkitUserSelect: "text",
+        padding: "8px",
+        lineHeight: "1.4",
+        whiteSpace: "pre-wrap",
+        wordWrap: "break-word",
+      }}
+    />
+  );
 };
 
 const WhiteboardCanvas = ({
   canvasRef,
-  transformerRef,
-  dimensions,
   zoom,
   setZoom,
   isReadOnly,
@@ -43,300 +111,254 @@ const WhiteboardCanvas = ({
   handleStageMouseMove,
   handleStageMouseUp,
   handleShapeSelect,
-  handleDragMove,
-  handleTransformEnd,
   handleDoubleClickSticky,
   finishStickyEditing,
   handleUndo,
   handleRedo,
   historyCount,
   redoCount,
+  pan,
+  setPan,
+  isPanning,
 }) => {
+  const containerRef = useRef(null);
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
+    const newZoom = Math.min(200, Math.max(25, Math.round(zoom * zoomFactor)));
+    setZoom(newZoom);
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (el) {
+      el.addEventListener("wheel", handleWheel, { passive: false });
+      return () => {
+        el.removeEventListener("wheel", handleWheel);
+      };
+    }
+  }, [zoom]);
+
   return (
     <div
-      ref={canvasRef}
-      className="w-full h-full relative overflow-hidden"
-      style={{ pointerEvents: "all" }}
+      ref={(el) => {
+        containerRef.current = el;
+        if (canvasRef) canvasRef.current = el;
+      }}
+      className="w-full h-full relative overflow-hidden select-none bg-slate-50 canvas-grid"
+      style={{
+        cursor: isPanning ? "grabbing" : selectedTool === "select" ? "default" : "crosshair",
+        backgroundImage: `radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px)`,
+        backgroundSize: `${24 * (zoom / 100)}px ${24 * (zoom / 100)}px`,
+        backgroundPosition: `${pan.x}px ${pan.y}px`,
+      }}
+      onPointerDown={handleStageMouseDown}
+      onPointerMove={handleStageMouseMove}
+      onPointerUp={handleStageMouseUp}
     >
-      <Stage
-        width={dimensions.width}
-        height={dimensions.height}
-        onMouseDown={handleStageMouseDown}
-        onMouseMove={handleStageMouseMove}
-        onMouseUp={handleStageMouseUp}
-        onMouseLeave={handleStageMouseUp}
-        onTouchStart={handleStageMouseDown}
-        onTouchMove={handleStageMouseMove}
-        onTouchEnd={handleStageMouseUp}
+      <div
+        className="absolute inset-0 pointer-events-none"
         style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: "100%",
-          height: "100%",
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+          transformOrigin: "0 0",
         }}
       >
-        <Layer>
-          <Rect
-            id="stage-background"
-            x={0}
-            y={0}
-            width={dimensions.width * 4}
-            height={dimensions.height * 4}
-            fill="transparent"
-          />
-        </Layer>
-        <Layer scaleX={zoom / 100} scaleY={zoom / 100}>
+        <svg className="absolute inset-0 overflow-visible w-[5000px] h-[5000px]">
           {displayedElements.map((el) => {
-            const isSelected = el.id === selectedElementId;
-
             if (el.type === "stroke") {
+              const isSelected = el.id === selectedElementId;
               return (
-                <Line
-                  key={el.id}
-                  id={el.id}
-                  points={el.points.flatMap((p) => [p.x, p.y])}
-                  stroke={el.color}
-                  strokeWidth={el.strokeWidth || 4}
-                  lineCap="round"
-                  lineJoin="round"
-                  opacity={0.8}
-                  draggable={selectedTool === "select" && !isReadOnly}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragMove={handleDragMove}
-                />
-              );
-            }
-
-            if (el.type === "rectangle") {
-              return (
-                <Rect
-                  key={el.id}
-                  id={el.id}
-                  x={el.x}
-                  y={el.y}
-                  width={el.width}
-                  height={el.height}
-                  fill="transparent"
-                  stroke={el.color}
-                  strokeWidth={3}
-                  draggable={selectedTool === "select" && !isReadOnly}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragMove={handleDragMove}
-                  onTransformEnd={handleTransformEnd}
-                />
-              );
-            }
-
-            if (el.type === "circle") {
-              return (
-                <KonvaCircle
-                  key={el.id}
-                  id={el.id}
-                  x={el.cx}
-                  y={el.cy}
-                  radius={el.r}
-                  fill="transparent"
-                  stroke={el.color}
-                  strokeWidth={3}
-                  draggable={selectedTool === "select" && !isReadOnly}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragMove={handleDragMove}
-                  onTransformEnd={handleTransformEnd}
-                />
-              );
-            }
-
-            if (el.type === "sticky") {
-              return (
-                <Group
-                  key={el.id}
-                  id={el.id}
-                  x={el.x}
-                  y={el.y}
-                  width={el.width}
-                  height={el.height}
-                  draggable={selectedTool === "select" && !isReadOnly}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDblClick={(e) => handleDoubleClickSticky(e, el)}
-                  onDblTap={(e) => handleDoubleClickSticky(e, el)}
-                  onDragMove={handleDragMove}
-                  onTransformEnd={handleTransformEnd}
-                >
-                  <Rect
-                    width={el.width}
-                    height={el.height}
-                    fill={el.color === "#eff4ff" ? "#fef08a" : el.color}
-                    stroke={isSelected ? "#2563eb" : "#e2e8f0"}
-                    strokeWidth={isSelected ? 2 : 1}
-                    cornerRadius={12}
-                    shadowColor="#0f172a"
-                    shadowBlur={10}
-                    shadowOpacity={0.15}
-                    shadowOffset={{ x: 0, y: 4 }}
+                <g key={el.id} className="pointer-events-auto cursor-pointer">
+                  <path
+                    d={getSvgPathFromPoints(el.points)}
+                    fill="none"
+                    stroke={el.color}
+                    strokeWidth={el.strokeWidth || 4}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    onPointerDown={(e) => handleShapeSelect(e, el.id)}
                   />
-                  <Text
-                    x={12}
-                    y={12}
-                    text={
-                      el.color === "#fef08a" || el.color === "#eff4ff"
-                        ? "STICKY NOTE"
-                        : "IDEA"
-                    }
-                    fontSize={9}
-                    fontFamily="sans-serif"
-                    fontWeight="bold"
-                    fill={
-                      getStickyTextColor(el.color) === "#ffffff"
-                        ? "rgba(255, 255, 255, 0.7)"
-                        : "#64748b"
-                    }
-                    letterSpacing={0.5}
-                  />
-                  {editingStickyId !== el.id && (
-                    <Text
-                      x={12}
-                      y={28}
-                      width={el.width - 24}
-                      height={el.height - 40}
-                      text={el.text}
-                      fontSize={13}
-                      fontFamily="sans-serif"
-                      fontWeight="bold"
-                      fill={getStickyTextColor(el.color)}
-                      align="center"
-                      verticalAlign="middle"
-                      wrap="char"
-                    />
-                  )}
-                </Group>
+                  {isSelected && (() => {
+                    const bounds = getStrokeBounds(el.points);
+                    return (
+                      <rect
+                        x={bounds.x}
+                        y={bounds.y}
+                        width={bounds.width}
+                        height={bounds.height}
+                        fill="none"
+                        stroke="#ef4444"
+                        strokeWidth={2}
+                        strokeDasharray="4,4"
+                      />
+                    );
+                  })()}
+                </g>
               );
             }
-
             return null;
           })}
 
-          {currentDrawingElement && (
-            <Group>
-              {currentDrawingElement.type === "stroke" && (
-                <Line
-                  points={currentDrawingElement.points.flatMap((p) => [
-                    p.x,
-                    p.y,
-                  ])}
-                  stroke={currentDrawingElement.color}
-                  strokeWidth={4}
-                  lineCap="round"
-                  lineJoin="round"
-                  opacity={0.8}
-                />
-              )}
-              {currentDrawingElement.type === "rectangle" && (
-                <Rect
-                  x={currentDrawingElement.x}
-                  y={currentDrawingElement.y}
-                  width={currentDrawingElement.width}
-                  height={currentDrawingElement.height}
-                  fill="transparent"
-                  stroke={currentDrawingElement.color}
-                  strokeWidth={3}
-                  dash={[5, 3]}
-                  opacity={0.8}
-                />
-              )}
-              {currentDrawingElement.type === "circle" && (
-                <KonvaCircle
-                  x={currentDrawingElement.cx}
-                  y={currentDrawingElement.cy}
-                  radius={currentDrawingElement.r}
-                  fill="transparent"
-                  stroke={currentDrawingElement.color}
-                  strokeWidth={3}
-                  dash={[5, 3]}
-                  opacity={0.8}
-                />
-              )}
-            </Group>
-          )}
-
-          {selectedTool === "select" && !isReadOnly && (
-            <Transformer
-              ref={transformerRef}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (
-                  Math.abs(newBox.width) < 10 ||
-                  Math.abs(newBox.height) < 10
-                ) {
-                  return oldBox;
-                }
-                return newBox;
-              }}
-              rotateEnabled={false}
+          {currentDrawingElement && currentDrawingElement.type === "stroke" && (
+            <path
+              d={getSvgPathFromPoints(currentDrawingElement.points)}
+              fill="none"
+              stroke={currentDrawingElement.color}
+              strokeWidth={currentDrawingElement.strokeWidth || 4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.8}
             />
           )}
-        </Layer>
-      </Stage>
+        </svg>
 
-      {editingStickyId &&
-        (() => {
-          const el = displayedElements.find(
-            (item) => item.id === editingStickyId,
-          );
-          if (!el) return null;
-          const scale = zoom / 100;
-          return (
-            <textarea
-              value={editingStickyText}
-              onChange={(e) => setEditingStickyText(e.target.value)}
-              onBlur={finishStickyEditing}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  finishStickyEditing();
-                }
-              }}
-              style={{
-                position: "absolute",
-                left: `${el.x * scale}px`,
-                top: `${el.y * scale}px`,
-                width: `${el.width * scale}px`,
-                height: `${el.height * scale}px`,
-                backgroundColor: el.color === "#eff4ff" ? "#fef08a" : el.color,
-                fontSize: `${13 * scale}px`,
-                zIndex: 100,
-                border: "2px solid #2563eb",
-                borderRadius: "12px",
-                resize: "none",
-                padding: `${16 * scale}px`,
-                boxSizing: "border-box",
-                outline: "none",
-                textAlign: "center",
-                fontFamily: "sans-serif",
-                fontWeight: "bold",
-                color: getStickyTextColor(el.color),
-                overflow: "hidden",
-                userSelect: "text",
-                WebkitUserSelect: "text",
-              }}
-              className="select-text"
-              ref={(tag) => {
-                if (tag) {
-                  tag.focus();
-                  tag.select();
-                }
-              }}
-            />
-          );
-        })()}
+        {displayedElements.map((el) => {
+          const isSelected = el.id === selectedElementId;
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 glass-card border border-outline-variant rounded-full px-4 py-2 shadow-md flex items-center gap-4 z-30 animate-in fade-in slide-in-from-bottom duration-300">
+          if (el.type === "rectangle") {
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: "absolute",
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  border: `3px solid ${el.color}`,
+                  outline: isSelected ? "3px dashed #ef4444" : "none",
+                  outlineOffset: isSelected ? "4px" : "0px",
+                }}
+                className="pointer-events-auto cursor-pointer transition-shadow hover:shadow-md"
+                onPointerDown={(e) => handleShapeSelect(e, el.id)}
+              />
+            );
+          }
+
+          if (el.type === "circle") {
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: "absolute",
+                  left: el.cx - el.r,
+                  top: el.cy - el.r,
+                  width: el.r * 2,
+                  height: el.r * 2,
+                  border: `3px solid ${el.color}`,
+                  borderRadius: "50%",
+                  outline: isSelected ? "3px dashed #ef4444" : "none",
+                  outlineOffset: isSelected ? "4px" : "0px",
+                }}
+                className="pointer-events-auto cursor-pointer transition-shadow hover:shadow-md"
+                onPointerDown={(e) => handleShapeSelect(e, el.id)}
+              />
+            );
+          }
+
+          if (el.type === "sticky") {
+            const isEditing = editingStickyId === el.id;
+            return (
+              <div
+                key={el.id}
+                style={{
+                  position: "absolute",
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  backgroundColor: el.color,
+                  outline: isSelected ? "3px dashed #ef4444" : "none",
+                  outlineOffset: isSelected ? "4px" : "0px",
+                }}
+                className="pointer-events-auto rounded-2xl p-4 shadow-lg flex flex-col justify-between cursor-pointer transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 border border-white/20 select-text overflow-hidden"
+                onPointerDown={(e) => handleShapeSelect(e, el.id)}
+                onDoubleClick={(e) => handleDoubleClickSticky(e, el)}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] tracking-wider uppercase font-black bg-white/20 px-2.5 py-0.5 rounded-full text-white/90">
+                    {getStickyLabel(el.color)}
+                  </span>
+                </div>
+
+                <div className="flex-1 w-full h-full min-h-0 overflow-hidden mt-1">
+                  {!isEditing ? (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "transparent",
+                        border: "none",
+                        outline: "none",
+                        color: "#ffffff",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        textAlign: "left",
+                        fontFamily: "sans-serif",
+                        padding: "8px",
+                        lineHeight: "1.4",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                      className="select-none"
+                    >
+                      {el.text || "Double-click to edit note"}
+                    </div>
+                  ) : (
+                    <StickyNoteEditor
+                      initialText={el.text}
+                      onSave={(newText) => {
+                        finishStickyEditing(newText);
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          return null;
+        })}
+
+        {currentDrawingElement && (
+          <>
+            {currentDrawingElement.type === "rectangle" && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: currentDrawingElement.x,
+                  top: currentDrawingElement.y,
+                  width: currentDrawingElement.width,
+                  height: currentDrawingElement.height,
+                  border: `3px dashed ${currentDrawingElement.color}`,
+                  opacity: 0.8,
+                }}
+              />
+            )}
+            {currentDrawingElement.type === "circle" && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: currentDrawingElement.cx - currentDrawingElement.r,
+                  top: currentDrawingElement.cy - currentDrawingElement.r,
+                  width: currentDrawingElement.r * 2,
+                  height: currentDrawingElement.r * 2,
+                  border: `3px dashed ${currentDrawingElement.color}`,
+                  borderRadius: "50%",
+                  opacity: 0.8,
+                }}
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 glass-card border border-outline-variant rounded-full px-4 py-2 shadow-md flex items-center gap-4 z-30 animate-in fade-in slide-in-from-bottom duration-300 pointer-events-auto">
         <button
           onClick={() => setZoom(Math.max(25, zoom - 10))}
-          className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
+          className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center text-on-surface-variant"
           title="Zoom Out"
         >
           <ZoomOut size={18} />
@@ -346,7 +368,7 @@ const WhiteboardCanvas = ({
         </span>
         <button
           onClick={() => setZoom(Math.min(200, zoom + 10))}
-          className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
+          className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center text-on-surface-variant"
           title="Zoom In"
         >
           <ZoomIn size={18} />

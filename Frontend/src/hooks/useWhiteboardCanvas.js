@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 
 export const useWhiteboardCanvas = ({
@@ -19,32 +19,44 @@ export const useWhiteboardCanvas = ({
   ydocRef,
   lastCursorEmitRef,
   triggerAutoSave,
+  canvasRef, 
 }) => {
+  const [pan, setPan] = useState({ x: 100, y: 20 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedElementId, setDraggedElementId] = useState(null);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragInitialCoords, setDragInitialCoords] = useState({ x: 0, y: 0 });
+
   const [currentDrawingElement, setCurrentDrawingElement] = useState(null);
   const [editingStickyId, setEditingStickyId] = useState(null);
   const [editingStickyText, setEditingStickyText] = useState("");
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
 
-  const getStageMouseCoords = (e) => {
-    const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
-    if (!pos) return { x: 0, y: 0 };
+  const elementsRef = useRef(elements);
+  useEffect(() => {
+    elementsRef.current = elements;
+  }, [elements]);
+
+  const getRelativeCoords = (clientX, clientY) => {
+    if (!canvasRef?.current) return { x: 0, y: 0 };
+    const rect = canvasRef.current.getBoundingClientRect();
     const scale = zoom / 100;
     return {
-      x: pos.x / scale,
-      y: pos.y / scale,
+      x: (clientX - rect.left - pan.x) / scale,
+      y: (clientY - rect.top - pan.y) / scale,
     };
   };
 
   const updateElementsAndHistory = (newElements) => {
-    setHistory((prev) => [...prev, elements]);
+    setHistory((prev) => [...prev, elementsRef.current]);
     setRedoStack([]);
     setElements(newElements);
     triggerAutoSave(newElements);
 
-    if (canvasMapRef.current && ydocRef.current) {
+    if (canvasMapRef?.current && ydocRef?.current) {
       ydocRef.current.transact(() => {
         const currentKeys = new Set(canvasMapRef.current.keys());
         const newIds = new Set(newElements.map((el) => el.id));
@@ -66,7 +78,7 @@ export const useWhiteboardCanvas = ({
       });
     }
 
-    if (socketRef.current?.connected) {
+    if (socketRef?.current?.connected) {
       socketRef.current.emit("canvas-change", {
         boardId: board._id,
         elements: newElements,
@@ -78,7 +90,7 @@ export const useWhiteboardCanvas = ({
     if (history.length === 0) return;
     const previous = history[history.length - 1];
     setHistory((prev) => prev.slice(0, -1));
-    setRedoStack((prev) => [...prev, elements]);
+    setRedoStack((prev) => [...prev, elementsRef.current]);
     setElements(previous);
     triggerAutoSave(previous);
   };
@@ -87,19 +99,21 @@ export const useWhiteboardCanvas = ({
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
     setRedoStack((prev) => prev.slice(0, -1));
-    setHistory((prev) => [...prev, elements]);
+    setHistory((prev) => [...prev, elementsRef.current]);
     setElements(next);
     triggerAutoSave(next);
   };
 
-  const finishStickyEditing = () => {
+  const finishStickyEditing = (textOverride) => {
     if (!editingStickyId) return;
 
-    const updated = elements.map((el) => {
+    const finalVal = textOverride !== undefined ? textOverride : editingStickyText;
+
+    const updated = elementsRef.current.map((el) => {
       if (el.id === editingStickyId) {
         return {
           ...el,
-          text: editingStickyText.trim() || "Sticky note text",
+          text: finalVal && finalVal.trim() !== "" ? finalVal : "Double-click to edit note",
         };
       }
       return el;
@@ -111,28 +125,54 @@ export const useWhiteboardCanvas = ({
   };
 
   const handleStageMouseDown = (e) => {
-    console.log(
-      "Stage MouseDown: isReadOnly =",
-      isReadOnly,
-      "selectedTool =",
-      selectedTool,
-      "previewSnapshot =",
-      !!previewSnapshot,
-    );
     if (isReadOnly || previewSnapshot) return;
+
     if (editingStickyId) {
       finishStickyEditing();
+    }
+
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       return;
     }
 
-    const clickedOnEmpty =
-      e.target === e.target.getStage() || e.target.id() === "stage-background";
-    if (clickedOnEmpty) {
+    const clickedOnBg = e.target === e.currentTarget || e.target.id === "canvas-grid";
+    if (clickedOnBg) {
       setSelectedElementId(null);
     }
 
-    if (selectedTool !== "select") {
-      const { x, y } = getStageMouseCoords(e);
+    if (selectedTool === "select") {
+      if (clickedOnBg) {
+        setIsPanning(true);
+        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      }
+    } else if (selectedTool === "eraser") {
+      const { x, y } = getRelativeCoords(e.clientX, e.clientY);
+      const updated = elementsRef.current.filter((el) => {
+        if (el.type === "sticky" || el.type === "rectangle") {
+          return !(x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height);
+        }
+        if (el.type === "circle") {
+          const dx = x - el.cx;
+          const dy = y - el.cy;
+          return Math.sqrt(dx * dx + dy * dy) > el.r;
+        }
+        if (el.type === "stroke") {
+          return !el.points.some((p) => {
+            const dx = x - p.x;
+            const dy = y - p.y;
+            return Math.sqrt(dx * dx + dy * dy) < 15;
+          });
+        }
+        return true;
+      });
+      if (updated.length !== elementsRef.current.length) {
+        updateElementsAndHistory(updated);
+      }
+    } else {
+      const { x, y } = getRelativeCoords(e.clientX, e.clientY);
       const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
       if (selectedTool === "pencil") {
@@ -141,6 +181,7 @@ export const useWhiteboardCanvas = ({
           type: "stroke",
           points: [{ x, y }],
           color: currentColor,
+          strokeWidth: 4,
         };
         setIsDragging(true);
         setCurrentDrawingElement(newStroke);
@@ -176,9 +217,9 @@ export const useWhiteboardCanvas = ({
           width: 160,
           height: 160,
           text: "Double-click to edit note",
-          color: currentColor === "#eff4ff" ? "#fef08a" : currentColor,
+          color: currentColor,
         };
-        const newElements = [...elements, newSticky];
+        const newElements = [...elementsRef.current, newSticky];
         updateElementsAndHistory(newElements);
         setSelectedTool("select");
         setSelectedElementId(id);
@@ -189,40 +230,80 @@ export const useWhiteboardCanvas = ({
 
   const handleStageMouseMove = (e) => {
     if (previewSnapshot) return;
-    const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
 
-    if (pos && socketRef.current?.connected) {
+    if (socketRef?.current?.connected) {
       const now = Date.now();
       if (now - lastCursorEmitRef.current > 40) {
-        const scale = zoom / 100;
+        const { x, y } = getRelativeCoords(e.clientX, e.clientY);
         socketRef.current.emit("cursor-move", {
           boardId: board._id,
-          x: pos.x / scale,
-          y: pos.y / scale,
-          userId:
-            currentUser?._id ||
-            `guest_${Math.random().toString(36).substring(2, 6)}`,
+          x,
+          y,
+          userId: currentUser?._id || `guest_${Math.random().toString(36).substring(2, 6)}`,
           username: currentUser?.username || "Guest Collaborator",
         });
         lastCursorEmitRef.current = now;
       }
     }
 
+    if (isPanning) {
+      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+      return;
+    }
+
+    if (draggedElementId) {
+      const scale = zoom / 100;
+      const dx = (e.clientX - dragStart.x) / scale;
+      const dy = (e.clientY - dragStart.y) / scale;
+
+      const updated = elementsRef.current.map((el) => {
+        if (el.id === draggedElementId) {
+          if (el.type === "sticky" || el.type === "rectangle") {
+            return {
+              ...el,
+              x: dragInitialCoords.x + dx,
+              y: dragInitialCoords.y + dy,
+            };
+          } else if (el.type === "circle") {
+            return {
+              ...el,
+              cx: dragInitialCoords.x + dx,
+              cy: dragInitialCoords.y + dy,
+            };
+          } else if (el.type === "stroke") {
+            return {
+              ...el,
+              points: el.points.map((p, idx) => ({
+                x: dragInitialCoords.points[idx].x + dx,
+                y: dragInitialCoords.points[idx].y + dy,
+              })),
+            };
+          }
+        }
+        return el;
+      });
+
+      setElements(updated);
+
+      if (socketRef?.current?.connected) {
+        socketRef.current.emit("canvas-change", {
+          boardId: board._id,
+          elements: updated,
+        });
+      }
+      return;
+    }
+
     if (!isDragging) return;
-    console.log(
-      "Stage MouseMove: currentDrawingElement =",
-      currentDrawingElement,
-    );
 
     if (currentDrawingElement) {
-      const { x, y } = getStageMouseCoords(e);
+      const { x, y } = getRelativeCoords(e.clientX, e.clientY);
       const updated = { ...currentDrawingElement };
       if (updated.type === "stroke") {
         updated.points = [...updated.points, { x, y }];
       } else if (updated.type === "rectangle") {
-        updated.width = Math.max(0, x - updated.x);
-        updated.height = Math.max(0, y - updated.y);
+        updated.width = x - updated.x;
+        updated.height = y - updated.y;
       } else if (updated.type === "circle") {
         const dx = x - updated.cx;
         const dy = y - updated.cy;
@@ -233,15 +314,40 @@ export const useWhiteboardCanvas = ({
   };
 
   const handleStageMouseUp = () => {
-    console.log(
-      "Stage MouseUp: currentDrawingElement =",
-      currentDrawingElement,
-    );
     if (previewSnapshot) return;
+
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+
+    if (draggedElementId) {
+      setDraggedElementId(null);
+      triggerAutoSave(elementsRef.current);
+      return;
+    }
+
     setIsDragging(false);
 
     if (currentDrawingElement) {
-      const newElements = [...elements, currentDrawingElement];
+      let el = currentDrawingElement;
+      if (el.type === "rectangle") {
+        let x = el.x;
+        let y = el.y;
+        let w = el.width;
+        let h = el.height;
+        if (w < 0) {
+          x += w;
+          w = Math.abs(w);
+        }
+        if (h < 0) {
+          y += h;
+          h = Math.abs(h);
+        }
+        el = { ...el, x, y, width: w, height: h };
+      }
+
+      const newElements = [...elementsRef.current, el];
       updateElementsAndHistory(newElements);
       setCurrentDrawingElement(null);
     }
@@ -249,90 +355,23 @@ export const useWhiteboardCanvas = ({
 
   const handleShapeSelect = (e, id) => {
     if (selectedTool !== "select" || isReadOnly || previewSnapshot) return;
-    e.cancelBubble = true;
+    e.stopPropagation();
     setSelectedElementId(id);
-  };
 
-  const handleTransformEnd = (e) => {
-    if (isReadOnly || previewSnapshot) return;
-    const node = e.target;
-    const id = node.id();
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
+    if (editingStickyId === id) return;
 
-    node.scaleX(1);
-    node.scaleY(1);
-
-    const updated = elements.map((el) => {
-      if (el.id === id) {
-        if (el.type === "rectangle" || el.type === "sticky") {
-          return {
-            ...el,
-            x: node.x(),
-            y: node.y(),
-            width: Math.max(5, el.width * scaleX),
-            height: Math.max(5, el.height * scaleY),
-          };
-        } else if (el.type === "circle") {
-          return {
-            ...el,
-            cx: node.x(),
-            cy: node.y(),
-            r: Math.max(5, el.r * Math.max(scaleX, scaleY)),
-          };
-        }
+    const el = elementsRef.current.find((item) => item.id === id);
+    if (el) {
+      setDraggedElementId(id);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      if (el.type === "sticky" || el.type === "rectangle") {
+        setDragInitialCoords({ x: el.x, y: el.y });
+      } else if (el.type === "circle") {
+        setDragInitialCoords({ x: el.cx, y: el.cy });
+      } else if (el.type === "stroke") {
+        setDragInitialCoords({ points: [...el.points] });
       }
-      return el;
-    });
-
-    updateElementsAndHistory(updated);
-  };
-
-  const handleDragMove = (e) => {
-    if (isReadOnly || previewSnapshot) return;
-    const node = e.target;
-    const id = node.id();
-
-    setElements((prevElements) => {
-      let movedEl = null;
-      const updated = prevElements.map((el) => {
-        if (el.id !== id) return el;
-        if (el.type === "rectangle" || el.type === "sticky") {
-          movedEl = { ...el, x: node.x(), y: node.y() };
-          return movedEl;
-        } else if (el.type === "circle") {
-          movedEl = { ...el, cx: node.x(), cy: node.y() };
-          return movedEl;
-        } else if (el.type === "stroke") {
-          const dx = node.x();
-          const dy = node.y();
-          node.x(0);
-          node.y(0);
-          const newPoints = el.points.map((pt) => ({
-            x: pt.x + dx,
-            y: pt.y + dy,
-          }));
-          movedEl = { ...el, points: newPoints };
-          return movedEl;
-        }
-        return el;
-      });
-
-      if (movedEl && canvasMapRef.current) {
-        canvasMapRef.current.set(movedEl.id, movedEl);
-      }
-
-      triggerAutoSave(updated);
-
-      if (socketRef.current?.connected) {
-        socketRef.current.emit("canvas-change", {
-          boardId: board._id,
-          elements: updated,
-        });
-      }
-
-      return updated;
-    });
+    }
   };
 
   const handleDoubleClickSticky = (e, element) => {
@@ -341,25 +380,22 @@ export const useWhiteboardCanvas = ({
     if (element.type === "sticky") {
       setEditingStickyId(element.id);
       setEditingStickyText(
-        element.text === "Double-click to edit note" ? "" : element.text,
+        element.text === "Double-click to edit note" ? "" : element.text
       );
+      setDraggedElementId(null);  
     }
   };
 
   const handleDeleteSelected = () => {
     if (!selectedElementId) return;
-    const updated = elements.filter((el) => el.id !== selectedElementId);
+    const updated = elementsRef.current.filter((el) => el.id !== selectedElementId);
     updateElementsAndHistory(updated);
     setSelectedElementId(null);
     toast.success("Element deleted");
   };
 
   const handleClearCanvas = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to clear the entire whiteboard canvas?",
-      )
-    ) {
+    if (window.confirm("Are you sure you want to clear the entire whiteboard canvas?")) {
       updateElementsAndHistory([]);
       setSelectedElementId(null);
       toast.success("Canvas cleared");
@@ -367,9 +403,12 @@ export const useWhiteboardCanvas = ({
   };
 
   const isCanvasBusy =
-    isDragging || currentDrawingElement !== null || editingStickyId !== null;
+    isDragging || currentDrawingElement !== null || editingStickyId !== null || isPanning;
 
   return {
+    pan,
+    setPan,
+    isPanning,
     isDragging,
     currentDrawingElement,
     editingStickyId,
@@ -377,13 +416,11 @@ export const useWhiteboardCanvas = ({
     setEditingStickyText,
     history,
     redoStack,
-    getStageMouseCoords,
+    getRelativeCoords,
     handleStageMouseDown,
     handleStageMouseMove,
     handleStageMouseUp,
     handleShapeSelect,
-    handleTransformEnd,
-    handleDragMove,
     handleDoubleClickSticky,
     finishStickyEditing,
     handleDeleteSelected,
