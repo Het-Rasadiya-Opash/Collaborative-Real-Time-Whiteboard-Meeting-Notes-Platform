@@ -1,13 +1,12 @@
-import React from "react";
 import {
-  Pencil,
-  MousePointer,
-  StickyNote,
-  Square,
   Circle,
-  Trash2,
   Eraser,
+  MousePointer,
   MoveRight,
+  Pencil,
+  Square,
+  StickyNote,
+  Trash2,
   Type,
 } from "lucide-react";
 

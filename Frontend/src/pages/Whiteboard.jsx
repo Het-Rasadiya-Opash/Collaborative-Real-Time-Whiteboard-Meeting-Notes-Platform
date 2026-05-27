@@ -1,22 +1,22 @@
-import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
-import toast from "react-hot-toast";
 import { FileText } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 
-import PresenceLayer from "../components/whiteboard/PresenceLayer";
-import WhiteboardToolbar from "../components/whiteboard/WhiteboardToolbar";
-import WhiteboardCanvas from "../components/whiteboard/WhiteboardCanvas";
 import NotesPanel from "../components/whiteboard/NotesPanel";
+import PresenceLayer from "../components/whiteboard/PresenceLayer";
+import WhiteboardCanvas from "../components/whiteboard/WhiteboardCanvas";
+import WhiteboardToolbar from "../components/whiteboard/WhiteboardToolbar";
 
-import { WhiteboardStyles } from "../components/whiteboard/WhiteboardStyles";
-import { WhiteboardSidebar } from "../components/whiteboard/WhiteboardSidebar";
-import { WhiteboardHeader } from "../components/whiteboard/WhiteboardHeader";
 import { ShareModal } from "../components/whiteboard/ShareModal";
 import { SnapshotModal } from "../components/whiteboard/SnapshotModal";
+import { WhiteboardHeader } from "../components/whiteboard/WhiteboardHeader";
+import { WhiteboardSidebar } from "../components/whiteboard/WhiteboardSidebar";
+import { WhiteboardStyles } from "../components/whiteboard/WhiteboardStyles";
 
-import { useWhiteboardSocket } from "../hooks/useWhiteboardSocket";
 import { useWhiteboardCanvas } from "../hooks/useWhiteboardCanvas";
+import { useWhiteboardSocket } from "../hooks/useWhiteboardSocket";
 
 const COLOR_PALETTE = [
   { name: "Blue", hex: "#2563eb" },

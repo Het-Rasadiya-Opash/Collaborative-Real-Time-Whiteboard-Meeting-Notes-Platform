@@ -1,4 +1,3 @@
-import React from "react";
 import { History, X } from "lucide-react";
 
 export const SnapshotModal = ({

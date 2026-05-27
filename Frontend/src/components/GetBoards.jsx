@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import apiRequest from "../utils/apiRequest";
-import { BarChart3, Calendar, User, Briefcase } from "lucide-react";
+import { BarChart3, Briefcase, Calendar, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import apiRequest from "../utils/apiRequest";
 import { formatDate } from "../utils/utilities";
 
 const GetBoards = ({ onViewAllBoards }) => {

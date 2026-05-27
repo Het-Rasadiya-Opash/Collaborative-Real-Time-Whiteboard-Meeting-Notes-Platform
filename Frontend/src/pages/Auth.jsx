@@ -1,19 +1,20 @@
-import { useState, useEffect, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
 import {
-  User,
   AlertCircle,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
   Briefcase,
   ChevronDown,
-  Loader2,
-  MailCheck,
+  Eye,
+  EyeOff,
   Layers,
+  Loader2,
+  Lock,
+  Mail,
+  MailCheck,
+  User,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 import {
   clearError,
   setCurrentUser,
@@ -21,7 +22,6 @@ import {
   setLoading,
 } from "../features/usersSlice";
 import apiRequest from "../utils/apiRequest";
-import toast from "react-hot-toast";
 
 const Auth = ({ defaultMode = "login" }) => {
   const [mode, setMode] = useState(defaultMode);

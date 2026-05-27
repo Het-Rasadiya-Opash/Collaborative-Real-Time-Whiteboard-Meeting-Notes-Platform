@@ -30,8 +30,12 @@ const notesSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          enum: ["Pending", "Completed"],
-          default: "Pending",
+          enum: ["PENDING", "COMPLETED"],
+          default: "PENDING",
+        },
+        isManual: {
+          type: Boolean,
+          default: false,
         },
       },
     ],

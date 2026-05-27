@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Toaster } from "react-hot-toast";
-import { Route, Routes } from "react-router";
-import Home from "./pages/Home";
-import Auth from "./pages/Auth";
-import PublicBoard from "./pages/PublicBoard";
 import { useDispatch } from "react-redux";
-import apiRequest from "./utils/apiRequest";
-import { setCheckingAuth, setCurrentUser } from "./features/usersSlice";
+import { Route, Routes } from "react-router";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { setCheckingAuth, setCurrentUser } from "./features/usersSlice";
+import Auth from "./pages/Auth";
+import Home from "./pages/Home";
+import PublicBoard from "./pages/PublicBoard";
+import apiRequest from "./utils/apiRequest";
 
 const App = () => {
   const dispatch = useDispatch();

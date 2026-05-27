@@ -1,21 +1,21 @@
 import express from "express";
-import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   createBoard,
-  list,
-  get,
-  toggleStar,
-  generateShareLink,
-  revokeShareLink,
-  getPublicBoard,
-  restore,
-  snapShotList,
-  updateBoard,
   createSnapshot,
-  exportPNG,
   exportPDF,
+  exportPNG,
+  generateShareLink,
+  get,
   getAllBoards,
+  getPublicBoard,
+  list,
+  restore,
+  revokeShareLink,
+  snapShotList,
+  toggleStar,
+  updateBoard,
 } from "../controllers/board.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { authorizeRole } from "../middlewares/authRole.middleware.js";
 
 const router = express.Router();

@@ -1,20 +1,18 @@
-import { useState } from "react";
+import {
+  FileText,
+  HelpCircle,
+  Layers,
+  LayoutDashboard,
+  LogOut,
+  PenTool,
+  Settings,
+  X
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
-import apiRequest from "../utils/apiRequest";
 import { logout } from "../features/usersSlice";
-import {
-  LayoutDashboard,
-  PenTool,
-  FileText,
-  Users,
-  Settings,
-  HelpCircle,
-  LogOut,
-  X,
-  Layers,
-} from "lucide-react";
+import apiRequest from "../utils/apiRequest";
 
 const Sidebar = ({ activeNav, setActiveNav, isOpen, setIsOpen }) => {
   const dispatch = useDispatch();

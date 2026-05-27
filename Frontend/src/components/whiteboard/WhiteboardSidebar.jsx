@@ -1,15 +1,12 @@
-import React from "react";
 import {
-  LayoutDashboard,
-  PenTool,
   FileText,
-  Users,
-  Settings,
-  X,
   HelpCircle,
-  LogOut,
-  StickyNotes,
   Layers,
+  LayoutDashboard,
+  LogOut,
+  PenTool,
+  Settings,
+  X
 } from "lucide-react";
 
 export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {

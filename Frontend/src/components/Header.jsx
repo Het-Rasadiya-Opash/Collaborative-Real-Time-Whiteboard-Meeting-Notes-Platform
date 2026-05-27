@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { Bell, LogOut, Menu, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import apiRequest from "../utils/apiRequest";
 import { logout } from "../features/usersSlice";
-import { X, User, LogOut, Bell, Menu } from "lucide-react";
-import toast from "react-hot-toast";
+import apiRequest from "../utils/apiRequest";
 
 const Header = ({ onToggleSidebar }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);

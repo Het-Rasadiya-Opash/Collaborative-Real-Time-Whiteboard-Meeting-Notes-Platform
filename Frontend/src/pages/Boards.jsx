@@ -1,26 +1,24 @@
+import {
+  ArrowLeft,
+  Briefcase,
+  Brush,
+  Clock,
+  Filter,
+  Grid,
+  LayoutDashboard,
+  Lock,
+  Palette,
+  PenTool,
+  PlusCircle,
+  PlusSquare,
+  Search,
+  Star,
+  Workflow,
+  X
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
-import {
-  Briefcase,
-  ArrowLeft,
-  Filter,
-  Plus,
-  Search,
-  Palette,
-  Star,
-  PenTool,
-  Brush,
-  Workflow,
-  LayoutDashboard,
-  MoreVertical,
-  PlusCircle,
-  X,
-  Clock,
-  Grid,
-  Lock,
-  PlusSquare,
-} from "lucide-react";
 
 const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const [boards, setBoards] = useState([]);

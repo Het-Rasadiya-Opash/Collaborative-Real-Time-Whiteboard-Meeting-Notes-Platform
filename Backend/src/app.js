@@ -1,13 +1,13 @@
 import cookieParser from "cookie-parser";
-import express from "express";
 import cors from "cors";
+import express from "express";
 import errorHandler from "./middlewares/error.middleware.js";
 export const app = express();
 
-import userRoutes from "./routes/users.route.js";
-import workspaceRoutes from "./routes/workspace.route.js";
 import boardRoutes from "./routes/board.route.js";
 import notesRoutes from "./routes/notes.route.js";
+import userRoutes from "./routes/users.route.js";
+import workspaceRoutes from "./routes/workspace.route.js";
 
 app.use(
   cors({

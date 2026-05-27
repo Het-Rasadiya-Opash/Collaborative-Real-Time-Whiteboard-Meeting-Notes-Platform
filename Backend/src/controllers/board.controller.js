@@ -1,13 +1,13 @@
-import crypto from "crypto";
-import * as Y from "yjs";
 import { createCanvas } from "canvas";
+import crypto from "crypto";
 import PDFDocument from "pdfkit";
+import * as Y from "yjs";
 import boardModel from "../models/board.model.js";
+import userModel from "../models/users.model.js";
+import workSpaceModel from "../models/workspace.model.js";
+import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import workSpaceModel from "../models/workspace.model.js";
-import userModel from "../models/users.model.js";
 
 export const createBoard = asyncHandler(async (req, res) => {
   const { workspaceId } = req.params;

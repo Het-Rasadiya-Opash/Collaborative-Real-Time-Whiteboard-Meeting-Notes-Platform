@@ -2,19 +2,14 @@ import {
   ArrowRight,
   Briefcase,
   Calendar,
-  ExternalLink,
   Mail,
-  Plus,
+  Megaphone,
+  Palette,
+  PlusSquare,
   Rocket,
-  Shield,
   Trash2,
   UserPlus,
-  Users,
-  X,
-  Palette,
-  Megaphone,
-  PlusSquare,
-  TrendingUp,
+  X
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";

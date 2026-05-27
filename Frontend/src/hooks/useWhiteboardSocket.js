@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import * as Y from "yjs";
-import toast from "react-hot-toast";
 import apiRequest from "../utils/apiRequest";
 
 function getCaretCharacterOffsetWithin(element) {

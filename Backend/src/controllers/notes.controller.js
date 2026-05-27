@@ -1,9 +1,9 @@
+import boardModel from "../models/board.model.js";
+import notesModel from "../models/notes.model.js";
+import workSpaceModel from "../models/workspace.model.js";
+import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import notesModel from "../models/notes.model.js";
-import boardModel from "../models/board.model.js";
-import workSpaceModel from "../models/workspace.model.js";
 
 export const get = asyncHandler(async (req, res) => {
   const { boardId } = req.params;
@@ -200,7 +200,7 @@ export const extractActions = asyncHandler(async (req, res) => {
             task,
             assignee,
             dueDate,
-            status: "Pending",
+            status: "PENDING",
           });
         }
       }
@@ -220,7 +220,7 @@ export const extractActions = asyncHandler(async (req, res) => {
         task: "Implement the secure API endpoints for collaborative notes integration",
         assignee: "Backend Developer",
         dueDate: "By Next Wednesday",
-        status: "Pending",
+        status: "PENDING",
       });
     }
     if (
@@ -233,7 +233,7 @@ export const extractActions = asyncHandler(async (req, res) => {
         task: "Refine the whiteboard canvas styling and responsiveness across devices",
         assignee: "UI/UX Designer",
         dueDate: "By Friday EOD",
-        status: "Pending",
+        status: "PENDING",
       });
     }
     if (
@@ -245,7 +245,7 @@ export const extractActions = asyncHandler(async (req, res) => {
         task: "Update database indexes and optimize queries for faster real-time sync",
         assignee: "Database Administrator",
         dueDate: "In 3 days",
-        status: "Pending",
+        status: "PENDING",
       });
     }
     if (
@@ -257,7 +257,7 @@ export const extractActions = asyncHandler(async (req, res) => {
         task: "Write unit tests for the newly added Notes and AI extraction controllers",
         assignee: "QA Engineer",
         dueDate: "Next Monday",
-        status: "Pending",
+        status: "PENDING",
       });
     }
 
@@ -267,13 +267,13 @@ export const extractActions = asyncHandler(async (req, res) => {
           task: "Review the whiteboard meeting notes and finalize next sprint objectives",
           assignee: "Project Manager",
           dueDate: "Tomorrow by 10 AM",
-          status: "Pending",
+          status: "PENDING",
         },
         {
           task: "Share the updated whiteboard board link with all external stakeholders",
           assignee: "Meeting Facilitator",
           dueDate: "EOD today",
-          status: "Pending",
+          status: "PENDING",
         },
       );
     }
@@ -289,11 +289,20 @@ export const extractActions = asyncHandler(async (req, res) => {
       actionItems,
     });
   } else {
-    notesDoc.actionItems = actionItems;
+    
+    const manualItems = notesDoc.actionItems.filter(item => item.isManual === true);
+    notesDoc.actionItems = [...manualItems, ...actionItems];
     if (text) {
       notesDoc.textContent = text;
     }
     await notesDoc.save();
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`board_${boardId}`).emit("action-items-update", {
+      actionItems: notesDoc.actionItems,
+    });
   }
 
   await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -313,8 +322,8 @@ export const updateActionItemStatus = asyncHandler(async (req, res) => {
   const { boardId, itemId } = req.params;
   const { status } = req.body;
 
-  if (!status || !["Pending", "Completed"].includes(status)) {
-    throw new ApiError(400, "Invalid status. Must be Pending or Completed");
+  if (!status || !["PENDING", "COMPLETED"].includes(status)) {
+    throw new ApiError(400, "Invalid status. Must be PENDING or COMPLETED");
   }
 
   const notesDoc = await notesModel.findOne({ board: boardId });
@@ -329,6 +338,13 @@ export const updateActionItemStatus = asyncHandler(async (req, res) => {
 
   actionItem.status = status;
   await notesDoc.save();
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`board_${boardId}`).emit("action-items-update", {
+      actionItems: notesDoc.actionItems,
+    });
+  }
 
   return res
     .status(200)
@@ -399,11 +415,19 @@ export const createActionItem = asyncHandler(async (req, res) => {
     task: task.trim(),
     assignee: finalAssignee,
     dueDate: dueDate ? dueDate.trim() : "",
-    status: "Pending",
+    status: "PENDING",
+    isManual: true,
   };
 
   notesDoc.actionItems.push(newItem);
   await notesDoc.save();
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`board_${boardId}`).emit("action-items-update", {
+      actionItems: notesDoc.actionItems,
+    });
+  }
 
   const addedItem = notesDoc.actionItems[notesDoc.actionItems.length - 1];
 
@@ -458,6 +482,13 @@ export const clearAll = asyncHandler(async (req, res) => {
   } else {
     notesDoc.actionItems = [];
     await notesDoc.save();
+  }
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`board_${boardId}`).emit("action-items-update", {
+      actionItems: notesDoc.actionItems,
+    });
   }
 
   return res

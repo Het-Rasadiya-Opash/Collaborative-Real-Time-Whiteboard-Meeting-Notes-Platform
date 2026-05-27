@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { AlertCircle, Clock, Home, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import apiRequest from "../utils/apiRequest";
 import Whiteboard from "./Whiteboard";
-import { Loader2, AlertCircle, Home, Clock } from "lucide-react";
 
 const PublicBoard = () => {
   const { token } = useParams();

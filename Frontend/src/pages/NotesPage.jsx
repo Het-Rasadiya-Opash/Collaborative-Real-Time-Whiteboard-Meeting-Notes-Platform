@@ -1,14 +1,25 @@
+import {
+  ArrowLeft,
+  Briefcase,
+  Calendar,
+  CheckSquare,
+  Clock,
+  Copy,
+  ExternalLink,
+  FileText,
+  ListTodo,
+  Loader2,
+  Lock,
+  PenTool,
+  Search,
+  Sparkles,
+  Trash2,
+  User
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
-import {
-  Briefcase, ArrowLeft, Search, PenTool, Clock, FileText,
-  CheckCircle, Copy, ExternalLink, Lock, Calendar, User,
-  Sparkles, Loader2, ListTodo, CheckSquare, LayoutDashboard,
-  PinIcon, ClipboardList, Users, Settings, PlusCircle,
-  HelpCircle, LogOut, Bell, History, ChevronRight, Trash2,
-} from "lucide-react";
-import toast from "react-hot-toast";
 
 const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const [boards, setBoards] = useState([]);
@@ -22,7 +33,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   const { currentUser } = useSelector((state) => state.users);
 
   const myMember = workspace?.members?.find(
-    (m) => (m.user?._id || m.user) === currentUser?._id
+    (m) => (m.user?._id || m.user) === currentUser?._id,
   );
   const myRole =
     workspace?.owner?._id === currentUser?._id ||
@@ -48,7 +59,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           apiRequest
             .get(`/notes/${b._id}`)
             .then((r) => ({ boardId: b._id, note: r.data?.data }))
-            .catch(() => ({ boardId: b._id, note: null }))
+            .catch(() => ({ boardId: b._id, note: null })),
         );
         const notesResults = await Promise.all(notePromises);
         if (!isMounted) return;
@@ -58,28 +69,43 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
         });
         setNotesData(notesMap);
       })
-      .catch(() => { if (isMounted) toast.error("Failed to load workspace boards."); })
-      .finally(() => { if (isMounted) setIsLoadingBoards(false); });
+      .catch(() => {
+        if (isMounted) toast.error("Failed to load workspace boards.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingBoards(false);
+      });
 
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [workspace]);
 
   const handleToggleActionItem = async (boardId, idx, itemId) => {
     const boardNotes = notesData[boardId];
     if (!boardNotes) return;
     const actionItem = boardNotes.actionItems[idx];
-    const newStatus = actionItem.status === "Completed" ? "Pending" : "Completed";
+    const newStatus =
+      actionItem.status === "COMPLETED" ? "PENDING" : "COMPLETED";
     const updatedActionItems = [...boardNotes.actionItems];
     updatedActionItems[idx] = { ...actionItem, status: newStatus };
-    setNotesData((prev) => ({ ...prev, [boardId]: { ...boardNotes, actionItems: updatedActionItems } }));
+    setNotesData((prev) => ({
+      ...prev,
+      [boardId]: { ...boardNotes, actionItems: updatedActionItems },
+    }));
     if (itemId) {
       try {
-        await apiRequest.patch(`/notes/${boardId}/ai-action-items/${itemId}`, { status: newStatus });
+        await apiRequest.patch(`/notes/${boardId}/ai-action-items/${itemId}`, {
+          status: newStatus,
+        });
       } catch {
         toast.error("Failed to update status on server.");
         const rolledBack = [...boardNotes.actionItems];
         rolledBack[idx] = actionItem;
-        setNotesData((prev) => ({ ...prev, [boardId]: { ...boardNotes, actionItems: rolledBack } }));
+        setNotesData((prev) => ({
+          ...prev,
+          [boardId]: { ...boardNotes, actionItems: rolledBack },
+        }));
       }
     }
   };
@@ -90,17 +116,26 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     const boardObj = boards.find((b) => b._id === boardId);
     if (!boardObj) return;
     const textContent = boardNotes?.textContent || boardObj.meetingNotes || "";
-    if (!textContent.trim()) { toast.error("Notes are empty. Write some notes first!"); return; }
+    if (!textContent.trim()) {
+      toast.error("Notes are empty. Write some notes first!");
+      return;
+    }
     setIsLoadingActions(true);
     try {
-      const response = await apiRequest.post(`/notes/${boardId}/ai-action-items`, { notesText: textContent });
+      const response = await apiRequest.post(
+        `/notes/${boardId}/ai-action-items`,
+        { notesText: textContent },
+      );
       const updatedNotes = response.data?.data;
       if (updatedNotes) {
         setNotesData((prev) => ({ ...prev, [boardId]: updatedNotes }));
         toast.success("AI Action Items extracted successfully!");
       }
-    } catch { toast.error("Failed to extract action items."); }
-    finally { setIsLoadingActions(false); }
+    } catch {
+      toast.error("Failed to extract action items.");
+    } finally {
+      setIsLoadingActions(false);
+    }
   };
 
   const handleClearAllActionItems = async (boardId) => {
@@ -108,7 +143,9 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
       toast.error("You are not authorized to clear action items.");
       return;
     }
-    const confirmClear = window.confirm("Are you sure you want to clear all action items for this board?");
+    const confirmClear = window.confirm(
+      "Are you sure you want to clear all action items for this board?",
+    );
     if (!confirmClear) return;
 
     try {
@@ -119,8 +156,8 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           ...prev,
           [boardId]: {
             ...boardNotes,
-            actionItems: []
-          }
+            actionItems: [],
+          },
         };
       });
       toast.success("Action items cleared successfully!");
@@ -133,7 +170,10 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     const boardNotes = notesData[boardId];
     if (!boardNotes?.actionItems?.length) return;
     const markdown = boardNotes.actionItems
-      .map((item) => `- [${item.status === "Completed" ? "x" : " "}] ${item.task} (Assignee: ${item.assignee || "Unassigned"}, Due: ${item.dueDate || "N/A"})`)
+      .map(
+        (item) =>
+          `- [${item.status === "COMPLETED" ? "x" : " "}] ${item.task} (Assignee: ${item.assignee || "Unassigned"}, Due: ${item.dueDate || "N/A"})`,
+      )
       .join("\n");
     navigator.clipboard.writeText(markdown);
     toast.success("Copied to clipboard as Markdown!");
@@ -150,15 +190,21 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const getActionItemStats = (boardId) => {
     const note = notesData[boardId];
-    if (!note?.actionItems?.length) return { total: 0, completed: 0, percent: 0 };
+    if (!note?.actionItems?.length)
+      return { total: 0, COMPLETED: 0, percent: 0 };
     const total = note.actionItems.length;
-    const completed = note.actionItems.filter((i) => i.status === "Completed").length;
-    return { total, completed, percent: Math.round((completed / total) * 100) };
+    const COMPLETED = note.actionItems.filter(
+      (i) => i.status === "COMPLETED",
+    ).length;
+    return { total, COMPLETED, percent: Math.round((COMPLETED / total) * 100) };
   };
 
   /* ── No workspace selected ── */
@@ -170,9 +216,12 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
             <Briefcase size={32} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-on-surface mb-2">No Workspace Selected</h2>
+            <h2 className="text-xl font-black text-on-surface mb-2">
+              No Workspace Selected
+            </h2>
             <p className="text-sm text-on-surface-variant leading-relaxed">
-              Launch a collaborative workspace to view meeting notes and action items.
+              Launch a collaborative workspace to view meeting notes and action
+              items.
             </p>
           </div>
           <button
@@ -188,14 +237,20 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   }
 
   const filteredBoards = boards.filter((board) => {
-    const titleMatch = board.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const noteMatch = (notesData[board._id]?.textContent || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const titleMatch = board.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const noteMatch = (notesData[board._id]?.textContent || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     return titleMatch || noteMatch;
   });
 
   const selectedBoard = boards.find((b) => b._id === selectedBoardId);
   const selectedNotes = selectedBoardId ? notesData[selectedBoardId] : null;
-  const selectedStats = selectedBoardId ? getActionItemStats(selectedBoardId) : { total: 0, completed: 0, percent: 0 };
+  const selectedStats = selectedBoardId
+    ? getActionItemStats(selectedBoardId)
+    : { total: 0, COMPLETED: 0, percent: 0 };
 
   return (
     <div className="max-w-7xl mx-auto py-6 md:py-8 space-y-6 animate-in fade-in duration-300">
@@ -205,7 +260,8 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
             {workspace.name} Notes &amp; Actions
           </h2>
           <p className="text-sm text-on-surface-variant leading-relaxed">
-            Track agendas, meeting reviews, and centralized AI tasks in real-time.
+            Track agendas, meeting reviews, and centralized AI tasks in
+            real-time.
           </p>
         </div>
         <button
@@ -218,7 +274,10 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
       </div>
 
       <div className="relative max-w-lg">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+        <Search
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant"
+          size={16}
+        />
         <input
           type="text"
           placeholder="Search notes or boards..."
@@ -231,21 +290,24 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
       {isLoadingBoards ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-on-surface-variant animate-pulse font-semibold">Retrieving notes database...</p>
+          <p className="text-sm text-on-surface-variant animate-pulse font-semibold">
+            Retrieving notes database...
+          </p>
         </div>
       ) : boards.length === 0 ? (
         <div className="glass-card rounded-2xl py-20 text-center flex flex-col items-center space-y-4">
           <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-primary/70">
             <FileText size={24} />
           </div>
-          <h3 className="text-base font-bold text-on-surface">No Boards Created</h3>
+          <h3 className="text-base font-bold text-on-surface">
+            No Boards Created
+          </h3>
           <p className="text-xs text-on-surface-variant max-w-xs leading-relaxed">
             Create a whiteboard room from the Boards dashboard first.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
           <div className="lg:col-span-4 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant px-1">
               Whiteboard Sessions ({filteredBoards.length})
@@ -272,7 +334,9 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     style={{ transform: "none" }}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className={`font-bold text-base line-clamp-1 ${isSelected ? "text-primary" : "text-on-surface"}`}>
+                      <h4
+                        className={`font-bold text-base line-clamp-1 ${isSelected ? "text-primary" : "text-on-surface"}`}
+                      >
                         {board.title}
                       </h4>
                       <span className="text-xs text-on-surface-variant whitespace-nowrap ml-2">
@@ -287,7 +351,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                         <div className="flex justify-between items-center text-xs font-bold">
                           <span className="text-primary">AI Action Items</span>
                           <span className="text-on-surface-variant">
-                            {stats.completed}/{stats.total} ({stats.percent}%)
+                            {stats.COMPLETED}/{stats.total} ({stats.percent}%)
                           </span>
                         </div>
                         <div className="w-full bg-outline-variant/40 rounded-full h-1">
@@ -312,13 +376,20 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
 
           <div className="lg:col-span-8">
             {selectedBoard ? (
-              <div className="glass-card rounded-2xl overflow-hidden" style={{ transform: "none" }}>
+              <div
+                className="glass-card rounded-2xl overflow-hidden"
+                style={{ transform: "none" }}
+              >
                 <div className="p-6 border-b border-outline-variant bg-white/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <h2 className="text-xl font-bold text-on-surface">{selectedBoard.title}</h2>
+                    <h2 className="text-xl font-bold text-on-surface">
+                      {selectedBoard.title}
+                    </h2>
                     <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-1">
                       <Clock size={13} />
-                      <span>Last updated {formatTimeAgo(selectedBoard.updatedAt)}</span>
+                      <span>
+                        Last updated {formatTimeAgo(selectedBoard.updatedAt)}
+                      </span>
                     </div>
                   </div>
                   <button
@@ -355,7 +426,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     AI Action Items
                     {selectedStats.total > 0 && (
                       <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full font-bold">
-                        {selectedStats.completed}/{selectedStats.total}
+                        {selectedStats.COMPLETED}/{selectedStats.total}
                       </span>
                     )}
                   </button>
@@ -365,20 +436,30 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                   <div>
                     {activeTab === "notes" && (
                       <div>
-                        {selectedNotes?.textContent || selectedBoard.meetingNotes ? (
+                        {selectedNotes?.textContent ||
+                        selectedBoard.meetingNotes ? (
                           <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm">
                             <article
                               className="text-sm text-on-surface-variant leading-relaxed"
                               dangerouslySetInnerHTML={{
-                                __html: selectedNotes?.textContent || selectedBoard.meetingNotes,
+                                __html:
+                                  selectedNotes?.textContent ||
+                                  selectedBoard.meetingNotes,
                               }}
                             />
                           </div>
                         ) : (
                           <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-white/50">
-                            <FileText className="mx-auto text-outline/50 mb-3" size={32} />
-                            <p className="text-sm text-on-surface-variant font-medium">No notes for this board.</p>
-                            <p className="text-xs text-outline mt-1">Open the whiteboard to start writing.</p>
+                            <FileText
+                              className="mx-auto text-outline/50 mb-3"
+                              size={32}
+                            />
+                            <p className="text-sm text-on-surface-variant font-medium">
+                              No notes for this board.
+                            </p>
+                            <p className="text-xs text-outline mt-1">
+                              Open the whiteboard to start writing.
+                            </p>
                           </div>
                         )}
                       </div>
@@ -403,14 +484,18 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                               {selectedStats.total > 0 && (
                                 <>
                                   <button
-                                    onClick={() => handleCopyMarkdown(selectedBoardId)}
+                                    onClick={() =>
+                                      handleCopyMarkdown(selectedBoardId)
+                                    }
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold text-on-surface transition-colors cursor-pointer"
                                   >
                                     <Copy size={12} />
                                     Copy Markdown
                                   </button>
                                   <button
-                                    onClick={() => handleClearAllActionItems(selectedBoardId)}
+                                    onClick={() =>
+                                      handleClearAllActionItems(selectedBoardId)
+                                    }
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                                   >
                                     <Trash2 size={12} />
@@ -419,14 +504,24 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                                 </>
                               )}
                               <button
-                                onClick={() => handleExtractActions(selectedBoardId)}
+                                onClick={() =>
+                                  handleExtractActions(selectedBoardId)
+                                }
                                 disabled={isLoadingActions}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white font-bold rounded-lg text-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                               >
                                 {isLoadingActions ? (
-                                  <><Loader2 size={12} className="animate-spin" /> Analyzing...</>
+                                  <>
+                                    <Loader2
+                                      size={12}
+                                      className="animate-spin"
+                                    />{" "}
+                                    Analyzing...
+                                  </>
                                 ) : (
-                                  <><Sparkles size={12} /> Sync AI Tasks</>
+                                  <>
+                                    <Sparkles size={12} /> Sync AI Tasks
+                                  </>
                                 )}
                               </button>
                             </div>
@@ -436,12 +531,14 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                         {selectedNotes?.actionItems?.length > 0 ? (
                           <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
                             {selectedNotes.actionItems.map((item, idx) => {
-                              const isCompleted = item.status === "Completed";
+                              const isCompleted = item.status === "COMPLETED";
                               return (
                                 <div
                                   key={item._id || idx}
                                   className={`p-4 rounded-xl border bg-white shadow-sm transition-all ${
-                                    isCompleted ? "border-outline-variant/30 opacity-60" : "border-outline-variant hover:border-blue-200"
+                                    isCompleted
+                                      ? "border-outline-variant/30 opacity-60"
+                                      : "border-outline-variant hover:border-blue-200"
                                   }`}
                                 >
                                   <div className="flex gap-3 items-start">
@@ -449,29 +546,41 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                                       type="checkbox"
                                       checked={isCompleted}
                                       disabled={!canModify}
-                                      onChange={() => handleToggleActionItem(selectedBoardId, idx, item._id)}
+                                      onChange={() =>
+                                        handleToggleActionItem(
+                                          selectedBoardId,
+                                          idx,
+                                          item._id,
+                                        )
+                                      }
                                       className="mt-0.5 h-4 w-4 rounded text-primary border-outline-variant focus:ring-primary/20 cursor-pointer disabled:pointer-events-none"
                                     />
                                     <div className="flex-1 space-y-2.5">
-                                      <p className={`text-sm font-medium text-on-surface leading-relaxed ${isCompleted ? "line-through opacity-60" : ""}`}>
+                                      <p
+                                        className={`text-sm font-medium text-on-surface leading-relaxed ${isCompleted ? "line-through opacity-60" : ""}`}
+                                      >
                                         {item.task}
                                       </p>
                                       <div className="flex flex-wrap gap-2">
                                         {item.assignee && (
                                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/10">
-                                            <User size={10} />{item.assignee}
+                                            <User size={10} />
+                                            {item.assignee}
                                           </span>
                                         )}
                                         {item.dueDate && (
                                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant border border-outline-variant">
-                                            <Calendar size={10} />{item.dueDate}
+                                            <Calendar size={10} />
+                                            {item.dueDate}
                                           </span>
                                         )}
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
-                                          isCompleted
-                                            ? "bg-green-500/10 text-green-600 border border-green-500/10"
-                                            : "bg-amber-500/10 text-amber-600 border border-amber-500/10"
-                                        }`}>
+                                        <span
+                                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
+                                            isCompleted
+                                              ? "bg-green-500/10 text-green-600 border border-green-500/10"
+                                              : "bg-amber-500/10 text-amber-600 border border-amber-500/10"
+                                          }`}
+                                        >
                                           {item.status}
                                         </span>
                                       </div>
@@ -483,12 +592,21 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                           </div>
                         ) : (
                           <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-white/50">
-                            <CheckSquare className="mx-auto text-outline/50 mb-3" size={32} />
-                            <p className="text-xs text-on-surface-variant font-medium">No action items yet.</p>
+                            <CheckSquare
+                              className="mx-auto text-outline/50 mb-3"
+                              size={32}
+                            />
+                            <p className="text-xs text-on-surface-variant font-medium">
+                              No action items yet.
+                            </p>
                             {canModify ? (
-                              <p className="text-[10px] text-outline mt-1">Click "Sync AI Tasks" to extract items using AI!</p>
+                              <p className="text-[10px] text-outline mt-1">
+                                Click "Sync AI Tasks" to extract items using AI!
+                              </p>
                             ) : (
-                              <p className="text-[10px] text-outline mt-1">No items extracted for this board yet.</p>
+                              <p className="text-[10px] text-outline mt-1">
+                                No items extracted for this board yet.
+                              </p>
                             )}
                           </div>
                         )}
@@ -500,12 +618,17 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     <div className="border-t border-outline-variant/40 pt-5 mt-4">
                       <div className="flex justify-between items-center mb-2">
                         <div>
-                          <p className="text-sm font-bold text-on-surface">Workspace Session Progress</p>
+                          <p className="text-sm font-bold text-on-surface">
+                            Workspace Session Progress
+                          </p>
                           <p className="text-xs text-on-surface-variant">
-                            Completed {selectedStats.completed} of {selectedStats.total} total extracted tasks.
+                            COMPLETED {selectedStats.COMPLETED} of{" "}
+                            {selectedStats.total} total extracted tasks.
                           </p>
                         </div>
-                        <span className="text-base font-black text-primary">{selectedStats.percent}%</span>
+                        <span className="text-base font-black text-primary">
+                          {selectedStats.percent}%
+                        </span>
                       </div>
                       <div className="w-full h-2.5 bg-outline-variant/30 rounded-full overflow-hidden border border-outline-variant/20">
                         <div
@@ -520,7 +643,10 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                 </div>
               </div>
             ) : (
-              <div className="glass-card rounded-2xl flex flex-col items-center justify-center py-24" style={{ transform: "none" }}>
+              <div
+                className="glass-card rounded-2xl flex flex-col items-center justify-center py-24"
+                style={{ transform: "none" }}
+              >
                 <FileText className="text-outline/40 mb-3" size={32} />
                 <p className="text-xs text-on-surface-variant">
                   Select a session from the left to display its details.

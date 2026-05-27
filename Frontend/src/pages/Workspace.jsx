@@ -2,20 +2,14 @@ import {
   Briefcase,
   Lock,
   Plus,
-  PlusCircle,
-  TrendingUp,
-  ShieldCheck,
-  Brush,
-  FileText,
-  Terminal,
-  BarChart3,
+  PlusCircle
 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
+import GetBoards from "../components/GetBoards";
 import GetWorkSpace from "../components/GetWorkSpace";
 import apiRequest from "../utils/apiRequest";
-import GetBoards from "../components/GetBoards";
 
 const Workspace = ({ onLaunchWorkspace, onViewAllBoards }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);

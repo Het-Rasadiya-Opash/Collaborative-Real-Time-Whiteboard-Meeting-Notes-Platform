@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
-import { Stage, Layer, Line, Rect, Circle, Arrow, Text, Group, Transformer } from "react-konva";
-import { ZoomIn, ZoomOut, Undo2, Redo2 } from "lucide-react";
+import { Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Arrow, Circle, Group, Layer, Line, Rect, Stage, Text, Transformer } from "react-konva";
 
 const getStickyLabel = (color) => {
   if (!color) return "IDEA";

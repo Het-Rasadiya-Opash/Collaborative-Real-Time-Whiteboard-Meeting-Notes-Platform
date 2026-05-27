@@ -1,30 +1,25 @@
-import React from "react";
 import {
-  History,
-  Clock,
-  Plus,
-  X,
   Bold,
-  Italic,
-  Underline,
-  List,
-  Pencil,
-  Sparkles,
-  Lock,
-  Loader2,
-  ClipboardCheck,
-  User,
   Calendar,
-  Copy,
-  Wand2,
+  ClipboardCheck,
+  Clock,
   FileText,
-  ChevronsRight,
+  History,
+  Italic,
+  List,
+  Loader2,
+  Lock,
   MessageSquare,
-  Image,
-  FileDown,
-  Trash2,
+  Plus,
   RotateCcw,
+  Sparkles,
+  Trash2,
+  Underline,
+  User,
+  Wand2,
+  X
 } from "lucide-react";
+import React from "react";
 import toast from "react-hot-toast";
 import apiRequest from "../../utils/apiRequest";
 
@@ -76,6 +71,21 @@ const NotesPanel = ({
         });
     }
   }, [board?._id]);
+
+  React.useEffect(() => {
+    if (!socketRef || !socketRef.current) return;
+    const socket = socketRef.current;
+
+    const handleActionItemsUpdate = ({ actionItems }) => {
+      setActionItems(actionItems || []);
+    };
+
+    socket.on("action-items-update", handleActionItemsUpdate);
+
+    return () => {
+      socket.off("action-items-update", handleActionItemsUpdate);
+    };
+  }, [socketRef, socketRef.current]);
 
   const handleExtractActions = async () => {
     if (isLoadingActions) return;
@@ -163,7 +173,7 @@ const NotesPanel = ({
 
   const handleToggleActionItem = async (idx, itemId) => {
     const item = actionItems[idx];
-    const newStatus = item.status === "Completed" ? "Pending" : "Completed";
+    const newStatus = item.status === "COMPLETED" ? "PENDING" : "COMPLETED";
 
     const updated = [...actionItems];
     updated[idx] = { ...item, status: newStatus };
@@ -663,7 +673,7 @@ const NotesPanel = ({
 
                 <div className="space-y-3 overflow-y-auto pr-1 flex-1">
                   {actionItems.map((item, idx) => {
-                    const isCompleted = item.status === "Completed";
+                    const isCompleted = item.status === "COMPLETED";
                     return (
                       <div
                         key={item._id || idx}

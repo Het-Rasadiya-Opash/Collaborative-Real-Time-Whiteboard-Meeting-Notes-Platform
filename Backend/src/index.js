@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
-dotenv.config();
-import connectDB from "./db/db.js";
-import { app } from "./app.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import * as Y from "yjs";
+import { app } from "./app.js";
+import connectDB from "./db/db.js";
 import boardModel from "./models/board.model.js";
 import notesModel from "./models/notes.model.js";
+dotenv.config();
 
 const server = createServer(app);
 const io = new Server(server, {

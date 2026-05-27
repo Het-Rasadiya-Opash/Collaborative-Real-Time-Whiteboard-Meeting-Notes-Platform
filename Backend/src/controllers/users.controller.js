@@ -1,9 +1,9 @@
 import crypto from "crypto";
 import userModel from "../models/users.model.js";
+import { sendVerificationEmail } from "../services/mail.service.js";
+import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js";
-import { sendVerificationEmail } from "../services/mail.service.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {

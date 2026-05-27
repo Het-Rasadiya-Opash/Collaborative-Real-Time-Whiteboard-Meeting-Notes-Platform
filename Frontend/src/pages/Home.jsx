@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import Workspace from "./Workspace";
 import Boards from "./Boards";
 import NotesPage from "./NotesPage";
 import Whiteboard from "./Whiteboard";
+import Workspace from "./Workspace";
 
 const Home = () => {
   const [activeNav, setActiveNav] = useState(() => {

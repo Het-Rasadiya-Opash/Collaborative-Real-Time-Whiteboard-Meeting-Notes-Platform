@@ -1,11 +1,10 @@
-import React from "react";
 import {
-  Share2,
-  Download,
   AlertTriangle,
   CheckCircle,
   ChevronDown,
+  Download,
   Menu,
+  Share2,
 } from "lucide-react";
 
 export const WhiteboardHeader = ({
