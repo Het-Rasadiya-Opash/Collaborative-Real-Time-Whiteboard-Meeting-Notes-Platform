@@ -40,6 +40,9 @@ export const get = asyncHandler(async (req, res) => {
       board: boardId,
       textContent: board.meetingNotes || "",
     });
+  } else if (notes.textContent !== board.meetingNotes) {
+    notes.textContent = board.meetingNotes || "";
+    await notes.save();
   }
 
   return res

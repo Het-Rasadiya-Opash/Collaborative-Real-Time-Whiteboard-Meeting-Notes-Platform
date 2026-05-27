@@ -380,7 +380,7 @@ const Whiteboard = ({
 
       <WhiteboardSidebar onClose={onClose} />
 
-      <main className="ml-[260px] flex-1 flex flex-col relative overflow-hidden">
+      <main className="ml-[240px] flex-1 flex flex-col relative overflow-hidden">
         <WhiteboardHeader
           isEditingTitle={isEditingTitle}
           boardTitle={boardTitle}
@@ -398,7 +398,7 @@ const Whiteboard = ({
           handleExportPDF={handleExportPDF}
         />
 
-        <div className="mt-16 flex-1 bg-surface-bright relative canvas-dot-grid overflow-hidden flex">
+        <div className="mt-14 flex-1 bg-surface-bright relative canvas-dot-grid overflow-hidden flex">
           <div className="flex-1 relative cursor-crosshair">
             {previewSnapshot && (
               <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 bg-amber-500/90 text-white font-sans px-6 py-3.5 rounded-2xl shadow-xl flex items-center gap-6 animate-in slide-in-from-top duration-300 backdrop-blur-md border border-amber-400/40">

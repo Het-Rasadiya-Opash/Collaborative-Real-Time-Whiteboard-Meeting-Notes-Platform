@@ -117,13 +117,13 @@ const NotesPanel = ({
     }
   };
 
-  if (!isNotesOpen) return null;
-
   React.useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== agendaText) {
+    if (isNotesOpen && editorRef.current && editorRef.current.innerHTML !== agendaText) {
       editorRef.current.innerHTML = agendaText || "";
     }
   }, [isNotesOpen, board?._id]);
+
+  if (!isNotesOpen) return null;
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
@@ -158,12 +158,12 @@ const NotesPanel = ({
 
   return (
     <section
-      className={`bg-surface-container-lowest border-l border-outline-variant flex flex-col sidebar-transition z-30 w-[380px] opacity-100`}
+      className={`bg-surface-container-lowest border-l border-outline-variant flex flex-col sidebar-transition z-30 w-[330px] opacity-100`}
       id="notes-panel"
     >
       <div className="border-b border-outline-variant flex flex-col">
-        <div className="p-4 px-6 flex justify-between items-center border-b border-outline-variant/40">
-          <h2 className="font-headline-md text-lg font-black text-on-surface tracking-tight">
+        <div className="p-3 px-5 flex justify-between items-center border-b border-outline-variant/40">
+          <h2 className="font-headline-md text-sm font-bold text-on-surface tracking-tight">
             Board Workspace
           </h2>
           <button
@@ -178,7 +178,7 @@ const NotesPanel = ({
         <div className="flex w-full bg-surface-container-low p-1">
           <button
             onClick={() => setActiveRightTab("notes")}
-            className={`flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
+            className={`flex-1 py-1.5 text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
               activeRightTab === "notes"
                 ? "bg-white text-primary shadow-sm"
                 : "text-on-surface-variant hover:bg-white/40"
@@ -191,7 +191,7 @@ const NotesPanel = ({
           </button>
           <button
             onClick={() => setActiveRightTab("ai")}
-            className={`flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
+            className={`flex-1 py-1.5 text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
               activeRightTab === "ai"
                 ? "bg-white text-primary shadow-sm"
                 : "text-on-surface-variant hover:bg-white/40"
@@ -207,7 +207,7 @@ const NotesPanel = ({
               setActiveRightTab("history");
               fetchSnapshots();
             }}
-            className={`flex-1 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
+            className={`flex-1 py-1.5 text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 rounded-lg cursor-pointer ${
               activeRightTab === "history"
                 ? "bg-white text-primary shadow-sm"
                 : "text-on-surface-variant hover:bg-white/40"
@@ -318,9 +318,9 @@ const NotesPanel = ({
               </div>
             </div>
 
-            <div className="bg-surface-bright rounded-xl border border-outline-variant p-4 min-h-[360px] shadow-sm relative flex flex-col gap-3">
+            <div className="bg-surface-bright rounded-xl border border-outline-variant p-3 min-h-[360px] shadow-sm relative flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <h3 className="font-headline-md text-primary font-bold text-sm">
+                <h3 className="font-headline-md text-primary font-bold text-xs">
                   Collaborative Notes
                 </h3>
 
@@ -380,7 +380,7 @@ const NotesPanel = ({
                     handleSaveNotes(html);
                     handleNotesTyping();
                   }}
-                  className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-xs rich-text-editor font-sans"
+                  className="w-full flex-1 bg-transparent text-on-surface-variant leading-relaxed outline-none overflow-y-auto text-[11px] rich-text-editor font-sans"
                   placeholder={
                     isReadOnly
                       ? "Notes are read-only for viewer role..."

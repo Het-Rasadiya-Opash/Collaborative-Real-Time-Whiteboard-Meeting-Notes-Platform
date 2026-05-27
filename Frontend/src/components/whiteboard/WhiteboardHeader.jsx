@@ -18,9 +18,9 @@ export const WhiteboardHeader = ({
   handleExportPDF,
 }) => {
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-surface-glass backdrop-blur-md border-b border-outline-variant z-40 flex justify-between items-center px-6">
-      <div className="flex items-center gap-4">
-        <h1 className="font-headline-md text-lg font-black text-primary flex items-center gap-2 select-text">
+    <header className="fixed top-0 right-0 w-[calc(100%-240px)] h-14 bg-surface-glass backdrop-blur-md border-b border-outline-variant z-40 flex justify-between items-center px-5">
+      <div className="flex items-center gap-3">
+        <h1 className="font-headline-md text-sm font-bold text-primary flex items-center gap-2 select-text">
           {isEditingTitle ? (
             <input
               type="text"
@@ -28,7 +28,7 @@ export const WhiteboardHeader = ({
               onChange={(e) => setBoardTitle(e.target.value)}
               onBlur={handleSaveTitle}
               onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-              className="bg-surface-container-low border border-primary/40 rounded-lg px-3 py-1 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[240px]"
+              className="bg-surface-container-low border border-primary/40 rounded-lg px-2.5 py-0.5 text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[200px]"
               autoFocus
             />
           ) : (
@@ -45,7 +45,7 @@ export const WhiteboardHeader = ({
             </span>
           )}
         </h1>
-        <div className="flex -space-x-2 ml-4">
+        <div className="flex -space-x-1.5 ml-2">
           {(workspace?.members || []).slice(0, 3).map((member, mIdx) => {
             const username = member.user?.username || "?";
             const firstChar = username.charAt(0).toUpperCase();
@@ -59,7 +59,7 @@ export const WhiteboardHeader = ({
             return (
               <div
                 key={member._id || mIdx}
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold ${colorClass}`}
+                className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold ${colorClass}`}
                 title={username}
               >
                 {firstChar}
@@ -67,26 +67,26 @@ export const WhiteboardHeader = ({
             );
           })}
           {(workspace?.members || []).length > 3 && (
-            <div className="w-8 h-8 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-[10px] font-bold text-primary">
+            <div className="w-6 h-6 rounded-full border border-white bg-surface-container flex items-center justify-center text-[9px] font-bold text-primary">
               +{(workspace?.members || []).length - 3}
             </div>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           {saveStatus === "saved" && (
-            <span className="flex items-center gap-1 text-success-emerald bg-success-emerald/10 px-2.5 py-1 rounded-full text-xs font-semibold">
-              <span className="material-symbols-outlined text-[14px]">
+            <span className="flex items-center gap-1 text-success-emerald bg-success-emerald/10 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+              <span className="material-symbols-outlined text-[12px]">
                 check_circle
               </span>
               Saved
             </span>
           )}
           {saveStatus === "saving" && (
-            <span className="flex items-center gap-1 text-primary bg-primary/10 px-2.5 py-1 rounded-full text-xs font-semibold animate-pulse">
+            <span className="flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded-full text-[10px] font-semibold animate-pulse">
               <svg
-                className="animate-spin h-3.5 w-3.5 text-primary"
+                className="animate-spin h-3 w-3 text-primary"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -109,21 +109,21 @@ export const WhiteboardHeader = ({
             </span>
           )}
           {saveStatus === "unsaved" && (
-            <span className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full text-xs font-semibold">
-              <AlertTriangle size={14} />
+            <span className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+              <AlertTriangle size={11} />
               Unsaved
             </span>
           )}
         </div>
-        <div className="h-8 w-[1px] bg-outline-variant mx-1"></div>
-        <div className="flex items-center gap-2">
+        <div className="h-6 w-[1px] bg-outline-variant mx-0.5"></div>
+        <div className="flex items-center gap-1.5">
           {!publicShareToken && (
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-all text-xs font-bold text-primary active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1 border border-outline-variant rounded-md hover:bg-surface-container-low transition-all text-[10px] font-bold text-primary active:scale-95 cursor-pointer"
             >
-              <Share2 size={16} />
-              <span className="font-label-md text-label-md uppercase tracking-wider">
+              <Share2 size={13} />
+              <span className="uppercase tracking-wider">
                 Share
               </span>
             </button>
@@ -131,13 +131,13 @@ export const WhiteboardHeader = ({
           <div className="relative">
             <button
               onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-all text-xs font-bold text-on-surface-variant active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1 border border-outline-variant rounded-md hover:bg-surface-container-low transition-all text-[10px] font-bold text-on-surface-variant active:scale-95 cursor-pointer"
             >
-              <Download size={16} />
-              <span className="font-label-md text-label-md uppercase tracking-wider">
+              <Download size={13} />
+              <span className="uppercase tracking-wider">
                 Export
               </span>
-              <span className="material-symbols-outlined text-[16px]">
+              <span className="material-symbols-outlined text-[13px] font-bold">
                 keyboard_arrow_down
               </span>
             </button>

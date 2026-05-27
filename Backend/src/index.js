@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import * as Y from "yjs";
 import boardModel from "./models/board.model.js";
+import notesModel from "./models/notes.model.js";
 
 const server = createServer(app);
 const io = new Server(server, {
@@ -120,6 +121,14 @@ function queueSave(boardId, doc) {
 
         await board.save();
         console.log(`Saved Yjs state for board ${boardId} successfully.`);
+
+        // Sync to Notes model textContent
+        await notesModel.findOneAndUpdate(
+          { board: boardId },
+          { $set: { textContent: meetingNotesText } },
+          { upsert: true, new: true }
+        );
+        console.log(`Synced Yjs notes textContent for board ${boardId} successfully.`);
       }
     } catch (err) {
       console.error("Error saving board Yjs state:", err);

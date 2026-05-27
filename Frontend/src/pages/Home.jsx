@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import Workspace from "./Workspace";
 import Boards from "./Boards";
+import NotesPage from "./NotesPage";
 import Whiteboard from "./Whiteboard";
 
 const Home = () => {
@@ -88,6 +89,12 @@ const Home = () => {
           <Workspace onLaunchWorkspace={handleLaunchWorkspace} />
         ) : activeNav === "boards" ? (
           <Boards
+            workspace={selectedWorkspace}
+            onSelectWorkspace={() => setActiveNav("dashboard")}
+            onOpenBoard={(board) => setActiveBoard(board)}
+          />
+        ) : activeNav === "notes" ? (
+          <NotesPage
             workspace={selectedWorkspace}
             onSelectWorkspace={() => setActiveNav("dashboard")}
             onOpenBoard={(board) => setActiveBoard(board)}
