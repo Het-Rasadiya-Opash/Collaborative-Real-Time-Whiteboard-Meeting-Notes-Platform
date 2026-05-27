@@ -14,11 +14,13 @@ import {
   createSnapshot,
   exportPNG,
   exportPDF,
+  getAllBoards,
 } from "../controllers/board.controller.js";
 import { authorizeRole } from "../middlewares/authRole.middleware.js";
 
 const router = express.Router();
 
+router.get("/", authMiddleware, getAllBoards);
 router.post(
   "/:workspaceId/create",
   authMiddleware,

@@ -289,39 +289,7 @@ const GetWorkSpace = ({
               </p>
             </button>
 
-            {/* <div className="glass-card rounded-2xl p-6 flex flex-col hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 min-h-[220px]">
-              <div className="flex items-center gap-2.5 mb-6">
-                <TrendingUp size={20} className="text-amber-500" />
-                <h3 className="font-bold text-sm text-on-surface">Activity Overview</h3>
-              </div>
-              <div className="space-y-4 flex-1">
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs text-on-surface-variant font-medium">Active Sessions</span>
-                    <span className="font-mono text-xs text-primary font-bold">12</span>
-                  </div>
-                  <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full w-[65%] rounded-full"></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs text-on-surface-variant font-medium">Storage Used</span>
-                    <span className="font-mono text-xs text-primary font-bold">4.2 GB</span>
-                  </div>
-                  <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
-                    <div className="bg-amber-500 h-full w-[40%] rounded-full"></div>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => toast.success("Analytics dashboard coming soon!")}
-                className="mt-6 text-primary text-xs font-bold flex items-center gap-1 hover:gap-2 transition-all cursor-pointer text-left self-start"
-              >
-                View analytics <ArrowRight size={14} />
-              </button>
-            </div> */}
+          
           </div>
         </div>
       )}

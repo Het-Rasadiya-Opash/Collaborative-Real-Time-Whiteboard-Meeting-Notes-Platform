@@ -41,7 +41,10 @@ const Home = () => {
   useEffect(() => {
     try {
       if (selectedWorkspace) {
-        localStorage.setItem("selectedWorkspace", JSON.stringify(selectedWorkspace));
+        localStorage.setItem(
+          "selectedWorkspace",
+          JSON.stringify(selectedWorkspace),
+        );
       } else {
         localStorage.removeItem("selectedWorkspace");
       }
@@ -74,7 +77,7 @@ const Home = () => {
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />
-      
+
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-xs z-35 lg:hidden"

@@ -173,21 +173,20 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
 
   return (
     <div className="max-w-7xl mx-auto py-6 md:py-8 space-y-6 animate-in fade-in duration-300">
-
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 md:pb-8 mb-6 md:mb-8 border-b border-outline-variant/60">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-on-surface mb-1">
-            {workspace.name} Notes &amp; Action Items
-          </h1>
-          <p className="text-sm text-on-surface-variant">
+          <h2 className="text-3xl font-black text-on-surface tracking-tight mb-2">
+            {workspace.name} Notes &amp; Actions
+          </h2>
+          <p className="text-sm text-on-surface-variant leading-relaxed">
             Track agendas, meeting reviews, and centralized AI tasks in real-time.
           </p>
         </div>
         <button
           onClick={onSelectWorkspace}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-outline-variant rounded-xl text-on-surface font-semibold text-sm shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-surface border border-outline-variant/70 rounded-xl text-on-surface font-bold text-sm shadow-sm hover:shadow-md transition-all hover:bg-surface-container-low active:scale-[0.98] cursor-pointer w-full sm:w-auto"
         >
-          <ArrowLeft size={15} />
+          <ArrowLeft size={20} className="text-on-surface-variant" />
           Switch Workspace
         </button>
       </div>

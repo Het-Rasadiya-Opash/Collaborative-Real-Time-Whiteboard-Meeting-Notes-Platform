@@ -237,34 +237,34 @@ const Boards = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-6 md:py-8 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+    <div className="max-w-7xl mx-auto py-6 md:py-8 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 md:pb-8 mb-6 md:mb-8 border-b border-outline-variant/60">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-background">
+          <h2 className="text-3xl font-black text-on-surface tracking-tight mb-2">
             {workspace.name} Boards
           </h2>
-          <p className="text-on-surface-variant font-body-md mt-2">
+          <p className="text-sm text-on-surface-variant leading-relaxed">
             Visualize your ideas and collaborate in real-time.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           <button
             onClick={() =>
               setSortBy((prev) =>
                 prev === "updatedAt" ? "title" : "updatedAt",
               )
             }
-            className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline-variant rounded-xl text-on-surface font-semibold text-xs shadow-sm hover:shadow-md transition-all hover:bg-surface-container-low active:scale-[0.98] cursor-pointer"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-surface border border-outline-variant/70 rounded-xl text-on-surface font-bold text-sm shadow-sm hover:shadow-md transition-all hover:bg-surface-container-low active:scale-[0.98] cursor-pointer"
           >
-            <Filter size={16} className="select-none" />
+            <Filter size={20} className="select-none text-on-surface-variant" />
             Sort: {sortBy === "updatedAt" ? "Recent" : "Alphabetical"}
           </button>
           {canModify ? (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary font-bold rounded-xl shadow-lg hover:shadow-xl hover:brightness-110 transition-all active:scale-95 cursor-pointer text-sm w-full sm:w-auto"
             >
-              <Plus size={16} className="select-none" />
+              <PlusCircle size={20} className="select-none" />
               Create New Board
             </button>
           ) : (

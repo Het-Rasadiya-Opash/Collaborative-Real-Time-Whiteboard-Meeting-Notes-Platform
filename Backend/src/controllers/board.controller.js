@@ -173,6 +173,13 @@ export const createBoard = asyncHandler(async (req, res) => {
   );
 });
 
+export const getAllBoards = asyncHandler(async (req, res) => {
+  const boards = await boardModel.find({})
+    .populate("owner", "username email")
+    .populate("workspace", "name");
+  return res.status(200).json(new ApiResponse(200, boards, "fetch All boards"));
+});
+
 export const list = asyncHandler(async (req, res) => {
   const { workspaceId } = req.params;
   const { search, starred } = req.query;

@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import GetWorkSpace from "../components/GetWorkSpace";
 import apiRequest from "../utils/apiRequest";
+import GetBoards from "../components/GetBoards";
 
 const Workspace = ({ onLaunchWorkspace }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,72 +82,7 @@ const Workspace = ({ onLaunchWorkspace }) => {
         onLaunchWorkspace={onLaunchWorkspace}
       />
 
-      <section className="mt-12 sm:mt-16">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-on-surface font-headline-md">
-            Recent Boards
-          </h3>
-          <button
-            onClick={() => toast.success("Select and launch a workspace to manage its active boards!")}
-            className="text-primary font-bold text-xs hover:underline cursor-pointer"
-          >
-            View all boards
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div
-            onClick={() => toast.success("Launch a workspace to open the 'Design Sprint' board!")}
-            className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
-          >
-            <div className="w-10 h-10 rounded-lg bg-note-purple flex items-center justify-center text-purple-600">
-              <Brush size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-sm text-on-surface">Design Sprint</p>
-              <p className="text-[10px] text-on-surface-variant">Edited 2h ago</p>
-            </div>
-          </div>
-
-          <div
-            onClick={() => toast.success("Launch a workspace to open the 'Q4 Roadmap' board!")}
-            className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
-          >
-            <div className="w-10 h-10 rounded-lg bg-note-yellow flex items-center justify-center text-amber-600">
-              <FileText size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-sm text-on-surface">Q4 Roadmap</p>
-              <p className="text-[10px] text-on-surface-variant">Edited yesterday</p>
-            </div>
-          </div>
-
-          <div
-            onClick={() => toast.success("Launch a workspace to open the 'API Documentation' board!")}
-            className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
-          >
-            <div className="w-10 h-10 rounded-lg bg-note-blue flex items-center justify-center text-blue-600">
-              <Terminal size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-sm text-on-surface">API Documentation</p>
-              <p className="text-[10px] text-on-surface-variant">Edited 3d ago</p>
-            </div>
-          </div>
-
-          <div
-            onClick={() => toast.success("Launch a workspace to open the 'Growth Metrics' board!")}
-            className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300"
-          >
-            <div className="w-10 h-10 rounded-lg bg-note-green flex items-center justify-center text-emerald-600">
-              <BarChart3 size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-sm text-on-surface">Growth Metrics</p>
-              <p className="text-[10px] text-on-surface-variant">Edited Oct 12</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <GetBoards />
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
