@@ -27,7 +27,9 @@ export const WhiteboardHeader = ({
   onToggleSidebar,
 }) => {
   return (
-    <header className={`fixed top-0 right-0 ${isSidebarOpen ? "lg:left-[280px]" : "left-0"} z-50 flex justify-between items-center h-14 px-6 bg-white border-b border-outline-variant/30 shadow-sm shadow-primary/5 transition-all duration-300`}>
+    <header
+      className={`fixed top-0 right-0 ${isSidebarOpen ? "lg:left-[280px]" : "left-0"} z-50 flex justify-between items-center h-14 px-6 bg-white border-b border-outline-variant/30 shadow-sm shadow-primary/5 transition-all duration-300`}
+    >
       <div className="flex items-center gap-3">
         {!isSidebarOpen && (
           <button
@@ -69,10 +71,10 @@ export const WhiteboardHeader = ({
             const username = member.user?.username || "?";
             const firstChar = username.charAt(0).toUpperCase();
             const palettes = [
-              { bg: "#dbeafe", text: "#1d4ed8" }, // blue
-              { bg: "#ede9fe", text: "#7c3aed" }, // purple
-              { bg: "#d1fae5", text: "#065f46" }, // green
-              { bg: "#fef3c7", text: "#92400e" }, // amber
+              { bg: "#dbeafe", text: "#1d4ed8" },
+              { bg: "#ede9fe", text: "#7c3aed" },
+              { bg: "#d1fae5", text: "#065f46" },
+              { bg: "#fef3c7", text: "#92400e" },
             ];
             const palette = palettes[mIdx % palettes.length];
             return (

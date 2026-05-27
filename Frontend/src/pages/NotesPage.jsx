@@ -6,7 +6,7 @@ import {
   CheckCircle, Copy, ExternalLink, Lock, Calendar, User,
   Sparkles, Loader2, ListTodo, CheckSquare, LayoutDashboard,
   PinIcon, ClipboardList, Users, Settings, PlusCircle,
-  HelpCircle, LogOut, Bell, History, ChevronRight,
+  HelpCircle, LogOut, Bell, History, ChevronRight, Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -101,6 +101,32 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
       }
     } catch { toast.error("Failed to extract action items."); }
     finally { setIsLoadingActions(false); }
+  };
+
+  const handleClearAllActionItems = async (boardId) => {
+    if (!canModify) {
+      toast.error("You are not authorized to clear action items.");
+      return;
+    }
+    const confirmClear = window.confirm("Are you sure you want to clear all action items for this board?");
+    if (!confirmClear) return;
+
+    try {
+      await apiRequest.delete(`/notes/${boardId}/action-items`);
+      setNotesData((prev) => {
+        const boardNotes = prev[boardId] || {};
+        return {
+          ...prev,
+          [boardId]: {
+            ...boardNotes,
+            actionItems: []
+          }
+        };
+      });
+      toast.success("Action items cleared successfully!");
+    } catch {
+      toast.error("Failed to clear action items.");
+    }
   };
 
   const handleCopyMarkdown = (boardId) => {
@@ -375,13 +401,22 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                           ) : (
                             <div className="flex gap-2">
                               {selectedStats.total > 0 && (
-                                <button
-                                  onClick={() => handleCopyMarkdown(selectedBoardId)}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold text-on-surface transition-colors cursor-pointer"
-                                >
-                                  <Copy size={12} />
-                                  Copy Markdown
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => handleCopyMarkdown(selectedBoardId)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold text-on-surface transition-colors cursor-pointer"
+                                  >
+                                    <Copy size={12} />
+                                    Copy Markdown
+                                  </button>
+                                  <button
+                                    onClick={() => handleClearAllActionItems(selectedBoardId)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={12} />
+                                    Clear Tasks
+                                  </button>
+                                </>
                               )}
                               <button
                                 onClick={() => handleExtractActions(selectedBoardId)}

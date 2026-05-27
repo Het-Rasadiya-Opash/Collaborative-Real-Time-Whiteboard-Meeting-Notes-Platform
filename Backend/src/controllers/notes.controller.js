@@ -377,7 +377,7 @@ export const createActionItem = asyncHandler(async (req, res) => {
       (u) =>
         u._id.toString() === assignee ||
         u.username?.toLowerCase() === assignee.trim().toLowerCase() ||
-        u.email?.toLowerCase() === assignee.trim().toLowerCase()
+        u.email?.toLowerCase() === assignee.trim().toLowerCase(),
     );
 
     if (!matchedUser) {
@@ -413,7 +413,55 @@ export const createActionItem = asyncHandler(async (req, res) => {
       new ApiResponse(
         201,
         { notes: notesDoc, addedItem },
-        "Action item created successfully"
-      )
+        "Action item created successfully",
+      ),
     );
 });
+
+export const clearAll = asyncHandler(async (req, res) => {
+  const { boardId } = req.params;
+
+  if (!boardId) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const boardDoc = await boardModel.findById(boardId);
+  if (!boardDoc) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspaceDoc = await workSpaceModel.findById(boardDoc.workspace);
+  if (!workspaceDoc) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isOwner = workspaceDoc.owner.toString() === req.user._id.toString();
+  const member = workspaceDoc.members.find(
+    (m) => m.user && m.user.toString() === req.user._id.toString()
+  );
+  const hasRequiredRole = member && (member.role === "OWNER" || member.role === "EDITOR");
+
+  if (!isOwner && !hasRequiredRole) {
+    throw new ApiError(
+      403,
+      "You are not authorized to clear action items on this board"
+    );
+  }
+
+  let notesDoc = await notesModel.findOne({ board: boardId });
+  if (!notesDoc) {
+    notesDoc = await notesModel.create({
+      board: boardId,
+      textContent: "",
+      actionItems: [],
+    });
+  } else {
+    notesDoc.actionItems = [];
+    await notesDoc.save();
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, notesDoc, "All action items cleared successfully"));
+});
+

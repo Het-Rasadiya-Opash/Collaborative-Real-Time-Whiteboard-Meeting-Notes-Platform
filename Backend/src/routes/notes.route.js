@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { authorizeRole } from "../middlewares/authRole.middleware.js";
-import { get, extractActions, updateActionItemStatus, createActionItem } from "../controllers/notes.controller.js";
+import { get, extractActions, updateActionItemStatus, createActionItem, clearAll } from "../controllers/notes.controller.js";
 
 const router = express.Router();
 
@@ -31,6 +31,13 @@ router.patch(
   authMiddleware,
   authorizeRole("OWNER", "EDITOR"),
   updateActionItemStatus,
+);
+
+router.delete(
+  "/:boardId/action-items",
+  authMiddleware,
+  authorizeRole("OWNER", "EDITOR"),
+  clearAll,
 );
 
 export default router;

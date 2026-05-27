@@ -186,6 +186,25 @@ const NotesPanel = ({
     }
   };
 
+  const handleClearAllActionItems = async () => {
+    if (isReadOnly) {
+      toast.error("You are not authorized to clear action items.");
+      return;
+    }
+    const confirmClear = window.confirm("Are you sure you want to clear all action items?");
+    if (!confirmClear) return;
+
+    try {
+      await apiRequest.delete(`/notes/${board._id}/action-items`);
+      setActionItems([]);
+      toast.success("Action items cleared successfully");
+    } catch (error) {
+      console.error("Failed to clear action items:", error);
+      toast.error("Failed to clear action items");
+    }
+  };
+
+
   React.useEffect(() => {
     if (
       isNotesOpen &&
@@ -632,12 +651,14 @@ const NotesPanel = ({
                   <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
                     Extracted Tasks ({actionItems.length})
                   </span>
-                  <button
-                    onClick={() => setActionItems([])}
-                    className="text-[10px] text-outline hover:text-red-500 font-bold transition-colors cursor-pointer"
-                  >
-                    Clear List
-                  </button>
+                  {!isReadOnly && actionItems.length > 0 && (
+                    <button
+                      onClick={handleClearAllActionItems}
+                      className="text-[10px] text-outline hover:text-red-500 font-bold transition-colors cursor-pointer"
+                    >
+                      Clear List
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-3 overflow-y-auto pr-1 flex-1">
