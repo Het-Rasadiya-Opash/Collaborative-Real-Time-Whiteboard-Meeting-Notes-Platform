@@ -25,9 +25,6 @@ export const useWhiteboardCanvas = ({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [draggedElementId, setDraggedElementId] = useState(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [dragInitialCoords, setDragInitialCoords] = useState({ x: 0, y: 0 });
 
   const [currentDrawingElement, setCurrentDrawingElement] = useState(null);
   const [editingStickyId, setEditingStickyId] = useState(null);
@@ -310,59 +307,6 @@ export const useWhiteboardCanvas = ({
       return;
     }
 
-    if (draggedElementId) {
-      const scale = zoom / 100;
-      const dx = (evt.clientX - dragStart.x) / scale;
-      const dy = (evt.clientY - dragStart.y) / scale;
-
-      const updated = elementsRef.current.map((el) => {
-        if (el.id === draggedElementId) {
-          if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
-            return {
-              ...el,
-              x: dragInitialCoords.x + dx,
-              y: dragInitialCoords.y + dy,
-            };
-          } else if (el.type === "circle") {
-            return {
-              ...el,
-              cx: dragInitialCoords.x + dx,
-              cy: dragInitialCoords.y + dy,
-            };
-          } else if (el.type === "stroke") {
-            return {
-              ...el,
-              points: el.points.map((p, idx) => ({
-                x: dragInitialCoords.points[idx].x + dx,
-                y: dragInitialCoords.points[idx].y + dy,
-              })),
-            };
-          } else if (el.type === "arrow" && Array.isArray(dragInitialCoords.points)) {
-            return {
-              ...el,
-              points: [
-                dragInitialCoords.points[0] + dx,
-                dragInitialCoords.points[1] + dy,
-                dragInitialCoords.points[2] + dx,
-                dragInitialCoords.points[3] + dy,
-              ],
-            };
-          }
-        }
-        return el;
-      });
-
-      setElements(updated);
-
-      if (socketRef?.current?.connected) {
-        socketRef.current.emit("canvas-change", {
-          boardId: board._id,
-          elements: updated,
-        });
-      }
-      return;
-    }
-
     if (!isDragging) return;
 
     if (currentDrawingElement) {
@@ -389,12 +333,6 @@ export const useWhiteboardCanvas = ({
 
     if (isPanning) {
       setIsPanning(false);
-      return;
-    }
-
-    if (draggedElementId) {
-      setDraggedElementId(null);
-      triggerAutoSave(elementsRef.current);
       return;
     }
 
@@ -436,26 +374,8 @@ export const useWhiteboardCanvas = ({
 
   const handleShapeSelect = (e, id) => {
     if (selectedTool !== "select" || isReadOnly || previewSnapshot) return;
-    const evt = e.evt || e;
     if (typeof e.stopPropagation === "function") e.stopPropagation();
     setSelectedElementId(id);
-
-    if (editingStickyId === id) return;
-
-    const el = elementsRef.current.find((item) => item.id === id);
-    if (el) {
-      setDraggedElementId(id);
-      setDragStart({ x: evt.clientX, y: evt.clientY });
-      if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
-        setDragInitialCoords({ x: el.x, y: el.y });
-      } else if (el.type === "circle") {
-        setDragInitialCoords({ x: el.cx, y: el.cy });
-      } else if (el.type === "stroke") {
-        setDragInitialCoords({ points: [...el.points] });
-      } else if (el.type === "arrow") {
-        setDragInitialCoords({ points: [...el.points] });
-      }
-    }
   };
 
   const handleDoubleClickSticky = (e, element) => {
@@ -466,7 +386,6 @@ export const useWhiteboardCanvas = ({
       setEditingStickyText(
         element.text === "Double-click to edit note" || element.text === "Double-click to edit text" ? "" : element.text,
       );
-      setDraggedElementId(null);
     }
   };
 

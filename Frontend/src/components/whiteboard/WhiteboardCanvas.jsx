@@ -85,7 +85,6 @@ const WhiteboardCanvas = ({
   historyCount,
   redoCount,
   pan,
-  setPan,
   isPanning,
   updateElementsAndHistory,
 }) => {
@@ -256,7 +255,6 @@ const WhiteboardCanvas = ({
         <Layer>
           {displayedElements.map((el) => {
             if (!el) return null;
-            const isSelected = el.id === selectedElementId;
             const listening = selectedTool === "select";
 
             if (el.type === "stroke") {
@@ -270,7 +268,7 @@ const WhiteboardCanvas = ({
                   lineCap="round"
                   lineJoin="round"
                   listening={listening}
-                  draggable={listening && !isReadOnly}
+                  draggable={false}
                   onClick={(e) => handleShapeSelect(e, el.id)}
                   onTap={(e) => handleShapeSelect(e, el.id)}
                   onDragEnd={(e) => handleDragEnd(e, el.id)}
@@ -291,7 +289,7 @@ const WhiteboardCanvas = ({
                   strokeWidth={3}
                   fill="transparent"
                   listening={listening}
-                  draggable={listening && !isReadOnly}
+                  draggable={false}
                   onClick={(e) => handleShapeSelect(e, el.id)}
                   onTap={(e) => handleShapeSelect(e, el.id)}
                   onDragEnd={(e) => handleDragEnd(e, el.id)}
@@ -312,7 +310,7 @@ const WhiteboardCanvas = ({
                   strokeWidth={3}
                   fill="transparent"
                   listening={listening}
-                  draggable={listening && !isReadOnly}
+                  draggable={false}
                   onClick={(e) => handleShapeSelect(e, el.id)}
                   onTap={(e) => handleShapeSelect(e, el.id)}
                   onDragEnd={(e) => handleDragEnd(e, el.id)}
@@ -333,7 +331,7 @@ const WhiteboardCanvas = ({
                   pointerLength={12}
                   pointerWidth={12}
                   listening={listening}
-                  draggable={listening && !isReadOnly}
+                  draggable={false}
                   onClick={(e) => handleShapeSelect(e, el.id)}
                   onTap={(e) => handleShapeSelect(e, el.id)}
                   onDragEnd={(e) => handleDragEnd(e, el.id)}
@@ -354,7 +352,7 @@ const WhiteboardCanvas = ({
                   fontStyle="bold"
                   fontFamily="sans-serif"
                   listening={listening}
-                  draggable={listening && !isReadOnly}
+                  draggable={false}
                   onClick={(e) => handleShapeSelect(e, el.id)}
                   onTap={(e) => handleShapeSelect(e, el.id)}
                   onDblClick={(e) => handleDoubleClickSticky(e, el)}
@@ -376,7 +374,7 @@ const WhiteboardCanvas = ({
                   x={el.x}
                   y={el.y}
                   listening={listening}
-                  draggable={listening && !isReadOnly}
+                  draggable={false}
                   onClick={(e) => handleShapeSelect(e, el.id)}
                   onTap={(e) => handleShapeSelect(e, el.id)}
                   onDblClick={(e) => handleDoubleClickSticky(e, el)}
