@@ -13,10 +13,7 @@ const getStickyLabel = (color) => {
   return "IDEA";
 };
 
-const CustomTextareaEditor = ({ initialText, onSave, style }) => {
-  const [text, setText] = useState(
-    initialText === "Double-click to edit note" || initialText === "Double-click to edit text" ? "" : initialText
-  );
+const CustomTextareaEditor = ({ initialText, value, onChange, onSave, style }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -31,7 +28,7 @@ const CustomTextareaEditor = ({ initialText, onSave, style }) => {
     e.stopPropagation();
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      onSave(text);
+      onSave(value);
     } else if (e.key === "Escape") {
       e.preventDefault();
       onSave(initialText);
@@ -41,9 +38,9 @@ const CustomTextareaEditor = ({ initialText, onSave, style }) => {
   return (
     <textarea
       ref={ref}
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => onSave(text)}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={() => onSave(value)}
       onKeyDown={handleKeyDown}
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
@@ -351,7 +348,7 @@ const WhiteboardCanvas = ({
                   id={el.id}
                   x={el.x}
                   y={el.y}
-                  text={el.text}
+                  text={editingStickyId === el.id ? "" : el.text}
                   fontSize={el.fontSize || 20}
                   fill={el.color}
                   fontStyle="bold"
@@ -371,6 +368,7 @@ const WhiteboardCanvas = ({
             if (el.type === "sticky") {
               const width = el.width || 160;
               const height = el.height || 160;
+              const isEditing = editingStickyId === el.id;
               return (
                 <Group
                   key={el.id}
@@ -413,7 +411,7 @@ const WhiteboardCanvas = ({
                     y={32}
                     width={width - 24}
                     height={height - 44}
-                    text={el.text || "Double-click to edit note"}
+                    text={isEditing ? "" : el.text || "Double-click to edit note"}
                     fontSize={13}
                     fill="#ffffff"
                     fontStyle="bold"
@@ -513,7 +511,10 @@ const WhiteboardCanvas = ({
         <>
           {editingElement.type === "sticky" && (
             <CustomTextareaEditor
+              key={editingElement.id}
               initialText={editingElement.text}
+              value={editingStickyText}
+              onChange={setEditingStickyText}
               onSave={(newText) => finishStickyEditing(newText)}
               style={{
                 position: "absolute",
@@ -530,7 +531,10 @@ const WhiteboardCanvas = ({
           )}
           {editingElement.type === "text" && (
             <CustomTextareaEditor
+              key={editingElement.id}
               initialText={editingElement.text}
+              value={editingStickyText}
+              onChange={setEditingStickyText}
               onSave={(newText) => finishStickyEditing(newText)}
               style={{
                 position: "absolute",
