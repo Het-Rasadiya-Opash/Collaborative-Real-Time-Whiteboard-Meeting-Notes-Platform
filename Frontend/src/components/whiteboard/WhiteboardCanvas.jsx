@@ -132,15 +132,65 @@ const WhiteboardCanvas = ({
     }
   }, [selectedElementId, displayedElements, selectedTool, isReadOnly]);
 
+  const getShapeCenter = (el) => {
+    if (el.type === 'rectangle' || el.type === 'sticky' || el.type === 'diamond' || el.type === 'triangle' || el.type === 'text') {
+      const w = el.width || (el.type === 'text' ? 120 : 160);
+      const h = el.height || (el.type === 'text' ? 30 : 160);
+      return { x: el.x + w / 2, y: el.y + h / 2 };
+    }
+    if (el.type === 'circle') {
+      return { x: el.cx, y: el.cy };
+    }
+    return null;
+  };
+
+  const updateConnectors = (elementsArray) => {
+    return elementsArray.map(el => {
+      if (el.type === 'arrow' || el.type === 'line') {
+        let newPoints = [...el.points];
+        let changed = false;
+        
+        if (el.startConnectedElementId) {
+          const startTarget = elementsArray.find(e => e.id === el.startConnectedElementId);
+          if (startTarget) {
+            const center = getShapeCenter(startTarget);
+            if (center) {
+              newPoints[0] = center.x;
+              newPoints[1] = center.y;
+              changed = true;
+            }
+          }
+        }
+        
+        if (el.endConnectedElementId) {
+          const endTarget = elementsArray.find(e => e.id === el.endConnectedElementId);
+          if (endTarget) {
+            const center = getShapeCenter(endTarget);
+            if (center) {
+              newPoints[2] = center.x;
+              newPoints[3] = center.y;
+              changed = true;
+            }
+          }
+        }
+        
+        if (changed) {
+          return { ...el, points: newPoints };
+        }
+      }
+      return el;
+    });
+  };
+
   const handleDragEnd = (e, id) => {
     if (isReadOnly) return;
     const node = e.target;
     const newX = node.x();
     const newY = node.y();
 
-    const updated = displayedElements.map((el) => {
+    let updated = displayedElements.map((el) => {
       if (el.id === id) {
-        if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
+        if (el.type === "sticky" || el.type === "rectangle" || el.type === "diamond" || el.type === "triangle" || el.type === "text") {
           return { ...el, x: newX, y: newY };
         } else if (el.type === "circle") {
           return { ...el, cx: newX, cy: newY };
@@ -154,7 +204,7 @@ const WhiteboardCanvas = ({
               y: p.y + newY,
             })),
           };
-        } else if (el.type === "arrow") {
+        } else if (el.type === "arrow" || el.type === "line") {
           node.x(0);
           node.y(0);
           return {
@@ -171,6 +221,7 @@ const WhiteboardCanvas = ({
       return el;
     });
 
+    updated = updateConnectors(updated);
     updateElementsAndHistory(updated);
   };
 
@@ -183,9 +234,9 @@ const WhiteboardCanvas = ({
     node.scaleX(1);
     node.scaleY(1);
 
-    const updated = displayedElements.map((el) => {
+    let updated = displayedElements.map((el) => {
       if (el.id === id) {
-        if (el.type === "rectangle" || el.type === "sticky") {
+        if (el.type === "rectangle" || el.type === "diamond" || el.type === "triangle" || el.type === "sticky") {
           return {
             ...el,
             x: node.x(),
@@ -213,6 +264,7 @@ const WhiteboardCanvas = ({
       return el;
     });
 
+    updated = updateConnectors(updated);
     updateElementsAndHistory(updated);
   };
 
@@ -270,7 +322,7 @@ const WhiteboardCanvas = ({
             const renderSelectionGlow = (shapeType) => {
               if (!selectedByOther) return null;
               
-              if (shapeType === "rectangle" || shapeType === "sticky") {
+              if (shapeType === "rectangle" || shapeType === "sticky" || shapeType === "diamond" || shapeType === "triangle") {
                 return (
                   <Rect
                     x={el.x}
@@ -391,23 +443,39 @@ const WhiteboardCanvas = ({
               );
             }
 
-            if (el.type === "arrow") {
+            if (el.type === "arrow" || el.type === "line") {
               return (
                 <Group key={el.id}>
-                  <Arrow
-                    id={el.id}
-                    points={el.points}
-                    stroke={el.color}
-                    fill={el.color}
-                    strokeWidth={el.strokeWidth || 4}
-                    pointerLength={12}
-                    pointerWidth={12}
-                    listening={listening}
-                    draggable={canMoveSelected}
-                    onClick={(e) => handleShapeSelect(e, el.id)}
-                    onTap={(e) => handleShapeSelect(e, el.id)}
-                    onDragEnd={(e) => handleDragEnd(e, el.id)}
-                  />
+                  {el.type === "arrow" ? (
+                    <Arrow
+                      id={el.id}
+                      points={el.points}
+                      stroke={el.color}
+                      fill={el.color}
+                      strokeWidth={el.strokeWidth || 4}
+                      pointerLength={12}
+                      pointerWidth={12}
+                      listening={listening}
+                      draggable={canMoveSelected}
+                      onClick={(e) => handleShapeSelect(e, el.id)}
+                      onTap={(e) => handleShapeSelect(e, el.id)}
+                      onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    />
+                  ) : (
+                    <Line
+                      id={el.id}
+                      points={el.points}
+                      stroke={el.color}
+                      strokeWidth={el.strokeWidth || 4}
+                      lineCap="round"
+                      lineJoin="round"
+                      listening={listening}
+                      draggable={canMoveSelected}
+                      onClick={(e) => handleShapeSelect(e, el.id)}
+                      onTap={(e) => handleShapeSelect(e, el.id)}
+                      onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    />
+                  )}
                   {selectedByOther && (() => {
                     const minX = Math.min(el.points[0], el.points[2]) - 10;
                     const minY = Math.min(el.points[1], el.points[3]) - 10;
@@ -428,6 +496,62 @@ const WhiteboardCanvas = ({
                 </Group>
               );
             }
+
+            if (el.type === "diamond") {
+              const pts = [
+                el.x + el.width / 2, el.y,
+                el.x + el.width, el.y + el.height / 2,
+                el.x + el.width / 2, el.y + el.height,
+                el.x, el.y + el.height / 2
+              ];
+              return (
+                <Group key={el.id}>
+                  <Line
+                    id={el.id}
+                    points={pts}
+                    closed={true}
+                    stroke={el.color}
+                    strokeWidth={3}
+                    fill="transparent"
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                  />
+                  {renderSelectionGlow("diamond")}
+                </Group>
+              );
+            }
+
+            if (el.type === "triangle") {
+              const pts = [
+                el.x + el.width / 2, el.y,
+                el.x + el.width, el.y + el.height,
+                el.x, el.y + el.height
+              ];
+              return (
+                <Group key={el.id}>
+                  <Line
+                    id={el.id}
+                    points={pts}
+                    closed={true}
+                    stroke={el.color}
+                    strokeWidth={3}
+                    fill="transparent"
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                  />
+                  {renderSelectionGlow("triangle")}
+                </Group>
+              );
+            }
+
 
             if (el.type === "text") {
               return (
@@ -583,6 +707,47 @@ const WhiteboardCanvas = ({
                   strokeWidth={currentDrawingElement.strokeWidth || 4}
                   pointerLength={12}
                   pointerWidth={12}
+                  opacity={0.8}
+                />
+              )}
+              {currentDrawingElement.type === "line" && (
+                <Line
+                  points={currentDrawingElement.points}
+                  stroke={currentDrawingElement.color}
+                  strokeWidth={currentDrawingElement.strokeWidth || 4}
+                  lineCap="round"
+                  lineJoin="round"
+                  opacity={0.8}
+                />
+              )}
+              {currentDrawingElement.type === "diamond" && (
+                <Line
+                  points={[
+                    currentDrawingElement.x + currentDrawingElement.width / 2, currentDrawingElement.y,
+                    currentDrawingElement.x + currentDrawingElement.width, currentDrawingElement.y + currentDrawingElement.height / 2,
+                    currentDrawingElement.x + currentDrawingElement.width / 2, currentDrawingElement.y + currentDrawingElement.height,
+                    currentDrawingElement.x, currentDrawingElement.y + currentDrawingElement.height / 2
+                  ]}
+                  closed={true}
+                  stroke={currentDrawingElement.color}
+                  strokeWidth={3}
+                  strokeScaleEnabled={false}
+                  dash={[4, 4]}
+                  opacity={0.8}
+                />
+              )}
+              {currentDrawingElement.type === "triangle" && (
+                <Line
+                  points={[
+                    currentDrawingElement.x + currentDrawingElement.width / 2, currentDrawingElement.y,
+                    currentDrawingElement.x + currentDrawingElement.width, currentDrawingElement.y + currentDrawingElement.height,
+                    currentDrawingElement.x, currentDrawingElement.y + currentDrawingElement.height
+                  ]}
+                  closed={true}
+                  stroke={currentDrawingElement.color}
+                  strokeWidth={3}
+                  strokeScaleEnabled={false}
+                  dash={[4, 4]}
                   opacity={0.8}
                 />
               )}

@@ -227,6 +227,29 @@ export const useWhiteboardCanvas = ({
     setEditingStickyText("");
   };
 
+  const findSnappingElement = (px, py, excludeId) => {
+    for (let i = elementsRef.current.length - 1; i >= 0; i--) {
+      const el = elementsRef.current[i];
+      if (el.id === excludeId) continue;
+      
+      let isInside = false;
+      if (el.type === 'rectangle' || el.type === 'sticky' || el.type === 'diamond' || el.type === 'triangle' || el.type === 'text') {
+        const w = Math.abs(el.width || (el.type === 'text' ? 120 : 160));
+        const h = Math.abs(el.height || (el.type === 'text' ? 30 : 160));
+        const ex = el.width < 0 ? el.x + el.width : el.x;
+        const ey = el.height < 0 ? el.y + el.height : el.y;
+        if (px >= ex - 15 && px <= ex + w + 15 && py >= ey - 15 && py <= ey + h + 15) {
+          isInside = true;
+        }
+      } else if (el.type === 'circle') {
+        const dist = Math.sqrt((px - el.cx)**2 + (py - el.cy)**2);
+        if (dist <= el.r + 15) isInside = true;
+      }
+      if (isInside) return el.id;
+    }
+    return null;
+  };
+
   const handleStageMouseDown = (e) => {
     if (isReadOnly || previewSnapshot) return;
 
@@ -336,16 +359,43 @@ export const useWhiteboardCanvas = ({
         };
         setIsDragging(true);
         setCurrentDrawingElement(newCircle);
-      } else if (selectedTool === "arrow") {
-        const newArrow = {
+      } else if (selectedTool === "arrow" || selectedTool === "line") {
+        const snapStartId = findSnappingElement(x, y, null);
+        const newShape = {
           id,
-          type: "arrow",
+          type: selectedTool,
           points: [x, y, x, y],
           color: currentColor,
           strokeWidth: 4,
+          startConnectedElementId: snapStartId,
+          endConnectedElementId: null,
         };
         setIsDragging(true);
-        setCurrentDrawingElement(newArrow);
+        setCurrentDrawingElement(newShape);
+      } else if (selectedTool === "diamond") {
+        const newDiamond = {
+          id,
+          type: "diamond",
+          x,
+          y,
+          width: 0,
+          height: 0,
+          color: currentColor,
+        };
+        setIsDragging(true);
+        setCurrentDrawingElement(newDiamond);
+      } else if (selectedTool === "triangle") {
+        const newTriangle = {
+          id,
+          type: "triangle",
+          x,
+          y,
+          width: 0,
+          height: 0,
+          color: currentColor,
+        };
+        setIsDragging(true);
+        setCurrentDrawingElement(newTriangle);
       } else if (selectedTool === "text") {
         const newText = {
           id,
@@ -415,14 +465,16 @@ export const useWhiteboardCanvas = ({
       const updated = { ...currentDrawingElement };
       if (updated.type === "stroke") {
         updated.points = [...updated.points, { x, y }];
-      } else if (updated.type === "rectangle") {
+      } else if (updated.type === "rectangle" || updated.type === "diamond" || updated.type === "triangle") {
         updated.width = x - updated.x;
         updated.height = y - updated.y;
       } else if (updated.type === "circle") {
         const dx = x - updated.cx;
         const dy = y - updated.cy;
         updated.r = Math.sqrt(dx * dx + dy * dy);
-      } else if (updated.type === "arrow") {
+      } else if (updated.type === "arrow" || updated.type === "line") {
+        const snapEndId = findSnappingElement(x, y, updated.id);
+        updated.endConnectedElementId = snapEndId;
         updated.points = [updated.points[0], updated.points[1], x, y];
       }
       setCurrentDrawingElement(updated);
@@ -441,7 +493,7 @@ export const useWhiteboardCanvas = ({
 
     if (currentDrawingElement) {
       let el = currentDrawingElement;
-      if (el.type === "rectangle") {
+      if (el.type === "rectangle" || el.type === "diamond" || el.type === "triangle") {
         let x = el.x;
         let y = el.y;
         let w = el.width;
@@ -455,7 +507,7 @@ export const useWhiteboardCanvas = ({
           h = Math.abs(h);
         }
         el = { ...el, x, y, width: w, height: h };
-      } else if (el.type === "arrow") {
+      } else if (el.type === "arrow" || el.type === "line") {
         const dx = el.points[2] - el.points[0];
         const dy = el.points[3] - el.points[1];
         if (Math.sqrt(dx * dx + dy * dy) < 5) {

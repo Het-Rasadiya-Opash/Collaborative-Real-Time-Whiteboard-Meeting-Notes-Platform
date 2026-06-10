@@ -1,12 +1,15 @@
 import {
   Circle,
+  Diamond,
   Eraser,
+  Minus,
   MousePointer,
   MoveRight,
   Pencil,
   Square,
   StickyNote,
   Trash2,
+  Triangle,
   Type,
 } from "lucide-react";
 
@@ -116,6 +119,48 @@ const WhiteboardToolbar = ({
             title="Arrow Shape"
           >
             <MoveRight size={18} />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedTool("line");
+              setSelectedElementId(null);
+            }}
+            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+              selectedTool === "line"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Straight Line"
+          >
+            <Minus size={18} />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedTool("diamond");
+              setSelectedElementId(null);
+            }}
+            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+              selectedTool === "diamond"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Diamond Shape"
+          >
+            <Diamond size={18} />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedTool("triangle");
+              setSelectedElementId(null);
+            }}
+            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+              selectedTool === "triangle"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Triangle Shape"
+          >
+            <Triangle size={18} />
           </button>
           <button
             onClick={() => {
