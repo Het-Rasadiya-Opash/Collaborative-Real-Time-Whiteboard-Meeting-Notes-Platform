@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import * as Y from "yjs";
 import apiRequest from "../utils/apiRequest";
+import { clearOfflineQueue, enqueueOperation, getOfflineQueue } from "../utils/offlineQueue";
 
 function getCaretCharacterOffsetWithin(element) {
   let caretOffset = 0;
@@ -224,15 +225,25 @@ export const useWhiteboardSocket = ({
     });
 
     ydoc.on("update", (update, origin) => {
-      if (origin !== "server" && socket.connected) {
-        socket.emit("yjs-update", {
-          boardId: board._id,
-          update: Array.from(update),
-        });
+      if (origin !== "server") {
+        if (socket.connected) {
+          socket.emit("yjs-update", {
+            boardId: board._id,
+            update: Array.from(update),
+          });
+        } else {
+          enqueueOperation({
+            type: "yjs-update",
+            payload: {
+              boardId: board._id,
+              update: Array.from(update),
+            },
+          });
+        }
       }
     });
 
-    socket.on("connect", () => {
+    socket.on("connect", async () => {
       console.log("Socket connected successfully!");
       setIsSocketConnected(true);
 
@@ -243,6 +254,34 @@ export const useWhiteboardSocket = ({
           `guest_${Math.random().toString(36).substring(2, 6)}`,
         username: currentUser?.username || "Guest Collaborator",
       });
+
+      const queue = await getOfflineQueue();
+      if (queue.length > 0) {
+        toast.success(`Syncing ${queue.length} offline operations...`);
+        for (const op of queue) {
+          if (op.type === "yjs-update") {
+            socket.emit("yjs-update", op.payload);
+          } else if (op.type === "canvas-change") {
+            socket.emit("canvas-change", op.payload);
+            apiRequest.put(
+              `/boards/${op.payload.boardId}`,
+              { snapshot: op.payload.elements },
+              { skipSuccessToast: true }
+            ).catch(() => {});
+          } else if (op.type === "notes-change") {
+            socket.emit("notes-change", op.payload);
+            apiRequest.put(
+              `/boards/${op.payload.boardId}`,
+              { meetingNotes: op.payload.meetingNotes },
+              { skipSuccessToast: true }
+            ).catch(() => {});
+          } else if (op.type === "add-comment") {
+            socket.emit("add-comment", op.payload);
+          }
+        }
+        await clearOfflineQueue();
+        toast.success("Offline operations synced successfully!");
+      }
     });
 
     socket.on("disconnect", () => {
@@ -494,6 +533,15 @@ export const useWhiteboardSocket = ({
         boardId: board._id,
         meetingNotes: text,
       });
+    } else {
+      enqueueOperation({
+        type: "notes-change",
+        payload: {
+          boardId: board._id,
+          meetingNotes: text,
+        },
+      });
+      toast("Saved offline. Will sync when reconnected.", { icon: "🔌", id: "offline-notes-toast" });
     }
   };
 

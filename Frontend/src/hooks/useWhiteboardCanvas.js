@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { enqueueOperation } from "../utils/offlineQueue";
 
 export const useWhiteboardCanvas = ({
   elements,
@@ -80,6 +81,15 @@ export const useWhiteboardCanvas = ({
         boardId: board._id,
         elements: newElements,
       });
+    } else {
+      enqueueOperation({
+        type: "canvas-change",
+        payload: {
+          boardId: board._id,
+          elements: newElements,
+        },
+      });
+      toast("Saved offline. Will sync when reconnected.", { icon: "🔌" });
     }
   };
 

@@ -22,6 +22,7 @@ import {
 import React from "react";
 import toast from "react-hot-toast";
 import apiRequest from "../../utils/apiRequest";
+import { enqueueOperation } from "../../utils/offlineQueue";
 
 const NotesPanel = ({
   isNotesOpen,
@@ -248,12 +249,21 @@ const NotesPanel = ({
       setComments(updatedComments);
       setNewComment("");
 
+      enqueueOperation({
+        type: "add-comment",
+        payload: {
+          boardId: board._id,
+          comment: freshComment,
+        },
+      });
+      toast("Comment saved offline.", { icon: "🔌" });
+
       apiRequest
         .put(`/boards/${board._id}`, {
           comments: updatedComments,
         })
         .catch(() => {
-          toast.error("Failed to post comment");
+          // Silent catch since we queued it for socket
         });
     }
   };
