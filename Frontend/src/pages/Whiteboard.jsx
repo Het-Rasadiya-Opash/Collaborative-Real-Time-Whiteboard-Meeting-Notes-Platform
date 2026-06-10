@@ -167,6 +167,7 @@ const Whiteboard = ({
     setPan,
     isPanning,
     updateElementsAndHistory,
+    isSpacePressed,
   } = useWhiteboardCanvas({
     elements,
     setElements,
@@ -515,6 +516,7 @@ const Whiteboard = ({
               pan={pan}
               setPan={setPan}
               isPanning={isPanning}
+              isSpacePressed={isSpacePressed}
               updateElementsAndHistory={updateElementsAndHistory}
               collaborators={collaborators}
               currentUser={currentUser}

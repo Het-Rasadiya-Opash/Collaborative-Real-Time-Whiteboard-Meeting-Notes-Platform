@@ -86,6 +86,7 @@ const WhiteboardCanvas = ({
   redoCount,
   pan,
   isPanning,
+  isSpacePressed,
   updateElementsAndHistory,
   collaborators = [],
   currentUser,
@@ -229,8 +230,8 @@ const WhiteboardCanvas = ({
       }}
       className="w-full h-full relative overflow-hidden select-none bg-slate-50 canvas-grid"
       style={{
-        cursor: isPanning
-          ? "grabbing"
+        cursor: isPanning || isSpacePressed
+          ? (isPanning ? "grabbing" : "grab")
           : selectedTool === "select"
             ? "default"
             : "crosshair",

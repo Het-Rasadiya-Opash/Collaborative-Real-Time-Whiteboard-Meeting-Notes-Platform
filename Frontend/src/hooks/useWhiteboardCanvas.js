@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { enqueueOperation } from "../utils/offlineQueue";
 
@@ -32,11 +32,118 @@ export const useWhiteboardCanvas = ({
   const [editingStickyText, setEditingStickyText] = useState("");
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
+  
+  const [clipboardElement, setClipboardElement] = useState(null);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
 
   const elementsRef = useRef(elements);
   useEffect(() => {
     elementsRef.current = elements;
   }, [elements]);
+
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory((prev) => prev.slice(0, -1));
+    setRedoStack((prev) => [...prev, elementsRef.current]);
+    setElements(previous);
+    triggerAutoSave(previous);
+  }, [history, setElements, triggerAutoSave]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+    setHistory((prev) => [...prev, elementsRef.current]);
+    setElements(next);
+    triggerAutoSave(next);
+  }, [redoStack, setElements, triggerAutoSave]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isReadOnly) return;
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable) {
+        return;
+      }
+      if (editingStickyId) return;
+
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        setIsSpacePressed(true);
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedElementId) {
+          e.preventDefault();
+          const updated = elementsRef.current.filter((el) => el.id !== selectedElementId);
+          updateElementsAndHistory(updated);
+          setSelectedElementId(null);
+          toast.success("Element deleted");
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        if (selectedElementId) {
+          e.preventDefault();
+          const el = elementsRef.current.find(e => e.id === selectedElementId);
+          if (el) {
+            setClipboardElement(el);
+            toast.success("Element copied");
+          }
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        if (clipboardElement) {
+          e.preventDefault();
+          const newId = `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+          const newEl = { ...clipboardElement, id: newId };
+          
+          if (newEl.x !== undefined) newEl.x += 20;
+          if (newEl.y !== undefined) newEl.y += 20;
+          if (newEl.cx !== undefined) newEl.cx += 20;
+          if (newEl.cy !== undefined) newEl.cy += 20;
+          if (newEl.points && Array.isArray(newEl.points)) {
+            if (newEl.type === 'stroke') {
+              newEl.points = newEl.points.map(p => ({ x: p.x + 20, y: p.y + 20 }));
+            } else {
+              newEl.points = newEl.points.map(val => val + 20);
+            }
+          }
+          
+          const newElements = [...elementsRef.current, newEl];
+          updateElementsAndHistory(newElements);
+          setSelectedElementId(newId);
+          setSelectedTool("select");
+          toast.success("Element pasted");
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        handleUndo();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        setIsSpacePressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isReadOnly, editingStickyId, selectedElementId, clipboardElement, handleUndo, handleRedo]);
 
   const getRelativeCoords = (clientX, clientY) => {
     if (!canvasRef?.current) return { x: 0, y: 0 };
@@ -93,23 +200,7 @@ export const useWhiteboardCanvas = ({
     }
   };
 
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    const previous = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
-    setRedoStack((prev) => [...prev, elementsRef.current]);
-    setElements(previous);
-    triggerAutoSave(previous);
-  };
 
-  const handleRedo = () => {
-    if (redoStack.length === 0) return;
-    const next = redoStack[redoStack.length - 1];
-    setRedoStack((prev) => prev.slice(0, -1));
-    setHistory((prev) => [...prev, elementsRef.current]);
-    setElements(next);
-    triggerAutoSave(next);
-  };
 
   const finishStickyEditing = (textOverride) => {
     if (!editingStickyId) return;
@@ -145,7 +236,7 @@ export const useWhiteboardCanvas = ({
 
     const evt = e.evt || e;
 
-    if (evt.button === 1 || evt.evt?.button === 1 || evt.button === 2 || evt.evt?.button === 2) {
+    if (evt.button === 1 || evt.evt?.button === 1 || evt.button === 2 || evt.evt?.button === 2 || isSpacePressed) {
       if (evt.preventDefault) evt.preventDefault();
       setIsPanning(true);
       setPanStart({ x: evt.clientX - pan.x, y: evt.clientY - pan.y });
@@ -451,5 +542,6 @@ export const useWhiteboardCanvas = ({
     handleRedo,
     isCanvasBusy,
     updateElementsAndHistory,
+    isSpacePressed,
   };
 };
