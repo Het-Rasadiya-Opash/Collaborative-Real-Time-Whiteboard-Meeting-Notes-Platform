@@ -1,6 +1,29 @@
 import { Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Arrow, Circle, Group, Layer, Line, Rect, Stage, Text, Transformer } from "react-konva";
+import {
+  Arrow,
+  Circle,
+  Group,
+  Layer,
+  Line,
+  Rect,
+  Stage,
+  Text,
+  Transformer,
+  Image as KonvaImage,
+} from "react-konva";
+
+const URLImage = ({ src, ...props }) => {
+  const [image, setImage] = useState(null);
+  useEffect(() => {
+    const img = new window.Image();
+    img.src = src;
+    img.onload = () => {
+      setImage(img);
+    };
+  }, [src]);
+  return <KonvaImage image={image} {...props} />;
+};
 
 const getStickyLabel = (color) => {
   if (!color) return "IDEA";
@@ -13,7 +36,13 @@ const getStickyLabel = (color) => {
   return "IDEA";
 };
 
-const CustomTextareaEditor = ({ initialText, value, onChange, onSave, style }) => {
+const CustomTextareaEditor = ({
+  initialText,
+  value,
+  onChange,
+  onSave,
+  style,
+}) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -69,6 +98,8 @@ const WhiteboardCanvas = ({
   isReadOnly,
   selectedTool,
   selectedElementId,
+  selectedElementIds,
+  handleImageUpload,
   displayedElements,
   currentDrawingElement,
   editingStickyId,
@@ -101,13 +132,13 @@ const WhiteboardCanvas = ({
     const handleResize = () => {
       if (containerRef.current) {
         setStageSize({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight,
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
         });
       }
     };
+    handleResize();
     window.addEventListener("resize", handleResize);
-    setTimeout(handleResize, 100);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -121,37 +152,59 @@ const WhiteboardCanvas = ({
     }
 
     if (stageRef.current && transformerRef.current) {
-      const selectedNode = stageRef.current.findOne("#" + selectedElementId);
-      if (selectedNode) {
-        transformerRef.current.nodes([selectedNode]);
+      if (selectedElementIds && selectedElementIds.length > 0) {
+        const nodes = selectedElementIds
+          .map((id) => stageRef.current.findOne("#" + id))
+          .filter(Boolean);
+        transformerRef.current.nodes(nodes);
         transformerRef.current.getLayer()?.batchDraw();
+      } else if (selectedElementId) {
+        const selectedNode = stageRef.current.findOne("#" + selectedElementId);
+        if (selectedNode) {
+          transformerRef.current.nodes([selectedNode]);
+          transformerRef.current.getLayer()?.batchDraw();
+        }
       } else {
         transformerRef.current.nodes([]);
         transformerRef.current.getLayer()?.batchDraw();
       }
     }
-  }, [selectedElementId, displayedElements, selectedTool, isReadOnly]);
+  }, [
+    selectedElementId,
+    selectedElementIds,
+    displayedElements,
+    selectedTool,
+    isReadOnly,
+  ]);
 
   const getShapeCenter = (el) => {
-    if (el.type === 'rectangle' || el.type === 'sticky' || el.type === 'diamond' || el.type === 'triangle' || el.type === 'text') {
-      const w = el.width || (el.type === 'text' ? 120 : 160);
-      const h = el.height || (el.type === 'text' ? 30 : 160);
+    if (
+      el.type === "rectangle" ||
+      el.type === "sticky" ||
+      el.type === "diamond" ||
+      el.type === "triangle" ||
+      el.type === "text"
+    ) {
+      const w = el.width || (el.type === "text" ? 120 : 160);
+      const h = el.height || (el.type === "text" ? 30 : 160);
       return { x: el.x + w / 2, y: el.y + h / 2 };
     }
-    if (el.type === 'circle') {
+    if (el.type === "circle") {
       return { x: el.cx, y: el.cy };
     }
     return null;
   };
 
   const updateConnectors = (elementsArray) => {
-    return elementsArray.map(el => {
-      if (el.type === 'arrow' || el.type === 'line') {
+    return elementsArray.map((el) => {
+      if (el.type === "arrow" || el.type === "line") {
         let newPoints = [...el.points];
         let changed = false;
-        
+
         if (el.startConnectedElementId) {
-          const startTarget = elementsArray.find(e => e.id === el.startConnectedElementId);
+          const startTarget = elementsArray.find(
+            (e) => e.id === el.startConnectedElementId,
+          );
           if (startTarget) {
             const center = getShapeCenter(startTarget);
             if (center) {
@@ -161,9 +214,11 @@ const WhiteboardCanvas = ({
             }
           }
         }
-        
+
         if (el.endConnectedElementId) {
-          const endTarget = elementsArray.find(e => e.id === el.endConnectedElementId);
+          const endTarget = elementsArray.find(
+            (e) => e.id === el.endConnectedElementId,
+          );
           if (endTarget) {
             const center = getShapeCenter(endTarget);
             if (center) {
@@ -173,7 +228,7 @@ const WhiteboardCanvas = ({
             }
           }
         }
-        
+
         if (changed) {
           return { ...el, points: newPoints };
         }
@@ -190,7 +245,13 @@ const WhiteboardCanvas = ({
 
     let updated = displayedElements.map((el) => {
       if (el.id === id) {
-        if (el.type === "sticky" || el.type === "rectangle" || el.type === "diamond" || el.type === "triangle" || el.type === "text") {
+        if (
+          el.type === "sticky" ||
+          el.type === "rectangle" ||
+          el.type === "diamond" ||
+          el.type === "triangle" ||
+          el.type === "text"
+        ) {
           return { ...el, x: newX, y: newY };
         } else if (el.type === "circle") {
           return { ...el, cx: newX, cy: newY };
@@ -236,7 +297,13 @@ const WhiteboardCanvas = ({
 
     let updated = displayedElements.map((el) => {
       if (el.id === id) {
-        if (el.type === "rectangle" || el.type === "diamond" || el.type === "triangle" || el.type === "sticky") {
+        if (
+          el.type === "rectangle" ||
+          el.type === "diamond" ||
+          el.type === "triangle" ||
+          el.type === "sticky" ||
+          el.type === "image"
+        ) {
           return {
             ...el,
             x: node.x(),
@@ -257,7 +324,10 @@ const WhiteboardCanvas = ({
             ...el,
             x: node.x(),
             y: node.y(),
-            fontSize: Math.max(8, (el.fontSize || 20) * Math.max(scaleX, scaleY)),
+            fontSize: Math.max(
+              8,
+              (el.fontSize || 20) * Math.max(scaleX, scaleY),
+            ),
           };
         }
       }
@@ -274,6 +344,33 @@ const WhiteboardCanvas = ({
 
   const scale = zoom / 100;
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (isReadOnly) return;
+    if (stageRef.current) {
+      stageRef.current.setPointersPositions(e);
+      const pointerPos = stageRef.current.getPointerPosition();
+      if (pointerPos) {
+        const dropCoords = {
+          x: (pointerPos.x - pan.x) / scale,
+          y: (pointerPos.y - pan.y) / scale,
+        };
+
+        if (e.dataTransfer?.files?.length > 0 && handleImageUpload) {
+          handleImageUpload(
+            e.dataTransfer.files[0],
+            dropCoords.x,
+            dropCoords.y,
+          );
+        }
+      }
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
   return (
     <div
       ref={(el) => {
@@ -281,12 +378,17 @@ const WhiteboardCanvas = ({
         if (canvasRef) canvasRef.current = el;
       }}
       className="w-full h-full relative overflow-hidden select-none bg-slate-50 canvas-grid"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
       style={{
-        cursor: isPanning || isSpacePressed
-          ? (isPanning ? "grabbing" : "grab")
-          : selectedTool === "select"
-            ? "default"
-            : "crosshair",
+        cursor:
+          isPanning || isSpacePressed
+            ? isPanning
+              ? "grabbing"
+              : "grab"
+            : selectedTool === "select"
+              ? "default"
+              : "crosshair",
         backgroundImage: `radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px)`,
         backgroundSize: `${24 * scale}px ${24 * scale}px`,
         backgroundPosition: `${pan.x}px ${pan.y}px`,
@@ -315,14 +417,20 @@ const WhiteboardCanvas = ({
             const canMoveSelected = listening && isSelected && !isReadOnly;
 
             const selectedByOther = collaborators.find(
-              (c) => c.selectedElementId === el.id && c.userId !== currentUser?._id
+              (c) =>
+                c.selectedElementId === el.id && c.userId !== currentUser?._id,
             );
             const otherSelectionColor = "#7c3aed"; // Purple indicator
 
             const renderSelectionGlow = (shapeType) => {
               if (!selectedByOther) return null;
-              
-              if (shapeType === "rectangle" || shapeType === "sticky" || shapeType === "diamond" || shapeType === "triangle") {
+
+              if (
+                shapeType === "rectangle" ||
+                shapeType === "sticky" ||
+                shapeType === "diamond" ||
+                shapeType === "triangle"
+              ) {
                 return (
                   <Rect
                     x={el.x}
@@ -372,25 +480,26 @@ const WhiteboardCanvas = ({
                     onTap={(e) => handleShapeSelect(e, el.id)}
                     onDragEnd={(e) => handleDragEnd(e, el.id)}
                   />
-                  {selectedByOther && (() => {
-                    const xs = el.points.map(p => p.x);
-                    const ys = el.points.map(p => p.y);
-                    const minX = Math.min(...xs) - 10;
-                    const minY = Math.min(...ys) - 10;
-                    const width = Math.max(...xs) - Math.min(...xs) + 20;
-                    const height = Math.max(...ys) - Math.min(...ys) + 20;
-                    return (
-                      <Rect
-                        x={minX}
-                        y={minY}
-                        width={width}
-                        height={height}
-                        stroke={otherSelectionColor}
-                        strokeWidth={2}
-                        listening={false}
-                      />
-                    );
-                  })()}
+                  {selectedByOther &&
+                    (() => {
+                      const xs = el.points.map((p) => p.x);
+                      const ys = el.points.map((p) => p.y);
+                      const minX = Math.min(...xs) - 10;
+                      const minY = Math.min(...ys) - 10;
+                      const width = Math.max(...xs) - Math.min(...xs) + 20;
+                      const height = Math.max(...ys) - Math.min(...ys) + 20;
+                      return (
+                        <Rect
+                          x={minX}
+                          y={minY}
+                          width={width}
+                          height={height}
+                          stroke={otherSelectionColor}
+                          strokeWidth={2}
+                          listening={false}
+                        />
+                      );
+                    })()}
                 </Group>
               );
             }
@@ -475,33 +584,38 @@ const WhiteboardCanvas = ({
                       onDragEnd={(e) => handleDragEnd(e, el.id)}
                     />
                   )}
-                  {selectedByOther && (() => {
-                    const minX = Math.min(el.points[0], el.points[2]) - 10;
-                    const minY = Math.min(el.points[1], el.points[3]) - 10;
-                    const width = Math.abs(el.points[0] - el.points[2]) + 20;
-                    const height = Math.abs(el.points[1] - el.points[3]) + 20;
-                    return (
-                      <Rect
-                        x={minX}
-                        y={minY}
-                        width={width}
-                        height={height}
-                        stroke={otherSelectionColor}
-                        strokeWidth={2}
-                        listening={false}
-                      />
-                    );
-                  })()}
+                  {selectedByOther &&
+                    (() => {
+                      const minX = Math.min(el.points[0], el.points[2]) - 10;
+                      const minY = Math.min(el.points[1], el.points[3]) - 10;
+                      const width = Math.abs(el.points[0] - el.points[2]) + 20;
+                      const height = Math.abs(el.points[1] - el.points[3]) + 20;
+                      return (
+                        <Rect
+                          x={minX}
+                          y={minY}
+                          width={width}
+                          height={height}
+                          stroke={otherSelectionColor}
+                          strokeWidth={2}
+                          listening={false}
+                        />
+                      );
+                    })()}
                 </Group>
               );
             }
 
             if (el.type === "diamond") {
               const pts = [
-                el.x + el.width / 2, el.y,
-                el.x + el.width, el.y + el.height / 2,
-                el.x + el.width / 2, el.y + el.height,
-                el.x, el.y + el.height / 2
+                el.x + el.width / 2,
+                el.y,
+                el.x + el.width,
+                el.y + el.height / 2,
+                el.x + el.width / 2,
+                el.y + el.height,
+                el.x,
+                el.y + el.height / 2,
               ];
               return (
                 <Group key={el.id}>
@@ -526,9 +640,12 @@ const WhiteboardCanvas = ({
 
             if (el.type === "triangle") {
               const pts = [
-                el.x + el.width / 2, el.y,
-                el.x + el.width, el.y + el.height,
-                el.x, el.y + el.height
+                el.x + el.width / 2,
+                el.y,
+                el.x + el.width,
+                el.y + el.height,
+                el.x,
+                el.y + el.height,
               ];
               return (
                 <Group key={el.id}>
@@ -550,7 +667,6 @@ const WhiteboardCanvas = ({
                 </Group>
               );
             }
-
 
             if (el.type === "text") {
               return (
@@ -577,7 +693,9 @@ const WhiteboardCanvas = ({
                     <Rect
                       x={el.x - 4}
                       y={el.y - 4}
-                      width={(el.text?.length || 10) * (el.fontSize || 20) * 0.6 + 8}
+                      width={
+                        (el.text?.length || 10) * (el.fontSize || 20) * 0.6 + 8
+                      }
                       height={(el.fontSize || 20) + 8}
                       stroke={otherSelectionColor}
                       strokeWidth={2}
@@ -634,7 +752,9 @@ const WhiteboardCanvas = ({
                     y={32}
                     width={width - 24}
                     height={height - 44}
-                    text={isEditing ? "" : el.text || "Double-click to edit note"}
+                    text={
+                      isEditing ? "" : el.text || "Double-click to edit note"
+                    }
                     fontSize={13}
                     fill="#ffffff"
                     fontStyle="bold"
@@ -658,6 +778,36 @@ const WhiteboardCanvas = ({
               );
             }
 
+            if (el.type === "image") {
+              return (
+                <Group
+                  key={el.id}
+                  id={el.id}
+                  x={el.x}
+                  y={el.y}
+                  listening={listening}
+                  draggable={canMoveSelected}
+                  onClick={(e) => handleShapeSelect(e, el.id)}
+                  onTap={(e) => handleShapeSelect(e, el.id)}
+                  onDragEnd={(e) => handleDragEnd(e, el.id)}
+                  onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                >
+                  <URLImage src={el.src} width={el.width} height={el.height} />
+                  {renderSelectionGlow("rectangle")}
+                  {selectedByOther && (
+                    <Text
+                      x={0}
+                      y={-20}
+                      text={`${selectedByOther.username} is editing`}
+                      fill={otherSelectionColor}
+                      fontSize={12}
+                      fontStyle="bold"
+                    />
+                  )}
+                </Group>
+              );
+            }
+
             return null;
           })}
 
@@ -665,7 +815,10 @@ const WhiteboardCanvas = ({
             <>
               {currentDrawingElement.type === "stroke" && (
                 <Line
-                  points={currentDrawingElement.points.flatMap((p) => [p.x, p.y])}
+                  points={currentDrawingElement.points.flatMap((p) => [
+                    p.x,
+                    p.y,
+                  ])}
                   stroke={currentDrawingElement.color}
                   strokeWidth={currentDrawingElement.strokeWidth || 4}
                   lineCap="round"
@@ -722,10 +875,14 @@ const WhiteboardCanvas = ({
               {currentDrawingElement.type === "diamond" && (
                 <Line
                   points={[
-                    currentDrawingElement.x + currentDrawingElement.width / 2, currentDrawingElement.y,
-                    currentDrawingElement.x + currentDrawingElement.width, currentDrawingElement.y + currentDrawingElement.height / 2,
-                    currentDrawingElement.x + currentDrawingElement.width / 2, currentDrawingElement.y + currentDrawingElement.height,
-                    currentDrawingElement.x, currentDrawingElement.y + currentDrawingElement.height / 2
+                    currentDrawingElement.x + currentDrawingElement.width / 2,
+                    currentDrawingElement.y,
+                    currentDrawingElement.x + currentDrawingElement.width,
+                    currentDrawingElement.y + currentDrawingElement.height / 2,
+                    currentDrawingElement.x + currentDrawingElement.width / 2,
+                    currentDrawingElement.y + currentDrawingElement.height,
+                    currentDrawingElement.x,
+                    currentDrawingElement.y + currentDrawingElement.height / 2,
                   ]}
                   closed={true}
                   stroke={currentDrawingElement.color}
@@ -738,9 +895,12 @@ const WhiteboardCanvas = ({
               {currentDrawingElement.type === "triangle" && (
                 <Line
                   points={[
-                    currentDrawingElement.x + currentDrawingElement.width / 2, currentDrawingElement.y,
-                    currentDrawingElement.x + currentDrawingElement.width, currentDrawingElement.y + currentDrawingElement.height,
-                    currentDrawingElement.x, currentDrawingElement.y + currentDrawingElement.height
+                    currentDrawingElement.x + currentDrawingElement.width / 2,
+                    currentDrawingElement.y,
+                    currentDrawingElement.x + currentDrawingElement.width,
+                    currentDrawingElement.y + currentDrawingElement.height,
+                    currentDrawingElement.x,
+                    currentDrawingElement.y + currentDrawingElement.height,
                   ]}
                   closed={true}
                   stroke={currentDrawingElement.color}

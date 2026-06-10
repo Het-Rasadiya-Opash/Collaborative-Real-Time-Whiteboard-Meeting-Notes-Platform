@@ -32,7 +32,7 @@ export const useWhiteboardCanvas = ({
   const [editingStickyText, setEditingStickyText] = useState("");
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
-  
+
   const [clipboardElement, setClipboardElement] = useState(null);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
 
@@ -63,30 +63,38 @@ export const useWhiteboardCanvas = ({
     const handleKeyDown = (e) => {
       if (isReadOnly) return;
       const activeTag = document.activeElement?.tagName?.toLowerCase();
-      if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable) {
+      if (
+        activeTag === "input" ||
+        activeTag === "textarea" ||
+        document.activeElement?.isContentEditable
+      ) {
         return;
       }
       if (editingStickyId) return;
 
-      if (e.key === ' ' || e.code === 'Space') {
+      if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         setIsSpacePressed(true);
       }
 
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (e.key === "Delete" || e.key === "Backspace") {
         if (selectedElementId) {
           e.preventDefault();
-          const updated = elementsRef.current.filter((el) => el.id !== selectedElementId);
+          const updated = elementsRef.current.filter(
+            (el) => el.id !== selectedElementId,
+          );
           updateElementsAndHistory(updated);
           setSelectedElementId(null);
           toast.success("Element deleted");
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
         if (selectedElementId) {
           e.preventDefault();
-          const el = elementsRef.current.find(e => e.id === selectedElementId);
+          const el = elementsRef.current.find(
+            (e) => e.id === selectedElementId,
+          );
           if (el) {
             setClipboardElement(el);
             toast.success("Element copied");
@@ -94,24 +102,27 @@ export const useWhiteboardCanvas = ({
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
         if (clipboardElement) {
           e.preventDefault();
           const newId = `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
           const newEl = { ...clipboardElement, id: newId };
-          
+
           if (newEl.x !== undefined) newEl.x += 20;
           if (newEl.y !== undefined) newEl.y += 20;
           if (newEl.cx !== undefined) newEl.cx += 20;
           if (newEl.cy !== undefined) newEl.cy += 20;
           if (newEl.points && Array.isArray(newEl.points)) {
-            if (newEl.type === 'stroke') {
-              newEl.points = newEl.points.map(p => ({ x: p.x + 20, y: p.y + 20 }));
+            if (newEl.type === "stroke") {
+              newEl.points = newEl.points.map((p) => ({
+                x: p.x + 20,
+                y: p.y + 20,
+              }));
             } else {
-              newEl.points = newEl.points.map(val => val + 20);
+              newEl.points = newEl.points.map((val) => val + 20);
             }
           }
-          
+
           const newElements = [...elementsRef.current, newEl];
           updateElementsAndHistory(newElements);
           setSelectedElementId(newId);
@@ -120,30 +131,45 @@ export const useWhiteboardCanvas = ({
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === "z"
+      ) {
         e.preventDefault();
         handleUndo();
       }
 
-      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key.toLowerCase() === "y" ||
+          (e.shiftKey && e.key.toLowerCase() === "z"))
+      ) {
         e.preventDefault();
         handleRedo();
       }
     };
 
     const handleKeyUp = (e) => {
-      if (e.key === ' ' || e.code === 'Space') {
+      if (e.key === " " || e.code === "Space") {
         setIsSpacePressed(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isReadOnly, editingStickyId, selectedElementId, clipboardElement, handleUndo, handleRedo]);
+  }, [
+    isReadOnly,
+    editingStickyId,
+    selectedElementId,
+    clipboardElement,
+    handleUndo,
+    handleRedo,
+  ]);
 
   const getRelativeCoords = (clientX, clientY) => {
     if (!canvasRef?.current) return { x: 0, y: 0 };
@@ -200,8 +226,6 @@ export const useWhiteboardCanvas = ({
     }
   };
 
-
-
   const finishStickyEditing = (textOverride) => {
     if (!editingStickyId) return;
 
@@ -210,13 +234,13 @@ export const useWhiteboardCanvas = ({
 
     const updated = elementsRef.current.map((el) => {
       if (el.id === editingStickyId) {
-        const defaultText = el.type === "text" ? "Double-click to edit text" : "Double-click to edit note";
+        const defaultText =
+          el.type === "text"
+            ? "Double-click to edit text"
+            : "Double-click to edit note";
         return {
           ...el,
-          text:
-            finalVal && finalVal.trim() !== ""
-              ? finalVal
-              : defaultText,
+          text: finalVal && finalVal.trim() !== "" ? finalVal : defaultText,
         };
       }
       return el;
@@ -231,18 +255,29 @@ export const useWhiteboardCanvas = ({
     for (let i = elementsRef.current.length - 1; i >= 0; i--) {
       const el = elementsRef.current[i];
       if (el.id === excludeId) continue;
-      
+
       let isInside = false;
-      if (el.type === 'rectangle' || el.type === 'sticky' || el.type === 'diamond' || el.type === 'triangle' || el.type === 'text') {
-        const w = Math.abs(el.width || (el.type === 'text' ? 120 : 160));
-        const h = Math.abs(el.height || (el.type === 'text' ? 30 : 160));
+      if (
+        el.type === "rectangle" ||
+        el.type === "sticky" ||
+        el.type === "diamond" ||
+        el.type === "triangle" ||
+        el.type === "text"
+      ) {
+        const w = Math.abs(el.width || (el.type === "text" ? 120 : 160));
+        const h = Math.abs(el.height || (el.type === "text" ? 30 : 160));
         const ex = el.width < 0 ? el.x + el.width : el.x;
         const ey = el.height < 0 ? el.y + el.height : el.y;
-        if (px >= ex - 15 && px <= ex + w + 15 && py >= ey - 15 && py <= ey + h + 15) {
+        if (
+          px >= ex - 15 &&
+          px <= ex + w + 15 &&
+          py >= ey - 15 &&
+          py <= ey + h + 15
+        ) {
           isInside = true;
         }
-      } else if (el.type === 'circle') {
-        const dist = Math.sqrt((px - el.cx)**2 + (py - el.cy)**2);
+      } else if (el.type === "circle") {
+        const dist = Math.sqrt((px - el.cx) ** 2 + (py - el.cy) ** 2);
         if (dist <= el.r + 15) isInside = true;
       }
       if (isInside) return el.id;
@@ -259,7 +294,13 @@ export const useWhiteboardCanvas = ({
 
     const evt = e.evt || e;
 
-    if (evt.button === 1 || evt.evt?.button === 1 || evt.button === 2 || evt.evt?.button === 2 || isSpacePressed) {
+    if (
+      evt.button === 1 ||
+      evt.evt?.button === 1 ||
+      evt.button === 2 ||
+      evt.evt?.button === 2 ||
+      isSpacePressed
+    ) {
       if (evt.preventDefault) evt.preventDefault();
       setIsPanning(true);
       setPanStart({ x: evt.clientX - pan.x, y: evt.clientY - pan.y });
@@ -269,7 +310,9 @@ export const useWhiteboardCanvas = ({
     const clickedOnBg =
       e.target === e.currentTarget ||
       e.target.id === "canvas-grid" ||
-      (e.target && typeof e.target.getStage === "function" && e.target === e.target.getStage());
+      (e.target &&
+        typeof e.target.getStage === "function" &&
+        e.target === e.target.getStage());
 
     if (clickedOnBg) {
       setSelectedElementId(null);
@@ -283,31 +326,40 @@ export const useWhiteboardCanvas = ({
     } else if (selectedTool === "eraser") {
       const { x, y } = getRelativeCoords(evt.clientX, evt.clientY);
       const updated = elementsRef.current.filter((el) => {
-        if (el.type === "sticky" || el.type === "rectangle" || el.type === "text") {
+        if (
+          el.type === "sticky" ||
+          el.type === "rectangle" ||
+          el.type === "text"
+        ) {
           const w = el.width || (el.type === "text" ? 120 : 160);
           const h = el.height || (el.type === "text" ? 30 : 160);
-          return !(
-            x >= el.x &&
-            x <= el.x + w &&
-            y >= el.y &&
-            y <= el.y + h
-          );
+          return !(x >= el.x && x <= el.x + w && y >= el.y && y <= el.y + h);
         }
         if (el.type === "circle") {
           const dx = x - el.cx;
           const dy = y - el.cy;
           return Math.sqrt(dx * dx + dy * dy) > el.r;
         }
-        if (el.type === "arrow" && Array.isArray(el.points) && el.points.length >= 4) {
+        if (
+          el.type === "arrow" &&
+          Array.isArray(el.points) &&
+          el.points.length >= 4
+        ) {
           const startX = el.points[0];
           const startY = el.points[1];
           const endX = el.points[2];
           const endY = el.points[3];
           const l2 = (startX - endX) ** 2 + (startY - endY) ** 2;
-          if (l2 === 0) return Math.sqrt((x - startX) ** 2 + (y - startY) ** 2) > 15;
-          let t = ((x - startX) * (endX - startX) + (y - startY) * (endY - startY)) / l2;
+          if (l2 === 0)
+            return Math.sqrt((x - startX) ** 2 + (y - startY) ** 2) > 15;
+          let t =
+            ((x - startX) * (endX - startX) + (y - startY) * (endY - startY)) /
+            l2;
           t = Math.max(0, Math.min(1, t));
-          const dist = Math.sqrt((x - (startX + t * (endX - startX))) ** 2 + (y - (startY + t * (endY - startY))) ** 2);
+          const dist = Math.sqrt(
+            (x - (startX + t * (endX - startX))) ** 2 +
+              (y - (startY + t * (endY - startY))) ** 2,
+          );
           return dist > 15;
         }
         if (el.type === "stroke") {
@@ -465,7 +517,11 @@ export const useWhiteboardCanvas = ({
       const updated = { ...currentDrawingElement };
       if (updated.type === "stroke") {
         updated.points = [...updated.points, { x, y }];
-      } else if (updated.type === "rectangle" || updated.type === "diamond" || updated.type === "triangle") {
+      } else if (
+        updated.type === "rectangle" ||
+        updated.type === "diamond" ||
+        updated.type === "triangle"
+      ) {
         updated.width = x - updated.x;
         updated.height = y - updated.y;
       } else if (updated.type === "circle") {
@@ -493,7 +549,11 @@ export const useWhiteboardCanvas = ({
 
     if (currentDrawingElement) {
       let el = currentDrawingElement;
-      if (el.type === "rectangle" || el.type === "diamond" || el.type === "triangle") {
+      if (
+        el.type === "rectangle" ||
+        el.type === "diamond" ||
+        el.type === "triangle"
+      ) {
         let x = el.x;
         let y = el.y;
         let w = el.width;
@@ -537,7 +597,10 @@ export const useWhiteboardCanvas = ({
     if (element.type === "sticky" || element.type === "text") {
       setEditingStickyId(element.id);
       setEditingStickyText(
-        element.text === "Double-click to edit note" || element.text === "Double-click to edit text" ? "" : element.text,
+        element.text === "Double-click to edit note" ||
+          element.text === "Double-click to edit text"
+          ? ""
+          : element.text,
       );
     }
   };
@@ -562,6 +625,65 @@ export const useWhiteboardCanvas = ({
       setSelectedElementId(null);
       toast.success("Canvas cleared");
     }
+  };
+
+  const handleImageUpload = (file, dropX, dropY) => {
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          if (width / height > MAX_WIDTH / MAX_HEIGHT) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          } else {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/webp", 0.8);
+        const centerCoords = getRelativeCoords(
+          window.innerWidth / 2,
+          window.innerHeight / 2,
+        );
+
+        const x = dropX !== undefined ? dropX : centerCoords.x - width / 2;
+        const y = dropY !== undefined ? dropY : centerCoords.y - height / 2;
+
+        const newImage = {
+          id: `el_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          type: "image",
+          x,
+          y,
+          width,
+          height,
+          src: dataUrl,
+        };
+
+        updateElementsAndHistory([...elementsRef.current, newImage]);
+        setSelectedElementId(newImage.id);
+        toast.success("Image added");
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const isCanvasBusy =
@@ -592,6 +714,7 @@ export const useWhiteboardCanvas = ({
     handleClearCanvas,
     handleUndo,
     handleRedo,
+    handleImageUpload,
     isCanvasBusy,
     updateElementsAndHistory,
     isSpacePressed,

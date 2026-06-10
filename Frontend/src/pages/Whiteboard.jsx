@@ -67,6 +67,7 @@ const Whiteboard = ({
   const [selectedTool, setSelectedTool] = useState("pencil");
   const [currentColor, setCurrentColor] = useState("#2563eb");
   const [selectedElementId, setSelectedElementId] = useState(null);
+  const [selectedElementIds, setSelectedElementIds] = useState([]);
 
   const [zoom, setZoom] = useState(85);
   const [isNotesOpen, setIsNotesOpen] = useState(true);
@@ -161,8 +162,10 @@ const Whiteboard = ({
     finishStickyEditing,
     handleDeleteSelected,
     handleClearCanvas,
+    handleAlign,
     handleUndo,
     handleRedo,
+    handleImageUpload,
     pan,
     setPan,
     isPanning,
@@ -176,6 +179,8 @@ const Whiteboard = ({
     currentColor,
     selectedElementId,
     setSelectedElementId,
+    selectedElementIds,
+    setSelectedElementIds,
     zoom,
     isReadOnly,
     previewSnapshot,
@@ -486,8 +491,11 @@ const Whiteboard = ({
               setCurrentColor={setCurrentColor}
               colorPalette={COLOR_PALETTE}
               selectedElementId={selectedElementId}
+              selectedElementIds={selectedElementIds}
               handleDeleteSelected={handleDeleteSelected}
               handleClearCanvas={handleClearCanvas}
+              handleAlign={handleAlign}
+              handleImageUpload={handleImageUpload}
               isReadOnly={isReadOnly}
             />
 
@@ -495,9 +503,12 @@ const Whiteboard = ({
               canvasRef={canvasRef}
               zoom={zoom}
               setZoom={setZoom}
+              pan={pan}
               isReadOnly={isReadOnly}
               selectedTool={selectedTool}
               selectedElementId={selectedElementId}
+              selectedElementIds={selectedElementIds}
+              handleImageUpload={handleImageUpload}
               displayedElements={displayedElements}
               currentDrawingElement={currentDrawingElement}
               editingStickyId={editingStickyId}

@@ -1,7 +1,13 @@
 import {
+  AlignCenter,
+  AlignHorizontalDistributeCenter,
+  AlignLeft,
+  AlignRight,
   Circle,
   Diamond,
   Eraser,
+  Grid3x3,
+  Image as ImageIcon,
   Minus,
   MousePointer,
   MoveRight,
@@ -29,8 +35,11 @@ const WhiteboardToolbar = ({
   setCurrentColor,
   colorPalette = DEFAULT_COLOR_PALETTE,
   selectedElementId,
+  selectedElementIds,
   handleDeleteSelected,
   handleClearCanvas,
+  handleAlign,
+  handleImageUpload,
   isReadOnly,
 }) => {
   return (
@@ -78,90 +87,92 @@ const WhiteboardToolbar = ({
           >
             <StickyNote size={18} />
           </button>
-          <button
-            onClick={() => {
-              setSelectedTool("rectangle");
-              setSelectedElementId(null);
-            }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-              selectedTool === "rectangle"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-            title="Rectangle Shape"
-          >
-            <Square size={18} />
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTool("circle");
-              setSelectedElementId(null);
-            }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-              selectedTool === "circle"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-            title="Circle Shape"
-          >
-            <Circle size={18} />
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTool("arrow");
-              setSelectedElementId(null);
-            }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-              selectedTool === "arrow"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-            title="Arrow Shape"
-          >
-            <MoveRight size={18} />
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTool("line");
-              setSelectedElementId(null);
-            }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-              selectedTool === "line"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-            title="Straight Line"
-          >
-            <Minus size={18} />
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTool("diamond");
-              setSelectedElementId(null);
-            }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-              selectedTool === "diamond"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-            title="Diamond Shape"
-          >
-            <Diamond size={18} />
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTool("triangle");
-              setSelectedElementId(null);
-            }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-              selectedTool === "triangle"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:bg-surface-container"
-            }`}
-            title="Triangle Shape"
-          >
-            <Triangle size={18} />
-          </button>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => {
+                setSelectedTool("rectangle");
+                setSelectedElementId(null);
+              }}
+              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                selectedTool === "rectangle"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+              title="Rectangle Shape"
+            >
+              <Square size={18} />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTool("circle");
+                setSelectedElementId(null);
+              }}
+              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                selectedTool === "circle"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+              title="Circle Shape"
+            >
+              <Circle size={18} />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTool("arrow");
+                setSelectedElementId(null);
+              }}
+              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                selectedTool === "arrow"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+              title="Arrow Shape"
+            >
+              <MoveRight size={18} />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTool("line");
+                setSelectedElementId(null);
+              }}
+              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                selectedTool === "line"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+              title="Straight Line"
+            >
+              <Minus size={18} />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTool("diamond");
+                setSelectedElementId(null);
+              }}
+              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                selectedTool === "diamond"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+              title="Diamond Shape"
+            >
+              <Diamond size={18} />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTool("triangle");
+                setSelectedElementId(null);
+              }}
+              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+                selectedTool === "triangle"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+              title="Triangle Shape"
+            >
+              <Triangle size={18} />
+            </button>
+          </div>
           <button
             onClick={() => {
               setSelectedTool("text");
@@ -176,10 +187,29 @@ const WhiteboardToolbar = ({
           >
             <Type size={18} />
           </button>
- 
+          <input
+            type="file"
+            accept="image/*"
+            id="image-upload"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                handleImageUpload(e.target.files[0]);
+                e.target.value = null;
+              }
+            }}
+          />
+          <button
+            onClick={() => document.getElementById("image-upload").click()}
+            className="p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center text-on-surface-variant hover:bg-surface-container"
+            title="Upload Image"
+          >
+            <ImageIcon size={18} />
+          </button>
+
           <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
- 
-          <div className="grid grid-cols-2 gap-1.5 justify-items-center py-1">
+
+          <div className="grid grid-cols-2 gap-1.5 justify-items-center py-1 max-w-[60px] mx-auto">
             {colorPalette.map((color) => {
               const isSelected = currentColor === color.hex;
               return (
@@ -201,14 +231,18 @@ const WhiteboardToolbar = ({
               );
             })}
           </div>
- 
+
           <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
- 
+
           <button
             onClick={handleDeleteSelected}
-            disabled={!selectedElementId}
+            disabled={
+              !selectedElementId &&
+              (!selectedElementIds || selectedElementIds.length === 0)
+            }
             className={`p-2.5 rounded-xl transition-all flex items-center justify-center ${
-              selectedElementId
+              selectedElementId ||
+              (selectedElementIds && selectedElementIds.length > 0)
                 ? "text-rose-500 hover:bg-rose-500/10 hover:scale-105 active:scale-95 cursor-pointer"
                 : "text-on-surface-variant/30 cursor-not-allowed"
             }`}
@@ -223,6 +257,42 @@ const WhiteboardToolbar = ({
           >
             <Eraser size={18} />
           </button>
+
+          {selectedElementIds && selectedElementIds.length > 1 && (
+            <>
+              <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => handleAlign("left")}
+                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  title="Align Left"
+                >
+                  <AlignLeft size={18} />
+                </button>
+                <button
+                  onClick={() => handleAlign("center")}
+                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  title="Align Center"
+                >
+                  <AlignCenter size={18} />
+                </button>
+                <button
+                  onClick={() => handleAlign("right")}
+                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  title="Align Right"
+                >
+                  <AlignRight size={18} />
+                </button>
+                <button
+                  onClick={() => handleAlign("distribute")}
+                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  title="Distribute Evenly"
+                >
+                  <AlignHorizontalDistributeCenter size={18} />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="absolute left-6 top-6 glass-card border border-outline-variant/60 rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2 z-30 animate-in slide-in-from-left duration-300 text-xs font-bold text-on-surface-variant bg-surface-container-high/90">
