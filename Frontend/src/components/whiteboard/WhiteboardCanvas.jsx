@@ -353,7 +353,6 @@ const WhiteboardCanvas = ({
                   />
                 );
               }
-              // For text, line, arrow, we can just draw a bounding rect
               return null;
             };
 

@@ -341,7 +341,7 @@ export const useWhiteboardSocket = ({
           updated[index] = { ...updated[index], selectedElementId };
           return updated;
         } else {
-          // It's possible we receive selection-update before cursor-update or other events, though unlikely.
+         
           return [...prev, { userId, selectedElementId }];
         }
       });
