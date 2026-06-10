@@ -416,7 +416,9 @@ const Whiteboard = ({
         />
       )}
 
-      <main className={`flex-1 flex flex-col relative overflow-hidden transition-all duration-300 ${isSidebarOpen ? "lg:ml-[280px]" : "ml-0"}`}>
+      <main
+        className={`flex-1 flex flex-col relative overflow-hidden transition-all duration-300 ${isSidebarOpen ? "lg:ml-[280px]" : "ml-0"}`}
+      >
         <WhiteboardHeader
           isEditingTitle={isEditingTitle}
           boardTitle={boardTitle}

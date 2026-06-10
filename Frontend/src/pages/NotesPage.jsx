@@ -318,9 +318,15 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                 const isSelected = board._id === selectedBoardId;
                 const stats = getActionItemStats(board._id);
                 const note = notesData[board._id];
-                const previewText = note?.textContent
-                  ? note.textContent.replace(/<[^>]*>/g, " ").trim()
-                  : "No notes written yet.";
+                  const activeNoteContent = note?.textContent || board.meetingNotes;
+                const savedNotes = (board.comments || []).filter(c => c.commentType === "note");
+                
+                let previewText = "No notes written yet.";
+                if (activeNoteContent && activeNoteContent.replace(/<[^>]*>/g, " ").trim()) {
+                  previewText = activeNoteContent.replace(/<[^>]*>/g, " ").trim();
+                } else if (savedNotes.length > 0) {
+                  previewText = savedNotes[savedNotes.length - 1].text;
+                }
 
                 return (
                   <div
@@ -435,10 +441,12 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                 <div className="p-6 min-h-[380px] flex flex-col justify-between space-y-6">
                   <div>
                     {activeTab === "notes" && (
-                      <div>
-                        {selectedNotes?.textContent ||
-                        selectedBoard.meetingNotes ? (
-                          <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm">
+                      <div className="space-y-6">
+                        {(selectedNotes?.textContent || selectedBoard.meetingNotes) && (
+                          <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm mb-6">
+                            <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4 border-b border-outline-variant/40 pb-2">
+                              Active Collaborative Note
+                            </h4>
                             <article
                               className="text-sm text-on-surface-variant leading-relaxed"
                               dangerouslySetInnerHTML={{
@@ -448,7 +456,40 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                               }}
                             />
                           </div>
-                        ) : (
+                        )}
+
+                        {selectedBoard.comments?.filter(c => c.commentType === "note").length > 0 && (
+                          <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm">
+                            <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4 border-b border-outline-variant/40 pb-2">
+                              All Notes
+                            </h4>
+                            <div className="space-y-4">
+                              {selectedBoard.comments.filter(c => c.commentType === "note").map((note, idx) => (
+                                <div key={note._id || note.id || idx} className="flex gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-blue-50 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-blue-700">
+                                    {note.author?.slice(0, 2).toUpperCase() || "UN"}
+                                  </div>
+                                  <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex-1">
+                                    <p className="text-sm mb-1 text-on-surface font-semibold">
+                                      {note.text}
+                                    </p>
+                                    <span className="text-[10px] text-slate-400">
+                                      {note.createdAt
+                                        ? new Date(note.createdAt).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })
+                                        : "Just now"}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {!(selectedNotes?.textContent || selectedBoard.meetingNotes) && 
+                         (!selectedBoard.comments || selectedBoard.comments.filter(c => c.commentType === "note").length === 0) && (
                           <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-white/50">
                             <FileText
                               className="mx-auto text-outline/50 mb-3"

@@ -3,7 +3,11 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import * as Y from "yjs";
 import apiRequest from "../utils/apiRequest";
-import { clearOfflineQueue, enqueueOperation, getOfflineQueue } from "../utils/offlineQueue";
+import {
+  clearOfflineQueue,
+  enqueueOperation,
+  getOfflineQueue,
+} from "../utils/offlineQueue";
 
 function getCaretCharacterOffsetWithin(element) {
   let caretOffset = 0;
@@ -263,18 +267,22 @@ export const useWhiteboardSocket = ({
             socket.emit("yjs-update", op.payload);
           } else if (op.type === "canvas-change") {
             socket.emit("canvas-change", op.payload);
-            apiRequest.put(
-              `/boards/${op.payload.boardId}`,
-              { snapshot: op.payload.elements },
-              { skipSuccessToast: true }
-            ).catch(() => {});
+            apiRequest
+              .put(
+                `/boards/${op.payload.boardId}`,
+                { snapshot: op.payload.elements },
+                { skipSuccessToast: true },
+              )
+              .catch(() => {});
           } else if (op.type === "notes-change") {
             socket.emit("notes-change", op.payload);
-            apiRequest.put(
-              `/boards/${op.payload.boardId}`,
-              { meetingNotes: op.payload.meetingNotes },
-              { skipSuccessToast: true }
-            ).catch(() => {});
+            apiRequest
+              .put(
+                `/boards/${op.payload.boardId}`,
+                { meetingNotes: op.payload.meetingNotes },
+                { skipSuccessToast: true },
+              )
+              .catch(() => {});
           } else if (op.type === "add-comment") {
             socket.emit("add-comment", op.payload);
           }
@@ -555,7 +563,10 @@ export const useWhiteboardSocket = ({
           meetingNotes: text,
         },
       });
-      toast("Saved offline. Will sync when reconnected.", { icon: "🔌", id: "offline-notes-toast" });
+      toast("Saved offline. Will sync when reconnected.", {
+        icon: "🔌",
+        id: "offline-notes-toast",
+      });
     }
   };
 

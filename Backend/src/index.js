@@ -125,9 +125,11 @@ function queueSave(boardId, doc) {
         await notesModel.findOneAndUpdate(
           { board: boardId },
           { $set: { textContent: meetingNotesText } },
-          { upsert: true, returnDocument: "after" }
+          { upsert: true, returnDocument: "after" },
         );
-        console.log(`Synced Yjs notes textContent for board ${boardId} successfully.`);
+        console.log(
+          `Synced Yjs notes textContent for board ${boardId} successfully.`,
+        );
       }
     } catch (err) {
       console.error("Error saving board Yjs state:", err);
@@ -229,7 +231,9 @@ io.on("connection", (socket) => {
         board.comments.push(freshComment);
         await board.save();
 
-        io.to(`board_${boardId}`).emit("comments-update", { comments: board.comments });
+        io.to(`board_${boardId}`).emit("comments-update", {
+          comments: board.comments,
+        });
       }
     } catch (err) {
       console.error("Error adding comment via socket:", err);
@@ -256,5 +260,3 @@ connectDB()
   .catch((err) => {
     console.log("DB Connection Failed..!", err);
   });
-
-
