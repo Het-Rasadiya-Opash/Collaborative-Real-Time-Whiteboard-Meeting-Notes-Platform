@@ -132,6 +132,11 @@ const boardSchema = new mongoose.Schema(
           type: Date,
           default: Date.now,
         },
+        commentType: {
+          type: String,
+          enum: ["comment", "note"],
+          default: "comment",
+        },
       },
     ],
     boardOps: [boardOpsSchema],

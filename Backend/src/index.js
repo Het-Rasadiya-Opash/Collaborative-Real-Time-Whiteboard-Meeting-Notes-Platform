@@ -125,7 +125,7 @@ function queueSave(boardId, doc) {
         await notesModel.findOneAndUpdate(
           { board: boardId },
           { $set: { textContent: meetingNotesText } },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: "after" }
         );
         console.log(`Synced Yjs notes textContent for board ${boardId} successfully.`);
       }
@@ -185,6 +185,14 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("selection-change", ({ boardId, userId, selectedElementId }) => {
+    if (!boardId) return;
+    socket.to(`board_${boardId}`).emit("selection-update", {
+      userId,
+      selectedElementId,
+    });
+  });
+
   socket.on("notes-change", ({ boardId, meetingNotes }) => {
     if (!boardId) return;
     socket.to(`board_${boardId}`).emit("notes-update", { meetingNotes });
@@ -212,6 +220,7 @@ io.on("connection", (socket) => {
         const freshComment = {
           author: comment.author,
           text: comment.text,
+          commentType: comment.commentType || "comment",
           createdAt: new Date(),
         };
         if (!board.comments) {

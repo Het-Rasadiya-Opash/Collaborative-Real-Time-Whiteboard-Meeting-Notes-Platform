@@ -228,6 +228,54 @@ const NotesPanel = ({
 
   if (!isNotesOpen) return null;
 
+  const handleSaveAsNote = () => {
+    const textToSave = editorRef.current?.innerText?.trim();
+    if (!textToSave) {
+      toast.error("Note cannot be empty");
+      return;
+    }
+
+    const freshComment = {
+      author: currentUser?.username || "Guest",
+      text: textToSave,
+      commentType: "note",
+      createdAt: new Date().toISOString(),
+    };
+
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("add-comment", {
+        boardId: board._id,
+        comment: freshComment,
+      });
+    } else {
+      const updatedComments = [...comments, freshComment];
+      setComments(updatedComments);
+
+      enqueueOperation({
+        type: "add-comment",
+        payload: {
+          boardId: board._id,
+          comment: freshComment,
+        },
+      });
+      toast("Note saved offline.", { icon: "🔌" });
+
+      apiRequest
+        .put(`/boards/${board._id}`, {
+          comments: updatedComments,
+        })
+        .catch(() => {});
+    }
+
+    toast.success("Saved to All Notes");
+    
+    if (editorRef.current) {
+      editorRef.current.innerHTML = "";
+    }
+    setAgendaText("");
+    handleSaveNotes("");
+  };
+
   const handleCommentSubmit = (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -235,6 +283,7 @@ const NotesPanel = ({
     const freshComment = {
       author: currentUser?.username || "Guest",
       text: newComment.trim(),
+      commentType: "comment",
       createdAt: new Date().toISOString(),
     };
 
@@ -256,15 +305,13 @@ const NotesPanel = ({
           comment: freshComment,
         },
       });
-      toast("Comment saved offline.", { icon: "🔌" });
+      toast("Note saved offline.", { icon: "🔌" });
 
       apiRequest
         .put(`/boards/${board._id}`, {
           comments: updatedComments,
         })
-        .catch(() => {
-          // Silent catch since we queued it for socket
-        });
+        .catch(() => {});
     }
   };
 
@@ -480,37 +527,88 @@ const NotesPanel = ({
                     </span>
                   </div>
                 )}
+                
+                {!isReadOnly && (
+                  <div className="flex justify-end mt-3">
+                    <button
+                      onClick={handleSaveAsNote}
+                      className="bg-primary hover:bg-primary/95 text-white font-bold text-[11px] py-1.5 px-4 rounded-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      Save Note
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
               <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
+                All Notes
+              </h4>
+              <div className="space-y-4 max-h-[150px] overflow-y-auto pr-1">
+                {comments.filter(c => c.commentType === "note").length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No notes saved yet.</p>
+                ) : (
+                  comments.filter(c => c.commentType === "note").map((note, index) => (
+                    <div
+                      key={note._id || note.id || index}
+                      className="flex gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-note-blue flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-blue-700">
+                        {note.author.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex-1">
+                        <p className="text-body-sm mb-1 text-on-surface font-semibold">
+                          {note.text}
+                        </p>
+                        <span className="text-[10px] text-slate-400">
+                          {note.createdAt
+                            ? new Date(note.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "Just now"}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-outline-variant/50">
+              <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
                 Recent Comments
               </h4>
-              <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1">
-                {comments.map((comment, index) => (
-                  <div
-                    key={comment._id || comment.id || index}
-                    className="flex gap-3"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-note-purple flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-purple-700">
-                      {comment.author.slice(0, 2).toUpperCase()}
+              <div className="space-y-4 max-h-[150px] overflow-y-auto pr-1">
+                {comments.filter(c => c.commentType !== "note").length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No comments yet.</p>
+                ) : (
+                  comments.filter(c => c.commentType !== "note").map((comment, index) => (
+                    <div
+                      key={comment._id || comment.id || index}
+                      className="flex gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-note-purple flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-purple-700">
+                        {comment.author.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-outline-variant/30 flex-1">
+                        <p className="text-body-sm mb-1 text-on-surface font-semibold">
+                          {comment.text}
+                        </p>
+                        <span className="text-[10px] text-slate-400">
+                          {comment.createdAt
+                            ? new Date(comment.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "Just now"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-outline-variant/30 flex-1">
-                      <p className="text-body-sm mb-1 text-on-surface font-semibold">
-                        {comment.text}
-                      </p>
-                      <span className="text-[10px] text-slate-400">
-                        {comment.createdAt
-                          ? new Date(comment.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Just now"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </>

@@ -87,6 +87,8 @@ const WhiteboardCanvas = ({
   pan,
   isPanning,
   updateElementsAndHistory,
+  collaborators = [],
+  currentUser,
 }) => {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
@@ -259,109 +261,206 @@ const WhiteboardCanvas = ({
             const listening = selectedTool === "select";
             const canMoveSelected = listening && isSelected && !isReadOnly;
 
+            const selectedByOther = collaborators.find(
+              (c) => c.selectedElementId === el.id && c.userId !== currentUser?._id
+            );
+            const otherSelectionColor = "#7c3aed"; // Purple indicator
+
+            const renderSelectionGlow = (shapeType) => {
+              if (!selectedByOther) return null;
+              
+              if (shapeType === "rectangle" || shapeType === "sticky") {
+                return (
+                  <Rect
+                    x={el.x}
+                    y={el.y}
+                    width={el.width || 160}
+                    height={el.height || 160}
+                    stroke={otherSelectionColor}
+                    strokeWidth={3}
+                    shadowColor={otherSelectionColor}
+                    shadowBlur={10}
+                    shadowOpacity={0.6}
+                    listening={false}
+                  />
+                );
+              }
+              if (shapeType === "circle") {
+                return (
+                  <Circle
+                    x={el.cx}
+                    y={el.cy}
+                    radius={el.r}
+                    stroke={otherSelectionColor}
+                    strokeWidth={3}
+                    shadowColor={otherSelectionColor}
+                    shadowBlur={10}
+                    shadowOpacity={0.6}
+                    listening={false}
+                  />
+                );
+              }
+              // For text, line, arrow, we can just draw a bounding rect
+              return null;
+            };
+
             if (el.type === "stroke") {
               return (
-                <Line
-                  key={el.id}
-                  id={el.id}
-                  points={el.points.flatMap((p) => [p.x, p.y])}
-                  stroke={el.color}
-                  strokeWidth={el.strokeWidth || 4}
-                  lineCap="round"
-                  lineJoin="round"
-                  listening={listening}
-                  draggable={canMoveSelected}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragEnd={(e) => handleDragEnd(e, el.id)}
-                />
+                <Group key={el.id}>
+                  <Line
+                    id={el.id}
+                    points={el.points.flatMap((p) => [p.x, p.y])}
+                    stroke={el.color}
+                    strokeWidth={el.strokeWidth || 4}
+                    lineCap="round"
+                    lineJoin="round"
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                  />
+                  {selectedByOther && (() => {
+                    const xs = el.points.map(p => p.x);
+                    const ys = el.points.map(p => p.y);
+                    const minX = Math.min(...xs) - 10;
+                    const minY = Math.min(...ys) - 10;
+                    const width = Math.max(...xs) - Math.min(...xs) + 20;
+                    const height = Math.max(...ys) - Math.min(...ys) + 20;
+                    return (
+                      <Rect
+                        x={minX}
+                        y={minY}
+                        width={width}
+                        height={height}
+                        stroke={otherSelectionColor}
+                        strokeWidth={2}
+                        listening={false}
+                      />
+                    );
+                  })()}
+                </Group>
               );
             }
 
             if (el.type === "rectangle") {
               return (
-                <Rect
-                  key={el.id}
-                  id={el.id}
-                  x={el.x}
-                  y={el.y}
-                  width={el.width}
-                  height={el.height}
-                  stroke={el.color}
-                  strokeWidth={3}
-                  fill="transparent"
-                  listening={listening}
-                  draggable={canMoveSelected}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragEnd={(e) => handleDragEnd(e, el.id)}
-                  onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                />
+                <Group key={el.id}>
+                  <Rect
+                    id={el.id}
+                    x={el.x}
+                    y={el.y}
+                    width={el.width}
+                    height={el.height}
+                    stroke={el.color}
+                    strokeWidth={3}
+                    fill="transparent"
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                  />
+                  {renderSelectionGlow("rectangle")}
+                </Group>
               );
             }
 
             if (el.type === "circle") {
               return (
-                <Circle
-                  key={el.id}
-                  id={el.id}
-                  x={el.cx}
-                  y={el.cy}
-                  radius={el.r}
-                  stroke={el.color}
-                  strokeWidth={3}
-                  fill="transparent"
-                  listening={listening}
-                  draggable={canMoveSelected}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragEnd={(e) => handleDragEnd(e, el.id)}
-                  onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                />
+                <Group key={el.id}>
+                  <Circle
+                    id={el.id}
+                    x={el.cx}
+                    y={el.cy}
+                    radius={el.r}
+                    stroke={el.color}
+                    strokeWidth={3}
+                    fill="transparent"
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                  />
+                  {renderSelectionGlow("circle")}
+                </Group>
               );
             }
 
             if (el.type === "arrow") {
               return (
-                <Arrow
-                  key={el.id}
-                  id={el.id}
-                  points={el.points}
-                  stroke={el.color}
-                  fill={el.color}
-                  strokeWidth={el.strokeWidth || 4}
-                  pointerLength={12}
-                  pointerWidth={12}
-                  listening={listening}
-                  draggable={canMoveSelected}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDragEnd={(e) => handleDragEnd(e, el.id)}
-                />
+                <Group key={el.id}>
+                  <Arrow
+                    id={el.id}
+                    points={el.points}
+                    stroke={el.color}
+                    fill={el.color}
+                    strokeWidth={el.strokeWidth || 4}
+                    pointerLength={12}
+                    pointerWidth={12}
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                  />
+                  {selectedByOther && (() => {
+                    const minX = Math.min(el.points[0], el.points[2]) - 10;
+                    const minY = Math.min(el.points[1], el.points[3]) - 10;
+                    const width = Math.abs(el.points[0] - el.points[2]) + 20;
+                    const height = Math.abs(el.points[1] - el.points[3]) + 20;
+                    return (
+                      <Rect
+                        x={minX}
+                        y={minY}
+                        width={width}
+                        height={height}
+                        stroke={otherSelectionColor}
+                        strokeWidth={2}
+                        listening={false}
+                      />
+                    );
+                  })()}
+                </Group>
               );
             }
 
             if (el.type === "text") {
               return (
-                <Text
-                  key={el.id}
-                  id={el.id}
-                  x={el.x}
-                  y={el.y}
-                  text={editingStickyId === el.id ? "" : el.text}
-                  fontSize={el.fontSize || 20}
-                  fill={el.color}
-                  fontStyle="bold"
-                  fontFamily="sans-serif"
-                  listening={listening}
-                  draggable={canMoveSelected}
-                  onClick={(e) => handleShapeSelect(e, el.id)}
-                  onTap={(e) => handleShapeSelect(e, el.id)}
-                  onDblClick={(e) => handleDoubleClickSticky(e, el)}
-                  onDblTap={(e) => handleDoubleClickSticky(e, el)}
-                  onDragEnd={(e) => handleDragEnd(e, el.id)}
-                  onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                />
+                <Group key={el.id}>
+                  <Text
+                    id={el.id}
+                    x={el.x}
+                    y={el.y}
+                    text={editingStickyId === el.id ? "" : el.text}
+                    fontSize={el.fontSize || 20}
+                    fill={el.color}
+                    fontStyle="bold"
+                    fontFamily="sans-serif"
+                    listening={listening}
+                    draggable={canMoveSelected}
+                    onClick={(e) => handleShapeSelect(e, el.id)}
+                    onTap={(e) => handleShapeSelect(e, el.id)}
+                    onDblClick={(e) => handleDoubleClickSticky(e, el)}
+                    onDblTap={(e) => handleDoubleClickSticky(e, el)}
+                    onDragEnd={(e) => handleDragEnd(e, el.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                  />
+                  {selectedByOther && (
+                    <Rect
+                      x={el.x - 4}
+                      y={el.y - 4}
+                      width={(el.text?.length || 10) * (el.fontSize || 20) * 0.6 + 8}
+                      height={(el.fontSize || 20) + 8}
+                      stroke={otherSelectionColor}
+                      strokeWidth={2}
+                      listening={false}
+                    />
+                  )}
+                </Group>
               );
             }
 
@@ -420,6 +519,17 @@ const WhiteboardCanvas = ({
                     verticalAlign="top"
                     wrap="char"
                   />
+                  {renderSelectionGlow("sticky")}
+                  {selectedByOther && (
+                    <Text
+                      x={0}
+                      y={-20}
+                      text={`${selectedByOther.username} is editing`}
+                      fill={otherSelectionColor}
+                      fontSize={12}
+                      fontStyle="bold"
+                    />
+                  )}
                 </Group>
               );
             }

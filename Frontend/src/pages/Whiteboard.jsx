@@ -196,6 +196,16 @@ const Whiteboard = ({
       isPanning;
   }, [isDragging, currentDrawingElement, editingStickyId, isPanning]);
 
+  useEffect(() => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("selection-change", {
+        boardId: board._id,
+        userId: currentUser?._id || `guest_${socketRef.current.id}`,
+        selectedElementId,
+      });
+    }
+  }, [selectedElementId, board._id, currentUser]);
+
   const handleCreateSnapshot = (e) => {
     e.preventDefault();
     if (isCreatingSnapshot) return;
@@ -504,6 +514,8 @@ const Whiteboard = ({
               setPan={setPan}
               isPanning={isPanning}
               updateElementsAndHistory={updateElementsAndHistory}
+              collaborators={collaborators}
+              currentUser={currentUser}
             />
 
             <PresenceLayer

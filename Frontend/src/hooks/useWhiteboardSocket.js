@@ -325,6 +325,20 @@ export const useWhiteboardSocket = ({
       });
     });
 
+    socket.on("selection-update", ({ userId, selectedElementId }) => {
+      setCollaborators((prev) => {
+        const index = prev.findIndex((c) => c.userId === userId);
+        if (index !== -1) {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], selectedElementId };
+          return updated;
+        } else {
+          // It's possible we receive selection-update before cursor-update or other events, though unlikely.
+          return [...prev, { userId, selectedElementId }];
+        }
+      });
+    });
+
     socket.on("notes-typing-update", ({ userId, username, isTyping }) => {
       setCollaborators((prev) => {
         const index = prev.findIndex((c) => c.userId === userId);
