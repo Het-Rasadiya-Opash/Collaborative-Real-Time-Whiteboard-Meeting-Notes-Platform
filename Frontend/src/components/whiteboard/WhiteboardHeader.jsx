@@ -5,6 +5,7 @@ import {
   Download,
   Menu,
   Share2,
+  Video,
 } from "lucide-react";
 
 export const WhiteboardHeader = ({
@@ -24,6 +25,8 @@ export const WhiteboardHeader = ({
   handleExportPDF,
   isSidebarOpen,
   onToggleSidebar,
+  isVideoCallActive,
+  setIsVideoCallActive,
 }) => {
   return (
     <header
@@ -119,6 +122,17 @@ export const WhiteboardHeader = ({
           )}
         </div>
         <div className="flex items-center gap-3 border-l border-outline-variant/40 pl-6">
+          <button
+            onClick={() => setIsVideoCallActive(!isVideoCallActive)}
+            className={`flex items-center gap-2 px-4 py-1.5 font-bold rounded-lg transition-all cursor-pointer text-xs select-none active:scale-95 ${
+              isVideoCallActive
+                ? "bg-red-500 hover:bg-red-600 text-white"
+                : "bg-primary text-white hover:bg-primary/95"
+            }`}
+          >
+            <Video size={15} />
+            {isVideoCallActive ? "LEAVE MEET" : "VIDEO MEET"}
+          </button>
           {!publicShareToken && (
             <button
               onClick={() => setIsShareModalOpen(true)}

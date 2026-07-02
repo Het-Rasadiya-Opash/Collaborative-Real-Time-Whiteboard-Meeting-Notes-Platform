@@ -8,6 +8,7 @@ import NotesPanel from "../components/whiteboard/NotesPanel";
 import PresenceLayer from "../components/whiteboard/PresenceLayer";
 import WhiteboardCanvas from "../components/whiteboard/WhiteboardCanvas";
 import WhiteboardToolbar from "../components/whiteboard/WhiteboardToolbar";
+import VideoMeet from "../components/whiteboard/VideoMeet";
 
 import { ShareModal } from "../components/whiteboard/ShareModal";
 import { SnapshotModal } from "../components/whiteboard/SnapshotModal";
@@ -82,6 +83,7 @@ const Whiteboard = ({
   }, []);
 
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
   const [newComment, setNewComment] = useState("");
 
   const [activeRightTab, setActiveRightTab] = useState("notes");
@@ -442,6 +444,8 @@ const Whiteboard = ({
           handleExportPDF={handleExportPDF}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          isVideoCallActive={isVideoCallActive}
+          setIsVideoCallActive={setIsVideoCallActive}
         />
 
         <div className="mt-14 flex-1 bg-surface-bright relative canvas-dot-grid overflow-hidden flex">
@@ -540,6 +544,16 @@ const Whiteboard = ({
               pan={pan}
             />
           </div>
+
+          {currentUser && isVideoCallActive && (
+            <VideoMeet
+              boardId={board._id}
+              currentUser={currentUser}
+              socketRef={socketRef}
+              isSidebarOpen={isSidebarOpen}
+              onLeave={() => setIsVideoCallActive(false)}
+            />
+          )}
 
           <NotesPanel
             isNotesOpen={isNotesOpen}

@@ -137,6 +137,8 @@ function queueSave(boardId, doc) {
   }, 2000);
 }
 
+const activeVideoUsers = new Map();
+
 io.on("connection", (socket) => {
   console.log("A user connected to WebSocket:", socket.id);
 
@@ -144,6 +146,62 @@ io.on("connection", (socket) => {
     if (!userId) return;
     socket.join(`user_${userId}`);
     console.log(`User ${userId} joined notifications room: user_${userId}`);
+  });
+
+  socket.on("join-video", ({ boardId, userId, username }) => {
+    if (!boardId || !userId) return;
+
+    activeVideoUsers.set(socket.id, { boardId, userId, username });
+    socket.join(`video_${boardId}`);
+
+    const otherUsers = [];
+    activeVideoUsers.forEach((info, sid) => {
+      if (info.boardId === boardId && sid !== socket.id) {
+        otherUsers.push({
+          socketId: sid,
+          userId: info.userId,
+          username: info.username,
+        });
+      }
+    });
+
+    socket.emit("video-users-list", otherUsers);
+
+    socket.to(`video_${boardId}`).emit("video-user-joined", {
+      socketId: socket.id,
+      userId,
+      username,
+    });
+
+    console.log(`User ${username} joined video room for board ${boardId}`);
+  });
+
+  socket.on("video-signal", ({ targetSocketId, signalData }) => {
+    const senderInfo = activeVideoUsers.get(socket.id);
+    if (!senderInfo) return;
+
+    io.to(targetSocketId).emit("video-signal", {
+      senderSocketId: socket.id,
+      senderUserId: senderInfo.userId,
+      senderUsername: senderInfo.username,
+      signalData,
+    });
+  });
+
+  socket.on("leave-video", () => {
+    const userInfo = activeVideoUsers.get(socket.id);
+    if (!userInfo) return;
+
+    activeVideoUsers.delete(socket.id);
+    socket.leave(`video_${userInfo.boardId}`);
+
+    socket.to(`video_${userInfo.boardId}`).emit("video-user-left", {
+      socketId: socket.id,
+      userId: userInfo.userId,
+      username: userInfo.username,
+    });
+
+    console.log(`User ${userInfo.username} left video room for board ${userInfo.boardId}`);
   });
 
   socket.on("join-board", async ({ boardId, userId, username }) => {
@@ -253,6 +311,17 @@ io.on("connection", (socket) => {
         userId: socket.userId,
         username: socket.username,
       });
+    }
+
+    if (activeVideoUsers.has(socket.id)) {
+      const userInfo = activeVideoUsers.get(socket.id);
+      activeVideoUsers.delete(socket.id);
+      socket.to(`video_${userInfo.boardId}`).emit("video-user-left", {
+        socketId: socket.id,
+        userId: userInfo.userId,
+        username: userInfo.username,
+      });
+      console.log(`User ${userInfo.username} disconnected from video room ${userInfo.boardId}`);
     }
   });
 });
