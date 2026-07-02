@@ -400,6 +400,15 @@ export const useWhiteboardSocket = ({
       },
     );
 
+    socket.on("board-deleted", () => {
+      toast.error("This board has been deleted by a workspace administrator.", {
+        id: "board-deleted-toast",
+      });
+      setTimeout(() => {
+        window.location.href = `/workspace/${board.workspace}`;
+      }, 1500);
+    });
+
     return () => {
       socket.disconnect();
       ydoc.destroy();

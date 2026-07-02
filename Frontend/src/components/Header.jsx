@@ -3,15 +3,84 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
+import { io } from "socket.io-client";
 import { logout } from "../features/usersSlice";
 import apiRequest from "../utils/apiRequest";
 
 const Header = ({ onToggleSidebar }) => {
+  const [notifications, setNotifications] = useState([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
+  const socketRef = useRef(null);
+
+  const { currentUser } = useSelector((state) => state.users);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!currentUser?._id) return;
+
+    apiRequest
+      .get("/notifications")
+      .then((res) => {
+        const list = res.data?.data || [];
+        setNotifications(list);
+      })
+      .catch(() => {});
+
+    const apiEndpoint =
+      import.meta.env.VITE_API_ENDPOINT || "http://localhost:3000/api";
+    const socketUrl = apiEndpoint.replace("/api", "");
+
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      socket.emit("join-notifications", { userId: currentUser._id });
+    });
+
+    socket.on("new-notification", (newNotif) => {
+      setNotifications((prev) => [newNotif, ...prev]);
+      toast(newNotif.message, {
+        icon: "🔔",
+        id: newNotif._id,
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [currentUser?._id]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkAllRead = async () => {
+    try {
+      await apiRequest.put("/notifications/read");
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, isRead: true }))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await apiRequest.delete("/notifications");
+      setNotifications([]);
+      toast.success("Notifications cleared!");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -31,10 +100,6 @@ const Header = ({ onToggleSidebar }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const { currentUser } = useSelector((state) => state.users);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -70,27 +135,67 @@ const Header = ({ onToggleSidebar }) => {
               title="Notifications"
             >
               <Bell className="select-none" size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 bg-error text-white font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-surface animate-bounce">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             {isNotificationsOpen && (
               <div className="absolute right-0 top-11 w-80 bg-surface rounded-xl shadow-xl border border-outline-variant p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="pb-2 border-b border-outline-variant flex justify-between items-center">
                   <h4 className="font-bold text-sm text-on-surface">
-                    Notifications
+                    Notifications ({unreadCount})
                   </h4>
-                  <button
-                    onClick={() =>
-                      toast.success("Notifications marked as read!")
-                    }
-                    className="text-[10px] text-primary hover:underline font-semibold"
-                  >
-                    Clear All
-                  </button>
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={handleClearAll}
+                      className="text-[10px] text-error hover:underline font-semibold"
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
-                <div className="py-4 text-center text-xs text-on-surface-variant/80">
-                  You are all caught up!
+                <div className="max-h-60 overflow-y-auto mt-2 divide-y divide-outline-variant/30">
+                  {notifications.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-on-surface-variant/80">
+                      You are all caught up!
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div
+                        key={notif._id}
+                        className={`py-2.5 px-1 hover:bg-surface-container/30 transition-colors flex items-start justify-between gap-2 ${!notif.isRead ? "bg-primary-container/5" : ""}`}
+                      >
+                        <div className="flex flex-col text-left">
+                          <p className="text-xs text-on-surface font-medium leading-snug">
+                            {notif.message}
+                          </p>
+                          <span className="text-[9px] text-outline mt-1">
+                            {new Date(notif.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        {!notif.isRead && (
+                          <span className="w-2 h-2 bg-primary rounded-full mt-1.5 flex-shrink-0"></span>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
+                {unreadCount > 0 && (
+                  <div className="pt-2 border-t border-outline-variant/40 mt-1 flex justify-end">
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-[10px] text-primary hover:underline font-semibold"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -3,8 +3,10 @@ import crypto from "crypto";
 import PDFDocument from "pdfkit";
 import * as Y from "yjs";
 import boardModel from "../models/board.model.js";
+import notesModel from "../models/notes.model.js";
 import userModel from "../models/users.model.js";
 import workSpaceModel from "../models/workspace.model.js";
+import notificationModel from "../models/notification.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -149,6 +151,47 @@ export const createBoard = asyncHandler(async (req, res) => {
 
   if (!board) {
     throw new ApiError(500, "Something went wrong while creating the board");
+  }
+
+  try {
+    const membersToNotify = [];
+    if (workspace.owner && workspace.owner.toString() !== req.user._id.toString()) {
+      membersToNotify.push(workspace.owner);
+    }
+    if (workspace.members) {
+      workspace.members.forEach((m) => {
+        if (m.user && m.user.toString() !== req.user._id.toString()) {
+          membersToNotify.push(m.user);
+        }
+      });
+    }
+
+    const io = req.app.get("io");
+
+    await Promise.all(
+      membersToNotify.map(async (recipientId) => {
+        const newNotif = await notificationModel.create({
+          recipient: recipientId,
+          sender: req.user._id,
+          type: "BOARD_ADDED",
+          message: `${req.user.username} created a new board: "${sanitizedTitle}" in workspace: "${workspace.name}"`,
+          link: `/`,
+        });
+
+        if (io) {
+          io.to(`user_${recipientId.toString()}`).emit("new-notification", {
+            ...newNotif.toObject(),
+            sender: {
+              _id: req.user._id,
+              username: req.user.username,
+              email: req.user.email,
+            },
+          });
+        }
+      })
+    );
+  } catch (err) {
+    console.error("Error creating BOARD_ADDED notifications:", err);
   }
 
   const populatedBoard = await boardModel
@@ -1383,4 +1426,102 @@ export const exportPDF = asyncHandler(async (req, res) => {
   }
 
   doc.end();
+});
+
+export const deleteBoard = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ApiError(400, "Board ID is required");
+  }
+
+  const board = await boardModel.findById(id);
+  if (!board) {
+    throw new ApiError(404, "Board not found");
+  }
+
+  const workspace = await workSpaceModel.findById(board.workspace);
+  if (!workspace) {
+    throw new ApiError(404, "Workspace associated with this board not found");
+  }
+
+  const isWorkspaceOwner = workspace.owner.toString() === req.user._id.toString();
+  const member = workspace.members.find(
+    (m) => m.user && m.user.toString() === req.user._id.toString(),
+  );
+
+  const hasWorkspacePower = isWorkspaceOwner || (member && (member.role === "OWNER" || member.role === "EDITOR"));
+
+  if (!hasWorkspacePower) {
+    throw new ApiError(
+      403,
+      "You are not authorized to delete this board. Only workspace Owners and Editors can delete boards."
+    );
+  }
+
+  // Remove the board from Yjs active documents map in memory
+  const activeDocs = req.app.get("activeDocs");
+  if (activeDocs && activeDocs.has(id)) {
+    const active = activeDocs.get(id);
+    if (active.saveTimeout) {
+      clearTimeout(active.saveTimeout);
+    }
+    activeDocs.delete(id);
+  }
+
+  // Delete associated notes document
+  await notesModel.deleteMany({ board: id });
+
+  // Delete the board document
+  await boardModel.findByIdAndDelete(id);
+
+  // Notify any active socket connections in this board
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`board_${id}`).emit("board-deleted");
+  }
+
+  // Send BOARD_DELETED notifications to other workspace members
+  try {
+    const membersToNotify = [];
+    if (workspace.owner && workspace.owner.toString() !== req.user._id.toString()) {
+      membersToNotify.push(workspace.owner);
+    }
+    if (workspace.members) {
+      workspace.members.forEach((m) => {
+        if (m.user && m.user.toString() !== req.user._id.toString()) {
+          membersToNotify.push(m.user);
+        }
+      });
+    }
+
+    await Promise.all(
+      membersToNotify.map(async (recipientId) => {
+        const newNotif = await notificationModel.create({
+          recipient: recipientId,
+          sender: req.user._id,
+          type: "BOARD_DELETED",
+          message: `${req.user.username} deleted the board: "${board.title}" in workspace: "${workspace.name}"`,
+          link: `/`,
+        });
+
+        if (io) {
+          io.to(`user_${recipientId.toString()}`).emit("new-notification", {
+            ...newNotif.toObject(),
+            sender: {
+              _id: req.user._id,
+              username: req.user.username,
+              email: req.user.email,
+            },
+          });
+        }
+      })
+    );
+  } catch (err) {
+    console.error("Error creating BOARD_DELETED notifications:", err);
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Board deleted successfully"));
 });

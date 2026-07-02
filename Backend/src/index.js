@@ -140,6 +140,12 @@ function queueSave(boardId, doc) {
 io.on("connection", (socket) => {
   console.log("A user connected to WebSocket:", socket.id);
 
+  socket.on("join-notifications", ({ userId }) => {
+    if (!userId) return;
+    socket.join(`user_${userId}`);
+    console.log(`User ${userId} joined notifications room: user_${userId}`);
+  });
+
   socket.on("join-board", async ({ boardId, userId, username }) => {
     if (!boardId) return;
 

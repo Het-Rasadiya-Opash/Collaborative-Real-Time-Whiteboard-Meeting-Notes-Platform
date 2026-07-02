@@ -1,5 +1,6 @@
 import userModel from "../models/users.model.js";
 import workSpaceModel from "../models/workspace.model.js";
+import notificationModel from "../models/notification.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -88,10 +89,39 @@ export const addMember = asyncHandler(async (req, res) => {
 
   await workspace.save();
 
+  try {
+    const newNotif = await notificationModel.create({
+      recipient: user._id,
+      sender: req.user._id,
+      type: "WORKSPACE_INVITE",
+      message: `${req.user.username} added you to workspace: ${workspace.name}`,
+      link: `/`,
+    });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`user_${user._id.toString()}`).emit("new-notification", {
+        ...newNotif.toObject(),
+        sender: {
+          _id: req.user._id,
+          username: req.user.username,
+          email: req.user.email,
+        },
+      });
+    }
+  } catch (err) {
+    console.error("Error creating workspace notification:", err);
+  }
+
   const populatedWorkspace = await workSpaceModel
     .findById(workspaceId)
     .populate("owner", "username email role")
     .populate("members.user", "username role email");
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`user_${user._id.toString()}`).emit("workspace-added", populatedWorkspace);
+  }
 
   return res
     .status(200)
@@ -140,10 +170,39 @@ export const removeMember = asyncHandler(async (req, res) => {
   workspace.members.splice(memberIndex, 1);
   await workspace.save();
 
+  try {
+    const newNotif = await notificationModel.create({
+      recipient: userId,
+      sender: req.user._id,
+      type: "WORKSPACE_REMOVE",
+      message: `${req.user.username} removed you from workspace: ${workspace.name}`,
+      link: `/`,
+    });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`user_${userId}`).emit("new-notification", {
+        ...newNotif.toObject(),
+        sender: {
+          _id: req.user._id,
+          username: req.user.username,
+          email: req.user.email,
+        },
+      });
+    }
+  } catch (err) {
+    console.error("Error creating workspace removal notification:", err);
+  }
+
   const populatedWorkspace = await workSpaceModel
     .findById(workspaceId)
     .populate("owner", "username email role")
     .populate("members.user", "username role email");
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`user_${userId}`).emit("workspace-removed", { workspaceId });
+  }
 
   return res
     .status(200)

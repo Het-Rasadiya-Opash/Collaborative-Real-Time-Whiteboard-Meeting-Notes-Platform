@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
+import { io } from "socket.io-client";
 import apiRequest from "../utils/apiRequest";
 
 const roleBadgeClass = {
@@ -61,6 +62,41 @@ const GetWorkSpace = ({
       isMounted = false;
     };
   }, [refreshKey]);
+
+  useEffect(() => {
+    if (!currentUser?._id) return;
+
+    const apiEndpoint =
+      import.meta.env.VITE_API_ENDPOINT || "http://localhost:3000/api";
+    const socketUrl = apiEndpoint.replace("/api", "");
+
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("connect", () => {
+      socket.emit("join-notifications", { userId: currentUser._id });
+    });
+
+    socket.on("workspace-added", (newWorkspace) => {
+      setWorkspaces((prev) => {
+        if (prev.some((w) => w._id === newWorkspace._id)) return prev;
+        return [newWorkspace, ...prev];
+      });
+    });
+
+    socket.on("workspace-removed", ({ workspaceId }) => {
+      setWorkspaces((prev) => prev.filter((w) => w._id !== workspaceId));
+      if (selectedWorkspaceId === workspaceId) {
+        setSelectedWorkspaceId(null);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [currentUser?._id, selectedWorkspaceId]);
 
   useEffect(() => {
     if (!selectedWorkspaceId) {

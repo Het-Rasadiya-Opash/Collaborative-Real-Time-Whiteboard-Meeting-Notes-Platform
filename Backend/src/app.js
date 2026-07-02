@@ -8,6 +8,7 @@ import boardRoutes from "./routes/board.route.js";
 import notesRoutes from "./routes/notes.route.js";
 import userRoutes from "./routes/users.route.js";
 import workspaceRoutes from "./routes/workspace.route.js";
+import notificationRoutes from "./routes/notification.route.js";
 
 app.use(
   cors({
@@ -25,6 +26,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/notes", notesRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 //error handler
 app.use(errorHandler);

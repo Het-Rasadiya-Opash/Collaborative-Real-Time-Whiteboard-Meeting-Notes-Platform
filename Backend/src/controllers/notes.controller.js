@@ -1,6 +1,7 @@
 import boardModel from "../models/board.model.js";
 import notesModel from "../models/notes.model.js";
 import workSpaceModel from "../models/workspace.model.js";
+import notificationModel from "../models/notification.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -388,6 +389,7 @@ export const createActionItem = asyncHandler(async (req, res) => {
   }
 
   let finalAssignee = "Unassigned";
+  let assigneeUser = null;
   if (assignee && assignee.trim() && assignee !== "Unassigned") {
     const matchedUser = validMembers.find(
       (u) =>
@@ -400,6 +402,7 @@ export const createActionItem = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Assignee must be a member of the workspace");
     }
     finalAssignee = matchedUser.username || matchedUser.email;
+    assigneeUser = matchedUser;
   }
 
   let notesDoc = await notesModel.findOne({ board: boardId });
@@ -421,6 +424,32 @@ export const createActionItem = asyncHandler(async (req, res) => {
 
   notesDoc.actionItems.push(newItem);
   await notesDoc.save();
+
+  if (assigneeUser && assigneeUser._id.toString() !== req.user._id.toString()) {
+    try {
+      const newNotif = await notificationModel.create({
+        recipient: assigneeUser._id,
+        sender: req.user._id,
+        type: "TASK_ASSIGNED",
+        message: `${req.user.username} assigned you a task: "${task.trim()}" in board: "${boardDoc.title}"`,
+        link: `/`,
+      });
+
+      const io = req.app.get("io");
+      if (io) {
+        io.to(`user_${assigneeUser._id.toString()}`).emit("new-notification", {
+          ...newNotif.toObject(),
+          sender: {
+            _id: req.user._id,
+            username: req.user.username,
+            email: req.user.email,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error creating task assignment notification:", err);
+    }
+  }
 
   const io = req.app.get("io");
   if (io) {
