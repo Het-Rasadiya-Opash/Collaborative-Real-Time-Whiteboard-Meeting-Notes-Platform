@@ -41,6 +41,7 @@ const WhiteboardToolbar = ({
   handleAlign,
   handleImageUpload,
   isReadOnly,
+  onOpenTemplates,
 }) => {
   return (
     <>
@@ -205,6 +206,13 @@ const WhiteboardToolbar = ({
             title="Upload Image"
           >
             <ImageIcon size={18} />
+          </button>
+          <button
+            onClick={onOpenTemplates}
+            className="p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center text-on-surface-variant hover:bg-surface-container"
+            title="Templates Gallery"
+          >
+            <Grid3x3 size={18} />
           </button>
 
           <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>

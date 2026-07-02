@@ -12,9 +12,16 @@ import VideoMeet from "../components/whiteboard/VideoMeet";
 
 import { ShareModal } from "../components/whiteboard/ShareModal";
 import { SnapshotModal } from "../components/whiteboard/SnapshotModal";
+import { TemplatesModal } from "../components/whiteboard/TemplatesModal";
 import { WhiteboardHeader } from "../components/whiteboard/WhiteboardHeader";
 import { WhiteboardSidebar } from "../components/whiteboard/WhiteboardSidebar";
 import { WhiteboardStyles } from "../components/whiteboard/WhiteboardStyles";
+import {
+  generateSWOTElements,
+  generateKanbanElements,
+  generateMindmapElements,
+  generateRetroElements,
+} from "../utils/templatesGenerator";
 
 import { useWhiteboardCanvas } from "../hooks/useWhiteboardCanvas";
 import { useWhiteboardSocket } from "../hooks/useWhiteboardSocket";
@@ -85,6 +92,7 @@ const Whiteboard = ({
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [isVideoCallActive, setIsVideoCallActive] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
 
   const [activeRightTab, setActiveRightTab] = useState("notes");
   const [previewSnapshot, setPreviewSnapshot] = useState(null);
@@ -193,8 +201,26 @@ const Whiteboard = ({
     ydocRef,
     lastCursorEmitRef,
     triggerAutoSave,
-    canvasRef,
   });
+
+  const handleApplyTemplate = (templateId, isAppend) => {
+    let templateElements = [];
+    if (templateId === "swot") {
+      templateElements = generateSWOTElements();
+    } else if (templateId === "kanban") {
+      templateElements = generateKanbanElements();
+    } else if (templateId === "mindmap") {
+      templateElements = generateMindmapElements();
+    } else if (templateId === "retro") {
+      templateElements = generateRetroElements();
+    }
+
+    const newElements = isAppend
+      ? [...elements, ...templateElements]
+      : templateElements;
+
+    updateElementsAndHistory(newElements);
+  };
 
   useEffect(() => {
     isCanvasBusyRef.current =
@@ -501,6 +527,7 @@ const Whiteboard = ({
               handleAlign={handleAlign}
               handleImageUpload={handleImageUpload}
               isReadOnly={isReadOnly}
+              onOpenTemplates={() => setIsTemplatesModalOpen(true)}
             />
 
             <WhiteboardCanvas
@@ -623,6 +650,14 @@ const Whiteboard = ({
           handleGenerateShareLink={handleGenerateShareLink}
           handleRevokeShareLink={handleRevokeShareLink}
           setIsShareModalOpen={setIsShareModalOpen}
+        />
+      )}
+
+      {isTemplatesModalOpen && (
+        <TemplatesModal
+          isOpen={isTemplatesModalOpen}
+          onClose={() => setIsTemplatesModalOpen(false)}
+          onApplyTemplate={handleApplyTemplate}
         />
       )}
     </div>
