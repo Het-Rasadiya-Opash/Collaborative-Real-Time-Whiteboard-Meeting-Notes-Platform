@@ -27,6 +27,8 @@ const VideoMeet = ({ boardId, currentUser, socketRef, isSidebarOpen, onLeave }) 
   const localVideoRef = useRef(null);
   const peerConnections = useRef({}); // socketId -> RTCPeerConnection
   const localStreamRef = useRef(null);
+  const didStartCall = useRef(false);
+  const isMountedRef = useRef(true);
 
   // Stop media stream tracks
   const stopLocalStream = () => {
@@ -44,6 +46,11 @@ const VideoMeet = ({ boardId, currentUser, socketRef, isSidebarOpen, onLeave }) 
         video: true,
         audio: true,
       });
+
+      if (!isMountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
 
       localStreamRef.current = stream;
       setLocalStream(stream);
@@ -69,6 +76,8 @@ const VideoMeet = ({ boardId, currentUser, socketRef, isSidebarOpen, onLeave }) 
   };
 
   useEffect(() => {
+    if (didStartCall.current) return;
+    didStartCall.current = true;
     startCall();
   }, []);
 
@@ -246,7 +255,9 @@ const VideoMeet = ({ boardId, currentUser, socketRef, isSidebarOpen, onLeave }) 
 
   // Handle cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       Object.keys(peerConnections.current).forEach((socketId) => {
         if (peerConnections.current[socketId]) {
           peerConnections.current[socketId].close();

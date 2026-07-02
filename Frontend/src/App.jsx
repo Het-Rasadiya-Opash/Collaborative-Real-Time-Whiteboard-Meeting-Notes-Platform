@@ -34,6 +34,7 @@ const App = () => {
       <Toaster
         position="top-center"
         reverseOrder={false}
+        limit={1}
         toastOptions={{
           style: {
             background: "var(--bg-surface)",
