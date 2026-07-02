@@ -44,12 +44,14 @@ const Whiteboard = ({
   const { currentUser } = useSelector((state) => state.users);
 
   const myMember = workspace?.members?.find(
-    (m) => currentUser?._id && (m.user?._id || m.user) === currentUser?._id,
+    (m) =>
+      currentUser?._id &&
+      String(m.user?._id || m.user) === String(currentUser?._id),
   );
   const myRole =
     currentUser?._id &&
-    (workspace?.owner?._id === currentUser?._id ||
-      workspace?.owner === currentUser?._id)
+    (String(workspace?.owner?._id || workspace?.owner) === String(currentUser?._id) ||
+      String(board?.owner?._id || board?.owner) === String(currentUser?._id))
       ? "OWNER"
       : myMember?.role || "VIEWER";
   const isReadOnly =
@@ -201,6 +203,7 @@ const Whiteboard = ({
     ydocRef,
     lastCursorEmitRef,
     triggerAutoSave,
+    canvasRef,
   });
 
   const handleApplyTemplate = (templateId, isAppend) => {
