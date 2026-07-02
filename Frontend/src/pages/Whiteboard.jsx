@@ -558,7 +558,6 @@ const Whiteboard = ({
               handleRedo={handleRedo}
               historyCount={history.length}
               redoCount={redoStack.length}
-              pan={pan}
               setPan={setPan}
               isPanning={isPanning}
               isSpacePressed={isSpacePressed}
