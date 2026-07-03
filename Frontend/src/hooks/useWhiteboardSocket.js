@@ -405,7 +405,7 @@ export const useWhiteboardSocket = ({
         id: "board-deleted-toast",
       });
       setTimeout(() => {
-        window.location.href = `/workspace/${board.workspace}`;
+        window.location.href = "/";
       }, 1500);
     });
 

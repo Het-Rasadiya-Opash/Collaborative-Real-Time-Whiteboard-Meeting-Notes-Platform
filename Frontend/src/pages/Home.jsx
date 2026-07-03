@@ -116,7 +116,10 @@ const Home = () => {
       {activeBoard && (
         <Whiteboard
           board={activeBoard}
-          onClose={() => setActiveBoard(null)}
+          onClose={(dest) => {
+            setActiveBoard(null);
+            if (dest) setActiveNav(dest);
+          }}
           workspace={selectedWorkspace}
         />
       )}

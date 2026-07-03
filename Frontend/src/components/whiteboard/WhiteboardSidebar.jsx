@@ -1,6 +1,26 @@
 import { X } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
+import toast from "react-hot-toast";
+import { logout } from "../../features/usersSlice";
+import apiRequest from "../../utils/apiRequest";
 
 export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.users.currentUser);
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest.post("/users/logout");
+      dispatch(logout());
+      navigate("/login");
+    } catch {
+      dispatch(logout());
+      navigate("/login");
+    }
+  };
+
   return (
     <aside className={`fixed left-0 top-0 h-full w-[280px] py-6 px-4 bg-surface-container-low border-r border-outline-variant z-[60] flex flex-col justify-between transition-all duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div>
@@ -25,7 +45,7 @@ export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
 
         <nav className="flex-1 space-y-1">
           <a
-            onClick={onClose}
+            onClick={() => onClose("dashboard")}
             className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined">grid_view</span>
@@ -36,14 +56,14 @@ export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
             <span className="font-body-md">Boards</span>
           </a>
           <a
-            onClick={onClose}
+            onClick={() => onClose("notes")}
             className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined">description</span>
             <span className="font-body-md">Notes</span>
           </a>
           <a
-            onClick={onClose}
+            onClick={() => onClose("settings")}
             className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined">settings</span>
@@ -54,7 +74,7 @@ export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
 
       <div className="mt-auto space-y-6">
         <button
-          onClick={onClose}
+          onClick={() => onClose()}
           className="w-full flex items-center justify-center space-x-2 py-3 border-2 border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:border-primary hover:text-primary transition-all cursor-pointer bg-transparent"
         >
           <span className="material-symbols-outlined text-[20px]">close</span>
@@ -62,19 +82,32 @@ export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
         </button>
         <div className="space-y-1">
           <a
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              toast.success("Help Center is always here to assist you.");
+            }}
             className="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined">help</span>
             <span className="font-label-md">Help Center</span>
           </a>
-          <a
-            onClick={onClose}
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined">logout</span>
-            <span className="font-label-md">Sign Out</span>
-          </a>
+          {currentUser ? (
+            <a
+              onClick={handleLogout}
+              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-error-container/20 hover:text-error transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined">logout</span>
+              <span className="font-label-md">Sign Out</span>
+            </a>
+          ) : (
+            <a
+              onClick={() => navigate("/login")}
+              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined">login</span>
+              <span className="font-label-md">Sign In</span>
+            </a>
+          )}
         </div>
       </div>
     </aside>
