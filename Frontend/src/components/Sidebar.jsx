@@ -6,7 +6,7 @@ import {
   LogOut,
   PenTool,
   User,
-  X
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -30,9 +30,11 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, setIsOpen }) => {
   };
 
   return (
-    <aside className={`fixed left-0 top-0 h-screen w-sidebar-width flex flex-col py-6 border-r border-outline-variant z-40 bg-surface transition-transform duration-300 lg:translate-x-0 ${
-      isOpen ? "translate-x-0" : "-translate-x-full"
-    }`}>
+    <aside
+      className={`fixed left-0 top-0 h-screen w-sidebar-width flex flex-col py-6 border-r border-outline-variant z-40 bg-surface transition-transform duration-300 lg:translate-x-0 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <div className="px-6 py-4 mb-8 flex items-center justify-between relative">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/10">

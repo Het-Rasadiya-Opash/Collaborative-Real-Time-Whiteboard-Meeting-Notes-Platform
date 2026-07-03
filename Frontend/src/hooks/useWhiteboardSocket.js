@@ -565,17 +565,19 @@ export const useWhiteboardSocket = ({
         meetingNotes: text,
       });
     } else {
-      enqueueOperation({
-        type: "notes-change",
-        payload: {
-          boardId: board._id,
-          meetingNotes: text,
-        },
-      });
-      toast("Saved offline. Will sync when reconnected.", {
-        icon: "🔌",
-        id: "offline-notes-toast",
-      });
+      if (!navigator.onLine) {
+        enqueueOperation({
+          type: "notes-change",
+          payload: {
+            boardId: board._id,
+            meetingNotes: text,
+          },
+        });
+        toast("Saved offline. Will sync when reconnected.", {
+          icon: "🔌",
+          id: "offline-notes-toast",
+        });
+      }
     }
   };
 

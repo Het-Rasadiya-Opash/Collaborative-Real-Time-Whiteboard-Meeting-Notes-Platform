@@ -215,14 +215,16 @@ export const useWhiteboardCanvas = ({
         elements: newElements,
       });
     } else {
-      enqueueOperation({
-        type: "canvas-change",
-        payload: {
-          boardId: board._id,
-          elements: newElements,
-        },
-      });
-      toast("Saved offline. Will sync when reconnected.", { icon: "🔌" });
+      if (!navigator.onLine) {
+        enqueueOperation({
+          type: "canvas-change",
+          payload: {
+            boardId: board._id,
+            elements: newElements,
+          },
+        });
+        toast("Saved offline. Will sync when reconnected.", { icon: "🔌" });
+      }
     }
   };
 
