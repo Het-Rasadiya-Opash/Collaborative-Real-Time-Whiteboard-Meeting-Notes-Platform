@@ -66,8 +66,8 @@ export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
             onClick={() => onClose("settings")}
             className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined">settings</span>
-            <span className="font-body-md">Settings</span>
+            <span className="material-symbols-outlined">person</span>
+            <span className="font-body-md">Profile Settings</span>
           </a>
         </nav>
       </div>

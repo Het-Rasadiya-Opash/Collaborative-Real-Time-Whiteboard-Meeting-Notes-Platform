@@ -3,37 +3,37 @@ export const WhiteboardStyles = () => {
   return (
     <style>{`
       .whiteboard-root {
-        --color-primary: #004ac6;
-        --color-on-primary: #ffffff;
-        --color-primary-container: #2563eb;
-        --color-background: #faf8ff;
-        --color-on-background: #131b2e;
-        --color-surface: #faf8ff;
-        --color-surface-bright: #faf8ff;
-        --color-surface-dim: #d2d9f4;
-        --color-surface-container-lowest: #ffffff;
-        --color-surface-container-low: #f2f3ff;
-        --color-surface-container: #eaedff;
-        --color-surface-container-high: #e2e7ff;
-        --color-surface-container-highest: #dae2fd;
-        --color-surface-glass: rgba(255, 255, 255, 0.85);
-        --color-outline: #737686;
-        --color-outline-variant: #c3c6d7;
-        --color-on-surface: #131b2e;
-        --color-on-surface-variant: #434655;
-        --color-secondary: #5a5f68;
-        --color-secondary-container: #dee2ed;
-        --color-on-secondary-container: #60656e;
-        --color-success-emerald: #007d55;
-        --color-active-indicator: #004ac6;
-        --color-primary-fixed: #b4c5ff;
-        --color-on-primary-fixed: #004ac6;
+        --color-primary: var(--primary);
+        --color-on-primary: var(--on-primary);
+        --color-primary-container: var(--primary-container);
+        --color-background: var(--background);
+        --color-on-background: var(--on-background);
+        --color-surface: var(--surface);
+        --color-surface-bright: var(--surface-bright);
+        --color-surface-dim: var(--surface-dim);
+        --color-surface-container-lowest: var(--surface-container-lowest);
+        --color-surface-container-low: var(--surface-container-low);
+        --color-surface-container: var(--surface-container);
+        --color-surface-container-high: var(--surface-container-high);
+        --color-surface-container-highest: var(--surface-container-highest);
+        --color-surface-glass: var(--glass-panel-bg);
+        --color-outline: var(--outline);
+        --color-outline-variant: var(--outline-variant);
+        --color-on-surface: var(--on-surface);
+        --color-on-surface-variant: var(--on-surface-variant);
+        --color-secondary: var(--secondary);
+        --color-secondary-container: var(--secondary-container);
+        --color-on-secondary-container: var(--on-secondary-container);
+        --color-success-emerald: var(--success-text);
+        --color-active-indicator: var(--primary);
+        --color-primary-fixed: var(--primary-fixed-dim);
+        --color-on-primary-fixed: var(--on-primary);
       }
       .material-symbols-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
       }
       .glass-card {
-        background: rgba(255, 255, 255, 0.8);
+        background: var(--glass-bg);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
       }

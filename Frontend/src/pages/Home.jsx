@@ -5,6 +5,7 @@ import Boards from "./Boards";
 import NotesPage from "./NotesPage";
 import Whiteboard from "./Whiteboard";
 import Workspace from "./Workspace";
+import SettingsPage from "./SettingsPage";
 
 const Home = () => {
   const [activeNav, setActiveNav] = useState(() => {
@@ -85,7 +86,10 @@ const Home = () => {
         />
       )}
 
-      <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <Header
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onNavigate={(dest) => setActiveNav(dest)}
+      />
 
       <main className="lg:ml-[280px] pt-20 min-h-screen px-4 sm:px-6 pb-4 sm:pb-6 bg-background transition-all duration-300">
         {activeNav === "dashboard" ? (
@@ -105,6 +109,8 @@ const Home = () => {
             onSelectWorkspace={() => setActiveNav("dashboard")}
             onOpenBoard={(board) => setActiveBoard(board)}
           />
+        ) : activeNav === "settings" ? (
+          <SettingsPage />
         ) : (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-120px)] text-on-surface-variant opacity-60">
             <h2 className="text-xl font-bold capitalize">{activeNav} Page</h2>

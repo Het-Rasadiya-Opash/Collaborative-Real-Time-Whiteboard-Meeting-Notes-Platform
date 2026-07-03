@@ -51,7 +51,7 @@ const GetBoards = ({ onViewAllBoards }) => {
               className="glass-card p-4 rounded-xl flex flex-col justify-between cursor-pointer hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 transition-all duration-300 min-h-[140px]"
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100/50 flex items-center justify-center text-emerald-600 shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0">
                   <BarChart3 size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -62,7 +62,7 @@ const GetBoards = ({ onViewAllBoards }) => {
                     {board.title}
                   </p>
                   {board.workspace?.name && (
-                    <div className="flex items-center gap-1 mt-1 text-[10px] text-primary/80 font-semibold bg-brand-50/50 border border-brand-100/30 px-2 py-0.5 rounded-md w-fit max-w-full">
+                    <div className="flex items-center gap-1 mt-1 text-[10px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md w-fit max-w-full">
                       <Briefcase size={10} className="shrink-0" />
                       <span className="truncate">{board.workspace.name}</span>
                     </div>

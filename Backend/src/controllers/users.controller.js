@@ -149,6 +149,40 @@ export const getMe = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User profile retrieved successfully"));
 });
 
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { username, currentPassword, newPassword } = req.body;
+
+  const user = await userModel.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (username && username.trim() !== "") {
+    user.username = username.trim();
+  }
+
+  if (newPassword) {
+    if (!currentPassword) {
+      throw new ApiError(400, "Current password is required to change password");
+    }
+    const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+    if (!isPasswordCorrect) {
+      throw new ApiError(401, "Incorrect current password");
+    }
+    user.password = newPassword;
+  }
+
+  await user.save();
+
+  const updatedUser = await userModel
+    .findById(user._id)
+    .select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Profile updated successfully"));
+});
+
 export const logout = asyncHandler(async (req, res) => {
   await userModel.findByIdAndUpdate(
     req.user._id,

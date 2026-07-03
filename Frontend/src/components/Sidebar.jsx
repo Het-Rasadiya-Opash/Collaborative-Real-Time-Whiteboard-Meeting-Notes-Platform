@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   LogOut,
   PenTool,
-  Settings,
+  User,
   X
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -60,7 +60,7 @@ const Sidebar = ({ activeNav, setActiveNav, isOpen, setIsOpen }) => {
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "boards", label: "Boards", icon: PenTool },
           { id: "notes", label: "Notes", icon: FileText },
-          { id: "settings", label: "Settings", icon: Settings },
+          { id: "settings", label: "Profile Settings", icon: User },
         ].map((item) => {
           const isActive = activeNav === item.id;
           const IconComponent = item.icon;

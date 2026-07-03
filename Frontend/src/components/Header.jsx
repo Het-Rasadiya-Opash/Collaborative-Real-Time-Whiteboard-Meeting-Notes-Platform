@@ -7,7 +7,7 @@ import { io } from "socket.io-client";
 import { logout } from "../features/usersSlice";
 import apiRequest from "../utils/apiRequest";
 
-const Header = ({ onToggleSidebar }) => {
+const Header = ({ onToggleSidebar, onNavigate }) => {
   const [notifications, setNotifications] = useState([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -238,16 +238,6 @@ const Header = ({ onToggleSidebar }) => {
                 </span>
               </div>
               <div className="pt-2 space-y-1">
-                <button
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    toast.success("Profile details page is coming soon!");
-                  }}
-                  className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-surface-container transition-colors text-on-surface flex items-center gap-2 cursor-pointer"
-                >
-                  <User size={16} />
-                  Profile Settings
-                </button>
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-error-container/20 text-error hover:text-error transition-colors flex items-center gap-2 cursor-pointer font-bold"

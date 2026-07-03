@@ -29,17 +29,31 @@ const App = () => {
     };
     checkAuth();
   }, [dispatch]);
+
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      const html = document.documentElement;
+      if (savedTheme === "dark") {
+        html.classList.remove("light");
+        html.classList.add("dark");
+      } else {
+        html.classList.remove("dark");
+        html.classList.add("light");
+      }
+    } catch {}
+  }, []);
   return (
     <div>
       <Toaster
-        position="top-center"
+        position="top-right"
         reverseOrder={false}
         limit={1}
         toastOptions={{
           style: {
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-primary)",
+            background: "var(--surface)",
+            border: "1px solid var(--outline-variant)",
+            color: "var(--on-surface)",
           },
         }}
       />

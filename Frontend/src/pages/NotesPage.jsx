@@ -275,7 +275,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
 
       <div className="relative max-w-lg">
         <Search
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/80"
           size={16}
         />
         <input
@@ -283,7 +283,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
           placeholder="Search notes or boards..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-outline-variant rounded-full text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface shadow-sm"
+          className="w-full pl-10 pr-4 py-2.5 bg-surface-container border border-outline-variant/60 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder-on-surface-variant/50 shadow-sm"
         />
       </div>
 
@@ -334,8 +334,8 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     onClick={() => setSelectedBoardId(board._id)}
                     className={`glass-card p-4 rounded-2xl cursor-pointer transition-all duration-200 select-none ${
                       isSelected
-                        ? "ring-1 ring-primary/20 border-primary/30 bg-blue-50/60"
-                        : "opacity-80 hover:opacity-100"
+                        ? "ring-2 ring-primary border-primary/20 bg-primary/10"
+                        : "opacity-80 hover:opacity-100 hover:bg-surface-container-high/40"
                     }`}
                     style={{ transform: "none" }}
                   >
@@ -386,7 +386,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                 className="glass-card rounded-2xl overflow-hidden"
                 style={{ transform: "none" }}
               >
-                <div className="p-6 border-b border-outline-variant bg-white/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-6 border-b border-outline-variant bg-surface-container-low/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className="text-xl font-bold text-on-surface">
                       {selectedBoard.title}
@@ -408,7 +408,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                   </button>
                 </div>
 
-                <div className="flex gap-8 px-6 border-b border-outline-variant bg-white/40">
+                <div className="flex gap-8 px-6 border-b border-outline-variant bg-surface-container-lowest/30">
                   <button
                     onClick={() => setActiveTab("notes")}
                     className={`py-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
@@ -443,8 +443,8 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                     {activeTab === "notes" && (
                       <div className="space-y-6">
                         {(selectedNotes?.textContent || selectedBoard.meetingNotes) && (
-                          <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm mb-6">
-                            <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4 border-b border-outline-variant/40 pb-2">
+                          <div className="bg-surface-container-low border border-outline-variant/60 p-6 rounded-xl shadow-sm mb-6">
+                            <h4 className="text-label-md font-bold uppercase text-on-surface-variant/60 tracking-widest mb-4 border-b border-outline-variant/40 pb-2">
                               Active Collaborative Note
                             </h4>
                             <article
@@ -459,21 +459,21 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                         )}
 
                         {selectedBoard.comments?.filter(c => c.commentType === "note").length > 0 && (
-                          <div className="bg-white border border-outline-variant/50 p-6 rounded-xl shadow-sm">
-                            <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4 border-b border-outline-variant/40 pb-2">
+                          <div className="bg-surface-container-low border border-outline-variant/60 p-6 rounded-xl shadow-sm">
+                            <h4 className="text-label-md font-bold uppercase text-on-surface-variant/60 tracking-widest mb-4 border-b border-outline-variant/40 pb-2">
                               All Notes
                             </h4>
                             <div className="space-y-4">
                               {selectedBoard.comments.filter(c => c.commentType === "note").map((note, idx) => (
                                 <div key={note._id || note.id || idx} className="flex gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-blue-50 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-blue-700">
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-primary">
                                     {note.author?.slice(0, 2).toUpperCase() || "UN"}
                                   </div>
-                                  <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex-1">
+                                  <div className="bg-surface-container-high/60 p-3 rounded-lg border border-outline-variant/60 flex-1">
                                     <p className="text-sm mb-1 text-on-surface font-semibold">
                                       {note.text}
                                     </p>
-                                    <span className="text-[10px] text-slate-400">
+                                    <span className="text-[10px] text-on-surface-variant/60">
                                       {note.createdAt
                                         ? new Date(note.createdAt).toLocaleTimeString([], {
                                             hour: "2-digit",
@@ -490,7 +490,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
 
                         {!(selectedNotes?.textContent || selectedBoard.meetingNotes) && 
                          (!selectedBoard.comments || selectedBoard.comments.filter(c => c.commentType === "note").length === 0) && (
-                          <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-white/50">
+                          <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-surface-container-lowest/30">
                             <FileText
                               className="mx-auto text-outline/50 mb-3"
                               size={32}
@@ -528,7 +528,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                                     onClick={() =>
                                       handleCopyMarkdown(selectedBoardId)
                                     }
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold text-on-surface transition-colors cursor-pointer"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold text-on-surface transition-colors cursor-pointer"
                                   >
                                     <Copy size={12} />
                                     Copy Markdown
@@ -537,7 +537,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                                     onClick={() =>
                                       handleClearAllActionItems(selectedBoardId)
                                     }
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-error/20 text-error hover:bg-error/10 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                                   >
                                     <Trash2 size={12} />
                                     Clear Tasks
@@ -576,10 +576,10 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                               return (
                                 <div
                                   key={item._id || idx}
-                                  className={`p-4 rounded-xl border bg-white shadow-sm transition-all ${
+                                  className={`p-4 rounded-xl border bg-surface-container-low shadow-sm transition-all ${
                                     isCompleted
                                       ? "border-outline-variant/30 opacity-60"
-                                      : "border-outline-variant hover:border-blue-200"
+                                      : "border-outline-variant hover:border-primary/40"
                                   }`}
                                 >
                                   <div className="flex gap-3 items-start">
@@ -632,7 +632,7 @@ const NotesPage = ({ workspace, onSelectWorkspace, onOpenBoard }) => {
                             })}
                           </div>
                         ) : (
-                          <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-white/50">
+                          <div className="text-center py-16 border border-dashed border-outline-variant rounded-xl bg-surface-container-lowest/30">
                             <CheckSquare
                               className="mx-auto text-outline/50 mb-3"
                               size={32}

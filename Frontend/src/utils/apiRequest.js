@@ -12,7 +12,7 @@ apiRequest.interceptors.response.use(
       return response;
     }
     if (response.config.method !== "get" && response.data?.message) {
-      toast.success(response.data.message);
+      toast.success(response.data.message, { id: response.data.message });
     }
     return response;
   },
@@ -24,7 +24,7 @@ apiRequest.interceptors.response.use(
     const message =
       error.response?.data?.message || error.message || "Something went wrong";
 
-    toast.error(message);
+    toast.error(message, { id: message });
 
     if (error.response?.data?.errors) {
       console.error("Validation errors:", error.response.data.errors);

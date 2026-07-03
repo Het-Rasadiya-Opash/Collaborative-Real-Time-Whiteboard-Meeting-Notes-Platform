@@ -56,7 +56,7 @@ export const WhiteboardHeader = ({
           {(workspace?.members || []).slice(0, 3).map((member, mIdx) => {
             const username = member.user?.username || "?";
             const firstChar = username.charAt(0).toUpperCase();
-            const bgClasses = ["bg-blue-100 text-blue-600", "bg-purple-100 text-purple-600", "bg-emerald-100 text-emerald-600"];
+            const bgClasses = ["bg-blue-500/10 text-blue-500", "bg-purple-500/10 text-purple-500", "bg-emerald-500/10 text-emerald-500"];
             const colorClass = bgClasses[mIdx % bgClasses.length];
             return (
               <div

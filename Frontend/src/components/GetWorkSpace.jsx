@@ -216,19 +216,19 @@ const GetWorkSpace = ({
               const getCardTheme = (idx) => {
                 const themes = [
                   {
-                    bg: "bg-brand-100/80 text-primary",
+                    bg: "bg-blue-500/10 text-blue-500",
                     icon: Rocket,
                   },
                   {
-                    bg: "bg-purple-100/80 text-purple-700",
+                    bg: "bg-purple-500/10 text-purple-500",
                     icon: Palette,
                   },
                   {
-                    bg: "bg-amber-100/80 text-amber-700",
+                    bg: "bg-amber-500/10 text-amber-500",
                     icon: Megaphone,
                   },
                   {
-                    bg: "bg-emerald-100/80 text-emerald-700",
+                    bg: "bg-emerald-500/10 text-emerald-500",
                     icon: Briefcase,
                   }
                 ];
@@ -249,7 +249,7 @@ const GetWorkSpace = ({
                       <div className={`p-2.5 rounded-xl ${theme.bg}`}>
                         <ThemeIcon className="select-none" size={28} />
                       </div>
-                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-semibold text-xs rounded-full border border-emerald-100">
+                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 font-semibold text-xs rounded-full border border-emerald-500/20">
                         Active
                       </span>
                     </div>
@@ -271,10 +271,10 @@ const GetWorkSpace = ({
                         const username = member.user?.username || "?";
                         const firstChar = username.charAt(0).toUpperCase();
                         const colors = [
-                          "bg-blue-100 text-blue-700 border-surface",
-                          "bg-purple-100 text-purple-700 border-surface",
-                          "bg-amber-100 text-amber-700 border-surface",
-                          "bg-emerald-100 text-emerald-700 border-surface",
+                          "bg-blue-500/10 text-blue-500 border-surface",
+                          "bg-purple-500/10 text-purple-500 border-surface",
+                          "bg-amber-500/10 text-amber-500 border-surface",
+                          "bg-emerald-500/10 text-emerald-500 border-surface",
                         ];
                         const colorClass = colors[mIdx % colors.length];
                         return (
@@ -293,7 +293,7 @@ const GetWorkSpace = ({
                         </div>
                       )}
                     </div>
-                    <span className={`text-xs font-bold tracking-wide uppercase ${isOwnerCard ? "text-primary" : "text-on-surface-variant"}`}>
+                    <span className={`text-xs font-bold tracking-wide uppercase ${isOwnerCard ? "text-primary animate-none" : "text-on-surface-variant"}`}>
                       {userRoleInWorkspace}
                     </span>
                   </div>
@@ -330,7 +330,7 @@ const GetWorkSpace = ({
           <div className="bg-surface border border-outline-variant/60 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-outline-variant/60 bg-surface-container-low/40">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-50 border border-brand-100 text-primary rounded-xl flex items-center justify-center shadow-inner">
+                <div className="w-10 h-10 bg-primary/10 border border-primary/20 text-primary rounded-xl flex items-center justify-center shadow-inner">
                   <Briefcase size={20} className="stroke-[2px]" />
                 </div>
                 <div>

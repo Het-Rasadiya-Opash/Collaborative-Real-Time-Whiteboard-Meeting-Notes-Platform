@@ -350,7 +350,7 @@ const VideoMeet = ({ boardId, currentUser, socketRef, isSidebarOpen, onLeave }) 
             onClick={toggleMic}
             className={`p-2.5 rounded-full shadow transition-all cursor-pointer ${
               micEnabled
-                ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                ? "bg-surface-container-high hover:bg-surface-container-highest text-on-surface"
                 : "bg-error/15 text-error hover:bg-error/20"
             }`}
           >
@@ -362,7 +362,7 @@ const VideoMeet = ({ boardId, currentUser, socketRef, isSidebarOpen, onLeave }) 
             onClick={toggleVideo}
             className={`p-2.5 rounded-full shadow transition-all cursor-pointer ${
               videoEnabled
-                ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                ? "bg-surface-container-high hover:bg-surface-container-highest text-on-surface"
                 : "bg-error/15 text-error hover:bg-error/20"
             }`}
           >

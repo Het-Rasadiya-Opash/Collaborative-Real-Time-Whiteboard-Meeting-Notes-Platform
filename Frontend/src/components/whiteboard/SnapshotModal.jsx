@@ -9,20 +9,20 @@ export const SnapshotModal = ({
 }) => {
   return (
     <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-2xl max-w-md w-full mx-4 flex flex-col gap-5 animate-in zoom-in-95 duration-200 text-slate-800">
+      <div className="bg-surface border border-outline-variant rounded-3xl p-6 shadow-2xl max-w-md w-full mx-4 flex flex-col gap-5 animate-in zoom-in-95 duration-200 text-on-surface">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-600">
+            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
               <History
                 className="animate-in spin-in-12 duration-500"
                 size={20}
               />
             </div>
             <div className="flex flex-col text-left">
-              <h3 className="text-slate-850 text-base font-extrabold leading-tight">
+              <h3 className="text-on-surface text-base font-extrabold leading-tight">
                 Save Custom Version
               </h3>
-              <p className="text-[11px] text-slate-500 font-medium tracking-wide">
+              <p className="text-[11px] text-on-surface-variant/80 font-medium tracking-wide">
                 Create a snapshot of the current whiteboard
               </p>
             </div>
@@ -33,7 +33,7 @@ export const SnapshotModal = ({
               setIsSnapshotModalOpen(false);
               setSnapshotLabel("");
             }}
-            className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+            className="text-outline hover:text-error hover:bg-error-container/20 p-1.5 rounded-lg transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -41,7 +41,7 @@ export const SnapshotModal = ({
 
         <form onSubmit={handleCreateSnapshot} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5 text-left">
-            <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+            <label className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">
               Version Label / Name
             </label>
             <input
@@ -50,7 +50,7 @@ export const SnapshotModal = ({
               placeholder="e.g. Initial Draft, Sprint 1 Done"
               value={snapshotLabel}
               onChange={(e) => setSnapshotLabel(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
+              className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3.5 py-2.5 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans animate-none"
               autoFocus
             />
           </div>
@@ -62,14 +62,14 @@ export const SnapshotModal = ({
                 setIsSnapshotModalOpen(false);
                 setSnapshotLabel("");
               }}
-              className="px-4 py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-xs font-bold text-slate-600 cursor-pointer active:scale-95"
+              className="px-4 py-2.5 border border-outline-variant rounded-xl hover:bg-surface-container-high transition-colors text-xs font-bold text-on-surface-variant cursor-pointer active:scale-95"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!snapshotLabel.trim() || isCreatingSnapshot}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all text-xs font-bold text-white cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md shadow-blue-500/10"
+              className="px-4 py-2.5 bg-primary hover:bg-primary/95 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all text-xs font-bold text-on-primary cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md"
             >
               {isCreatingSnapshot ? (
                 <>
