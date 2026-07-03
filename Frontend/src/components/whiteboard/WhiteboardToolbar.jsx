@@ -1,24 +1,3 @@
-import {
-  AlignCenter,
-  AlignHorizontalDistributeCenter,
-  AlignLeft,
-  AlignRight,
-  Circle,
-  Diamond,
-  Eraser,
-  Grid3x3,
-  Image as ImageIcon,
-  Minus,
-  MousePointer,
-  MoveRight,
-  Pencil,
-  Square,
-  StickyNote,
-  Trash2,
-  Triangle,
-  Type,
-} from "lucide-react";
-
 const DEFAULT_COLOR_PALETTE = [
   { name: "Blue", hex: "#2563eb" },
   { name: "Purple", hex: "#7c3aed" },
@@ -46,148 +25,160 @@ const WhiteboardToolbar = ({
   return (
     <>
       {!isReadOnly ? (
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 glass-card border border-outline-variant rounded-2xl p-2 shadow-lg flex flex-col gap-1.5 z-30 animate-in slide-in-from-left duration-300">
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col space-y-1.5 p-1.5 glass-panel rounded-2xl shadow-float z-40 max-h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar transition-all duration-300">
           <button
             onClick={() => {
               setSelectedTool("pencil");
               setSelectedElementId(null);
             }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
               selectedTool === "pencil"
-                ? "bg-primary text-on-primary"
+                ? "bg-primary text-on-primary shadow-soft"
                 : "text-on-surface-variant hover:bg-surface-container"
             }`}
             title="Pen Tool"
           >
-            <Pencil size={18} />
+            <span className="material-symbols-outlined text-[20px]">edit</span>
           </button>
+
           <button
             onClick={() => {
               setSelectedTool("select");
             }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
               selectedTool === "select"
-                ? "bg-primary text-on-primary"
+                ? "bg-primary text-on-primary shadow-soft"
                 : "text-on-surface-variant hover:bg-surface-container"
             }`}
             title="Select"
           >
-            <MousePointer size={18} />
+            <span className="material-symbols-outlined text-[20px]">near_me</span>
           </button>
+
+          <div className="h-[1px] w-6 mx-auto bg-outline-variant my-0.5"></div>
+
+          <button
+            onClick={() => {
+              setSelectedTool("rectangle");
+              setSelectedElementId(null);
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              selectedTool === "rectangle"
+                ? "bg-primary text-on-primary shadow-soft"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Rectangle"
+          >
+            <span className="material-symbols-outlined text-[20px]">rectangle</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTool("circle");
+              setSelectedElementId(null);
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              selectedTool === "circle"
+                ? "bg-primary text-on-primary shadow-soft"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Circle"
+          >
+            <span className="material-symbols-outlined text-[20px]">circle</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTool("diamond");
+              setSelectedElementId(null);
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              selectedTool === "diamond"
+                ? "bg-primary text-on-primary shadow-soft"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Diamond"
+          >
+            <span className="material-symbols-outlined text-[20px]">diamond</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTool("triangle");
+              setSelectedElementId(null);
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              selectedTool === "triangle"
+                ? "bg-primary text-on-primary shadow-soft"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Triangle"
+          >
+            <span className="material-symbols-outlined text-[20px]">change_history</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTool("arrow");
+              setSelectedElementId(null);
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              selectedTool === "arrow"
+                ? "bg-primary text-on-primary shadow-soft"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Arrow"
+          >
+            <span className="material-symbols-outlined text-[20px]">east</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTool("line");
+              setSelectedElementId(null);
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+              selectedTool === "line"
+                ? "bg-primary text-on-primary shadow-soft"
+                : "text-on-surface-variant hover:bg-surface-container"
+            }`}
+            title="Line"
+          >
+            <span className="material-symbols-outlined text-[20px]">horizontal_rule</span>
+          </button>
+
           <button
             onClick={() => {
               setSelectedTool("sticky");
               setSelectedElementId(null);
             }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
               selectedTool === "sticky"
-                ? "bg-primary text-on-primary"
+                ? "bg-primary text-on-primary shadow-soft"
                 : "text-on-surface-variant hover:bg-surface-container"
             }`}
             title="Sticky Note"
           >
-            <StickyNote size={18} />
+            <span className="material-symbols-outlined text-[20px]">sticky_note_2</span>
           </button>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              onClick={() => {
-                setSelectedTool("rectangle");
-                setSelectedElementId(null);
-              }}
-              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                selectedTool === "rectangle"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-              title="Rectangle Shape"
-            >
-              <Square size={18} />
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTool("circle");
-                setSelectedElementId(null);
-              }}
-              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                selectedTool === "circle"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-              title="Circle Shape"
-            >
-              <Circle size={18} />
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTool("arrow");
-                setSelectedElementId(null);
-              }}
-              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                selectedTool === "arrow"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-              title="Arrow Shape"
-            >
-              <MoveRight size={18} />
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTool("line");
-                setSelectedElementId(null);
-              }}
-              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                selectedTool === "line"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-              title="Straight Line"
-            >
-              <Minus size={18} />
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTool("diamond");
-                setSelectedElementId(null);
-              }}
-              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                selectedTool === "diamond"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-              title="Diamond Shape"
-            >
-              <Diamond size={18} />
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTool("triangle");
-                setSelectedElementId(null);
-              }}
-              className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
-                selectedTool === "triangle"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-surface-container"
-              }`}
-              title="Triangle Shape"
-            >
-              <Triangle size={18} />
-            </button>
-          </div>
+
+          <div className="h-[1px] w-6 mx-auto bg-outline-variant my-0.5"></div>
+
           <button
             onClick={() => {
               setSelectedTool("text");
               setSelectedElementId(null);
             }}
-            className={`p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center ${
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
               selectedTool === "text"
-                ? "bg-primary text-on-primary"
+                ? "bg-primary text-on-primary shadow-soft"
                 : "text-on-surface-variant hover:bg-surface-container"
             }`}
             title="Text Tool"
           >
-            <Type size={18} />
+            <span className="material-symbols-outlined text-[20px]">text_fields</span>
           </button>
+
           <input
             type="file"
             accept="image/*"
@@ -202,45 +193,47 @@ const WhiteboardToolbar = ({
           />
           <button
             onClick={() => document.getElementById("image-upload").click()}
-            className="p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center text-on-surface-variant hover:bg-surface-container"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
             title="Upload Image"
           >
-            <ImageIcon size={18} />
+            <span className="material-symbols-outlined text-[20px]">image</span>
           </button>
+
           <button
             onClick={onOpenTemplates}
-            className="p-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center text-on-surface-variant hover:bg-surface-container"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
             title="Templates Gallery"
           >
-            <Grid3x3 size={18} />
+            <span className="material-symbols-outlined text-[20px]">dashboard</span>
           </button>
 
-          <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
+          <div className="h-[1px] w-6 mx-auto bg-outline-variant my-0.5"></div>
 
-          <div className="grid grid-cols-2 gap-1.5 justify-items-center py-1 max-w-[60px] mx-auto">
+          {/* Compact 2-column Grid for Color Selection */}
+          <div className="grid grid-cols-2 gap-1 p-0.5 justify-items-center">
             {colorPalette.map((color) => {
               const isSelected = currentColor === color.hex;
               return (
                 <button
                   key={color.hex}
                   onClick={() => setCurrentColor(color.hex)}
-                  className={`w-5.5 h-5.5 rounded-full border transition-all cursor-pointer relative flex items-center justify-center ${
+                  className={`w-5 h-5 flex items-center justify-center rounded-full transition-all cursor-pointer ${
                     isSelected
-                      ? "scale-110 border-primary shadow-md ring-2 ring-primary/20"
-                      : "border-transparent hover:scale-105"
+                      ? "border border-primary bg-surface shadow-soft scale-110"
+                      : "border border-transparent hover:bg-surface-container hover:scale-105"
                   }`}
-                  style={{ backgroundColor: color.hex }}
                   title={`${color.name} Color`}
                 >
-                  {isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                  )}
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: color.hex }}
+                  />
                 </button>
               );
             })}
           </div>
 
-          <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
+          <div className="h-[1px] w-6 mx-auto bg-outline-variant my-0.5"></div>
 
           <button
             onClick={handleDeleteSelected}
@@ -248,65 +241,65 @@ const WhiteboardToolbar = ({
               !selectedElementId &&
               (!selectedElementIds || selectedElementIds.length === 0)
             }
-            className={`p-2.5 rounded-xl transition-all flex items-center justify-center ${
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
               selectedElementId ||
               (selectedElementIds && selectedElementIds.length > 0)
-                ? "text-rose-500 hover:bg-rose-500/10 hover:scale-105 active:scale-95 cursor-pointer"
+                ? "text-error hover:bg-error/10 cursor-pointer animate-pulse"
                 : "text-on-surface-variant/30 cursor-not-allowed"
             }`}
             title="Delete Selected"
           >
-            <Trash2 size={18} />
+            <span className="material-symbols-outlined text-[20px]">delete</span>
           </button>
+
           <button
             onClick={handleClearCanvas}
-            className="p-2.5 text-on-surface-variant hover:bg-rose-500/10 hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-error/10 transition-colors cursor-pointer"
             title="Clear Canvas"
           >
-            <Eraser size={18} />
+            <span className="material-symbols-outlined text-[20px]">ink_eraser</span>
           </button>
 
           {selectedElementIds && selectedElementIds.length > 1 && (
             <>
-              <div className="h-[1px] bg-outline-variant mx-1 my-0.5"></div>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="h-[1px] w-6 mx-auto bg-outline-variant my-0.5"></div>
+              {/* Compact 2-column grid for Align Tools */}
+              <div className="grid grid-cols-2 gap-1 p-0.5">
                 <button
                   onClick={() => handleAlign("left")}
-                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
                   title="Align Left"
                 >
-                  <AlignLeft size={18} />
+                  <span className="material-symbols-outlined text-[16px]">align_horizontal_left</span>
                 </button>
                 <button
                   onClick={() => handleAlign("center")}
-                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
                   title="Align Center"
                 >
-                  <AlignCenter size={18} />
+                  <span className="material-symbols-outlined text-[16px]">align_horizontal_center</span>
                 </button>
                 <button
                   onClick={() => handleAlign("right")}
-                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
                   title="Align Right"
                 >
-                  <AlignRight size={18} />
+                  <span className="material-symbols-outlined text-[16px]">align_horizontal_right</span>
                 </button>
                 <button
                   onClick={() => handleAlign("distribute")}
-                  className="p-2.5 text-on-surface-variant hover:bg-primary/10 hover:text-primary hover:scale-105 active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
                   title="Distribute Evenly"
                 >
-                  <AlignHorizontalDistributeCenter size={18} />
+                  <span className="material-symbols-outlined text-[16px]">align_horizontal_right</span>
                 </button>
               </div>
             </>
           )}
         </div>
       ) : (
-        <div className="absolute left-6 top-6 glass-card border border-outline-variant/60 rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2 z-30 animate-in slide-in-from-left duration-300 text-xs font-bold text-on-surface-variant bg-surface-container-high/90">
-          <span className="material-symbols-outlined text-[16px] text-outline">
-            lock
-          </span>
+        <div className="absolute left-6 top-6 glass-panel rounded-xl px-3 py-1.5 shadow-float flex items-center gap-2 z-30 animate-in slide-in-from-left duration-300 text-xs font-bold text-on-surface-variant bg-surface-container-high/90">
+          <span className="material-symbols-outlined text-[16px]">lock</span>
           <span>Viewer (Read-Only)</span>
         </div>
       )}

@@ -1,94 +1,79 @@
-import {
-  FileText,
-  HelpCircle,
-  Layers,
-  LayoutDashboard,
-  LogOut,
-  PenTool,
-  Settings,
-  X
-} from "lucide-react";
+import { X } from "lucide-react";
 
 export const WhiteboardSidebar = ({ onClose, isOpen, setIsOpen }) => {
   return (
-    <aside className={`fixed left-0 top-0 h-full w-[280px] bg-slate-50 border-r border-outline-variant shadow-sm z-50 flex flex-col justify-between py-6 transition-all duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+    <aside className={`fixed left-0 top-0 h-full w-[280px] py-6 px-4 bg-surface-container-low border-r border-outline-variant z-[60] flex flex-col justify-between transition-all duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div>
-        <div className="px-6 py-4 mb-8 flex items-center justify-between relative">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/10">
-              <Layers size={20} className="text-white" />
+        <div className="flex items-center justify-between mb-10 px-2 relative">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard_customize</span>
             </div>
-            <div className="flex flex-col">
-              <h1 className="font-bold text-base text-primary tracking-tight font-headline-md leading-tight">
-                Workspace
-              </h1>
-              <p className="text-[10px] text-on-surface-variant/70 font-semibold select-none">
-                Collaborative Canvas
-              </p>
+            <div>
+              <h2 className="text-headline-sm font-headline-sm font-bold text-primary">Workspace</h2>
+              <p className="text-label-md font-label-md text-on-surface-variant">Collaborative Canvas</p>
             </div>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1.5 hover:bg-slate-200/60 rounded-lg text-on-surface-variant transition-colors cursor-pointer flex items-center justify-center"
+            className="p-1.5 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors cursor-pointer flex items-center justify-center lg:hidden"
             title="Collapse Sidebar"
           >
             <X size={18} />
           </button>
         </div>
 
-        <nav className="space-y-1 px-3">
+        <nav className="flex-1 space-y-1">
           <a
             onClick={onClose}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
+            className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
-            <LayoutDashboard size={20} className="select-none" />
-            <span className="text-sm font-semibold">Dashboard</span>
+            <span className="material-symbols-outlined">grid_view</span>
+            <span className="font-body-md">Dashboard</span>
           </a>
-          <a className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-primary font-bold bg-surface-container border-l-4 border-primary shadow-sm cursor-pointer">
-            <PenTool size={20} className="select-none" />
-            <span className="text-sm font-semibold">Boards</span>
-          </a>
-
-          <a
-            onClick={onClose}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
-          >
-            <FileText size={20} className="select-none" />
-            <span className="text-sm font-semibold">Notes</span>
+          <a className="flex items-center space-x-3 px-3 py-3 rounded-lg bg-secondary-fixed text-on-secondary-fixed border-l-4 border-primary font-semibold shadow-soft scale-[0.98] transition-transform duration-150 cursor-pointer">
+            <span className="material-symbols-outlined">dashboard</span>
+            <span className="font-body-md">Boards</span>
           </a>
           <a
             onClick={onClose}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 cursor-pointer border-l-4 border-transparent hover:translate-x-1 transition-all"
+            className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
-            <Settings size={20} className="select-none" />
-            <span className="text-sm font-semibold">Settings</span>
+            <span className="material-symbols-outlined">description</span>
+            <span className="font-body-md">Notes</span>
+          </a>
+          <a
+            onClick={onClose}
+            className="flex items-center space-x-3 px-3 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined">settings</span>
+            <span className="font-body-md">Settings</span>
           </a>
         </nav>
       </div>
 
-      <div className="mt-auto px-4 space-y-4">
+      <div className="mt-auto space-y-6">
         <button
           onClick={onClose}
-          className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-outline text-primary font-bold text-xs hover:bg-primary/5 transition-colors cursor-pointer flex items-center justify-center gap-2"
+          className="w-full flex items-center justify-center space-x-2 py-3 border-2 border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:border-primary hover:text-primary transition-all cursor-pointer bg-transparent"
         >
-          <X size={16} />
-          Close Board
+          <span className="material-symbols-outlined text-[20px]">close</span>
+          <span className="font-label-md">Close Board</span>
         </button>
-
-        <div className="pt-4 border-t border-outline-variant space-y-1">
+        <div className="space-y-1">
           <a
             onClick={onClose}
-            className="flex items-center gap-3 text-on-surface-variant py-2 px-4 hover:bg-surface-container-low rounded-lg transition-all cursor-pointer"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
-            <HelpCircle size={18} className="select-none" />
-            <span className="text-xs font-semibold">Help Center</span>
+            <span className="material-symbols-outlined">help</span>
+            <span className="font-label-md">Help Center</span>
           </a>
           <a
             onClick={onClose}
-            className="flex items-center gap-3 text-on-surface-variant py-2 px-4 hover:bg-error-container/20 hover:text-error rounded-lg transition-all cursor-pointer"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
           >
-            <LogOut size={18} className="select-none" />
-            <span className="text-xs font-semibold">Sign Out</span>
+            <span className="material-symbols-outlined">logout</span>
+            <span className="font-label-md">Sign Out</span>
           </a>
         </div>
       </div>

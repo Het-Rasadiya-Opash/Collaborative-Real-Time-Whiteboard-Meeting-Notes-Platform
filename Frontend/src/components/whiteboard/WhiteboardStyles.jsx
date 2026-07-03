@@ -3,31 +3,31 @@ export const WhiteboardStyles = () => {
   return (
     <style>{`
       .whiteboard-root {
-        --color-primary: #2563eb;
+        --color-primary: #004ac6;
         --color-on-primary: #ffffff;
         --color-primary-container: #2563eb;
-        --color-background: #f8fafc;
-        --color-on-background: #1e293b;
-        --color-surface: #ffffff;
-        --color-surface-bright: #ffffff;
-        --color-surface-dim: #e2e8f0;
+        --color-background: #faf8ff;
+        --color-on-background: #131b2e;
+        --color-surface: #faf8ff;
+        --color-surface-bright: #faf8ff;
+        --color-surface-dim: #d2d9f4;
         --color-surface-container-lowest: #ffffff;
-        --color-surface-container-low: #f8fafc;
-        --color-surface-container: #f1f5f9;
-        --color-surface-container-high: #e2e8f0;
-        --color-surface-container-highest: #cbd5e1;
+        --color-surface-container-low: #f2f3ff;
+        --color-surface-container: #eaedff;
+        --color-surface-container-high: #e2e7ff;
+        --color-surface-container-highest: #dae2fd;
         --color-surface-glass: rgba(255, 255, 255, 0.85);
-        --color-outline: #94a3b8;
-        --color-outline-variant: #e2e8f0;
-        --color-on-surface: #1e293b;
-        --color-on-surface-variant: #475569;
-        --color-secondary: #7c3aed;
-        --color-secondary-container: #f1f5f9;
-        --color-on-secondary-container: #1e293b;
-        --color-success-emerald: #166534;
-        --color-active-indicator: #2563eb;
-        --color-primary-fixed: #dbeafe;
-        --color-on-primary-fixed: #1e3a8a;
+        --color-outline: #737686;
+        --color-outline-variant: #c3c6d7;
+        --color-on-surface: #131b2e;
+        --color-on-surface-variant: #434655;
+        --color-secondary: #5a5f68;
+        --color-secondary-container: #dee2ed;
+        --color-on-secondary-container: #60656e;
+        --color-success-emerald: #007d55;
+        --color-active-indicator: #004ac6;
+        --color-primary-fixed: #b4c5ff;
+        --color-on-primary-fixed: #004ac6;
       }
       .material-symbols-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -38,7 +38,7 @@ export const WhiteboardStyles = () => {
         -webkit-backdrop-filter: blur(12px);
       }
       .canvas-dot-grid {
-        background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+        background-image: radial-gradient(var(--color-outline-variant) 1.5px, transparent 1.5px);
         background-size: 32px 32px;
       }
       .cursor-smooth {

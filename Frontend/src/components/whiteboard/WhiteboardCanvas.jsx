@@ -377,7 +377,7 @@ const WhiteboardCanvas = ({
         containerRef.current = el;
         if (canvasRef) canvasRef.current = el;
       }}
-      className="w-full h-full relative overflow-hidden select-none bg-slate-50 canvas-grid"
+      className="w-full h-full relative overflow-hidden select-none bg-background canvas-grid"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       style={{
@@ -389,7 +389,7 @@ const WhiteboardCanvas = ({
             : selectedTool === "select"
               ? "default"
               : "crosshair",
-        backgroundImage: `radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px)`,
+        backgroundImage: `radial-gradient(circle, var(--color-outline-variant) 1.5px, transparent 1.5px)`,
         backgroundSize: `${24 * scale}px ${24 * scale}px`,
         backgroundPosition: `${pan.x}px ${pan.y}px`,
       }}
@@ -987,51 +987,53 @@ const WhiteboardCanvas = ({
         </>
       )}
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-[calc(50%+180px)] glass-panel rounded-full px-6 py-2 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-bottom duration-300 pointer-events-auto shadow-lg bg-white/95 backdrop-blur-md border border-slate-200">
-        <button
-          onClick={() => setZoom(Math.max(25, zoom - 10))}
-          className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center text-slate-700"
-          title="Zoom Out"
-        >
-          <ZoomOut size={18} />
-        </button>
-        <span className="font-bold text-slate-700 w-10 text-center select-none text-xs">
-          {zoom}%
-        </span>
-        <button
-          onClick={() => setZoom(Math.min(200, zoom + 10))}
-          className="p-1 hover:text-primary transition-colors cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center text-slate-700"
-          title="Zoom In"
-        >
-          <ZoomIn size={18} />
-        </button>
-
-        <div className="w-[1px] h-4 bg-slate-200"></div>
-
-        <button
-          onClick={handleUndo}
-          disabled={historyCount === 0}
-          className={`p-1 transition-all flex items-center justify-center ${
-            historyCount > 0
-              ? "hover:text-primary hover:scale-105 active:scale-95 cursor-pointer text-slate-700"
-              : "text-slate-300 cursor-not-allowed"
-          }`}
-          title="Undo"
-        >
-          <Undo2 size={18} />
-        </button>
-        <button
-          onClick={handleRedo}
-          disabled={redoCount === 0}
-          className={`p-1 transition-all flex items-center justify-center ${
-            redoCount > 0
-              ? "hover:text-primary hover:scale-105 active:scale-95 cursor-pointer text-slate-700"
-              : "text-slate-300 cursor-not-allowed"
-          }`}
-          title="Redo"
-        >
-          <Redo2 size={18} />
-        </button>
+      <div className="absolute bottom-6 left-1/2 -translate-x-[calc(50%+180px)] flex items-center space-x-4 p-2 glass-panel rounded-2xl shadow-float z-40 animate-in fade-in slide-in-from-bottom duration-300 pointer-events-auto">
+        <div className="flex items-center space-x-1 px-2">
+          <button
+            onClick={() => setZoom(Math.max(25, zoom - 10))}
+            className="w-8 h-8 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant cursor-pointer transition-all active:scale-90"
+            title="Zoom Out"
+          >
+            <span className="material-symbols-outlined">zoom_out</span>
+          </button>
+          <span className="text-label-md font-bold text-on-surface-variant px-2 min-w-12 text-center select-none">
+            {zoom}%
+          </span>
+          <button
+            onClick={() => setZoom(Math.min(200, zoom + 10))}
+            className="w-8 h-8 flex items-center justify-center hover:bg-surface-container rounded-lg text-on-surface-variant cursor-pointer transition-all active:scale-90"
+            title="Zoom In"
+          >
+            <span className="material-symbols-outlined">zoom_in</span>
+          </button>
+        </div>
+        <div className="h-6 w-[1px] bg-outline-variant"></div>
+        <div className="flex items-center space-x-1 px-2">
+          <button
+            onClick={handleUndo}
+            disabled={historyCount === 0}
+            className={`w-8 h-8 flex items-center justify-center hover:bg-surface-container rounded-lg transition-all active:scale-90 ${
+              historyCount > 0
+                ? "text-on-surface-variant cursor-pointer"
+                : "text-on-surface-variant/30 cursor-not-allowed"
+            }`}
+            title="Undo"
+          >
+            <span className="material-symbols-outlined">undo</span>
+          </button>
+          <button
+            onClick={handleRedo}
+            disabled={redoCount === 0}
+            className={`w-8 h-8 flex items-center justify-center hover:bg-surface-container rounded-lg transition-all active:scale-90 ${
+              redoCount > 0
+                ? "text-on-surface-variant cursor-pointer"
+                : "text-on-surface-variant/30 cursor-not-allowed"
+            }`}
+            title="Redo"
+          >
+            <span className="material-symbols-outlined">redo</span>
+          </button>
+        </div>
       </div>
     </div>
   );

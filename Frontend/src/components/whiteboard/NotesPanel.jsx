@@ -317,79 +317,80 @@ const NotesPanel = ({
 
   return (
     <aside
-      className="fixed right-0 top-14 h-[calc(100%-56px)] w-[360px] bg-white border-l border-outline-variant z-40 flex flex-col sidebar-transition"
+      className="fixed right-0 top-14 h-[calc(100%-56px)] w-[360px] bg-surface border-l border-outline-variant z-40 flex flex-col sidebar-transition shadow-float"
       id="notes-panel"
     >
       <div className="p-6 flex items-center justify-between border-b border-outline-variant">
-        <h3 className="font-headline-sm text-headline-sm font-bold text-on-background">
+        <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
           Board Workspace
         </h3>
         <button
           onClick={toggleNotes}
-          className="text-secondary hover:text-on-background transition-colors cursor-pointer flex items-center justify-center"
+          className="text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer flex items-center justify-center"
           title="Collapse Panel"
         >
-          <X size={20} />
+          <span className="material-symbols-outlined">close</span>
         </button>
       </div>
 
-      <div className="p-2 flex bg-slate-50 border-b border-outline-variant gap-1.5">
+      <div className="flex px-4 pt-4 relative bg-surface border-b border-outline-variant">
         <button
           onClick={() => setActiveRightTab("notes")}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center space-x-2 pb-4 text-label-md font-bold transition-all relative cursor-pointer ${
             activeRightTab === "notes"
-              ? "bg-white text-primary shadow-sm"
-              : "text-secondary hover:bg-white/50"
+              ? "text-primary font-semibold"
+              : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
-          <FileText size={16} />
-          Notes
+          <span className="material-symbols-outlined text-[20px]">sticky_note_2</span>
+          <span>Notes</span>
+          {activeRightTab === "notes" && <div className="active-tab-indicator" />}
         </button>
         <button
           onClick={() => setActiveRightTab("ai")}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center space-x-2 pb-4 text-label-md font-bold transition-all relative cursor-pointer ${
             activeRightTab === "ai"
-              ? "bg-white text-primary shadow-sm"
-              : "text-secondary hover:bg-white/50"
+              ? "text-primary font-semibold"
+              : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
-          <Sparkles size={16} />
-          AI
+          <span className="material-symbols-outlined text-[20px]">bolt</span>
+          <span>AI</span>
+          {activeRightTab === "ai" && <div className="active-tab-indicator" />}
         </button>
         <button
           onClick={() => {
             setActiveRightTab("history");
             fetchSnapshots();
           }}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center space-x-2 pb-4 text-label-md font-bold transition-all relative cursor-pointer ${
             activeRightTab === "history"
-              ? "bg-white text-primary shadow-sm"
-              : "text-secondary hover:bg-white/50"
+              ? "text-primary font-semibold"
+              : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
-          <History size={16} />
-          History
+          <span className="material-symbols-outlined text-[20px]">history</span>
+          <span>History</span>
+          {activeRightTab === "history" && <div className="active-tab-indicator" />}
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
         {activeRightTab === "notes" && (
           <>
-            <div>
-              <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
-                Active Editors
-              </h4>
-              <div className="flex flex-wrap gap-3">
+            <section>
+              <h4 className="text-label-md text-outline uppercase tracking-wider mb-4">Active Editors</h4>
+              <div className="flex space-x-4 flex-wrap gap-y-3">
                 {(workspace?.members || []).map((member, mIdx) => {
                   const username = member.user?.username || "?";
                   const initials = username.slice(0, 2).toUpperCase();
-                  const colors = [
-                    "bg-note-blue text-primary border-primary",
-                    "bg-note-purple text-purple-700 border-purple-300",
-                    "bg-note-green text-emerald-700 border-emerald-300",
-                    "bg-note-yellow text-amber-700 border-amber-300",
+                  const bgClasses = [
+                    "bg-blue-100 text-blue-700 border-blue-300",
+                    "bg-purple-100 text-purple-700 border-purple-300",
+                    "bg-emerald-100 text-emerald-700 border-emerald-300",
+                    "bg-amber-100 text-amber-700 border-amber-300",
                   ];
-                  const colorClass = colors[mIdx % colors.length];
+                  const colorClass = bgClasses[mIdx % bgClasses.length];
 
                   const isOnline =
                     (currentUser?._id &&
@@ -407,18 +408,18 @@ const NotesPanel = ({
                       (member.user && collab.userId === member.user),
                   );
                   const isTyping = typingCollab?.isTypingNotes;
+                  const isMe = String(member.user?._id || member.user) === String(currentUser?._id);
 
                   return (
-                    <div key={member._id || mIdx} className="relative">
-                      <div
-                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-xs ${colorClass} ${isTyping ? "animate-bounce shadow-md" : ""}`}
-                        title={`${username} ${isOnline ? "(Online)" : "(Offline)"}`}
-                      >
-                        {initials}
+                    <div key={member._id || mIdx} className={`flex flex-col items-center space-y-1 ${isOnline ? "" : "opacity-70"}`}>
+                      <div className={`w-12 h-12 rounded-full border-2 p-[2px] transition-all ${isMe ? "border-primary" : "border-transparent"} ${isTyping ? "animate-bounce shadow-md" : ""}`}>
+                        <div className={`w-full h-full rounded-full flex items-center justify-center font-bold text-xs ${colorClass}`}>
+                          {initials}
+                        </div>
                       </div>
-                      {isOnline && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-status-online border-2 border-white rounded-full"></div>
-                      )}
+                      <span className="text-[10px] text-on-surface-variant font-medium">
+                        {isMe ? "Me" : username.split(" ")[0]}
+                      </span>
                     </div>
                   );
                 })}
@@ -438,65 +439,58 @@ const NotesPanel = ({
                       .slice(0, 2)
                       .toUpperCase();
                     return (
-                      <div key={collab.userId || gIdx} className="relative">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center font-bold text-xs text-secondary">
-                          {initials}
+                      <div key={collab.userId || gIdx} className="flex flex-col items-center space-y-1">
+                        <div className="w-12 h-12 rounded-full border-2 border-dashed border-outline-variant p-[2px]">
+                          <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-on-surface-variant">
+                            {initials}
+                          </div>
                         </div>
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-status-online border-2 border-white rounded-full"></div>
+                        <span className="text-[10px] text-on-surface-variant font-medium">
+                          {collab.username || "Guest"}
+                        </span>
                       </div>
                     );
                   })}
               </div>
-            </div>
+            </section>
 
-            <div className="flex-1 flex flex-col min-h-[300px]">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-primary font-headline-sm">
-                  Collaborative Notes
-                </h4>
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-body-md font-semibold text-primary">Collaborative Notes</h4>
                 {!isReadOnly && (
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                  <div className="flex space-x-2 text-on-surface-variant">
                     <button
                       onClick={() => handleFormatCommand("bold")}
-                      className="p-1 hover:bg-white rounded transition-all text-secondary"
+                      className="p-1 hover:bg-surface-container rounded transition-colors cursor-pointer"
                       title="Bold"
                     >
-                      <Bold size={14} />
+                      <span className="material-symbols-outlined text-[18px]">format_bold</span>
                     </button>
                     <button
                       onClick={() => handleFormatCommand("italic")}
-                      className="p-1 hover:bg-white rounded transition-all text-secondary"
+                      className="p-1 hover:bg-surface-container rounded transition-colors cursor-pointer"
                       title="Italic"
                     >
-                      <Italic size={14} />
+                      <span className="material-symbols-outlined text-[18px]">format_italic</span>
                     </button>
                     <button
                       onClick={() => handleFormatCommand("underline")}
-                      className="p-1 hover:bg-white rounded transition-all text-secondary"
+                      className="p-1 hover:bg-surface-container rounded transition-colors cursor-pointer"
                       title="Underline"
                     >
-                      <Underline size={14} />
+                      <span className="material-symbols-outlined text-[18px]">format_underlined</span>
                     </button>
-                    <div className="w-[1px] h-4 bg-outline-variant mx-1"></div>
                     <button
                       onClick={() => handleFormatCommand("insertUnorderedList")}
-                      className="p-1 hover:bg-white rounded transition-all text-secondary"
+                      className="p-1 hover:bg-surface-container rounded transition-colors cursor-pointer"
                       title="Bullet List"
                     >
-                      <List size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleFormatCommand("removeFormat")}
-                      className="p-1 hover:bg-white rounded transition-all text-secondary"
-                      title="Clear Formatting"
-                    >
-                      <Trash2 size={14} />
+                      <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
                     </button>
                   </div>
                 )}
               </div>
-
-              <div className="flex-1 border border-outline-variant rounded-xl p-4 text-secondary font-body-md bg-slate-50/30 overflow-y-auto relative flex flex-col">
+              <div className="relative group w-full bg-surface rounded-xl border border-outline-variant focus-within:border-primary transition-all p-4 pb-14 min-h-[160px] flex flex-col">
                 <div
                   ref={editorRef}
                   contentEditable={!isReadOnly}
@@ -508,17 +502,17 @@ const NotesPanel = ({
                     handleSaveNotes(html);
                     handleNotesTyping();
                   }}
-                  className="w-full flex-1 outline-none text-xs text-on-surface-variant leading-relaxed"
+                  className="w-full flex-1 outline-none text-body-sm text-on-surface-variant leading-relaxed min-h-[100px] overflow-y-auto"
                   placeholder={
                     isReadOnly
                       ? "Notes are read-only for viewer role..."
-                      : "Type meeting agenda or collaborate on notes here..."
+                      : "Start typing shared notes..."
                   }
                   suppressContentEditableWarning={true}
                 />
 
                 {typingCollaborators.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-primary bg-primary/5 border border-primary/10 rounded-lg px-2 py-1.5 animate-pulse mt-2 select-none self-start">
+                  <div className="flex items-center gap-1.5 text-primary bg-primary/5 border border-primary/10 rounded-lg px-2 py-1 animate-pulse select-none absolute bottom-3 left-3">
                     <span className="text-[10px] font-bold">
                       {typingCollaborators
                         .map((c) => c.username || "Collaborator")
@@ -527,90 +521,110 @@ const NotesPanel = ({
                     </span>
                   </div>
                 )}
-                
+
                 {!isReadOnly && (
-                  <div className="flex justify-end mt-3">
-                    <button
-                      onClick={handleSaveAsNote}
-                      className="bg-primary hover:bg-primary/95 text-white font-bold text-[11px] py-1.5 px-4 rounded-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm cursor-pointer"
-                    >
-                      <Plus size={14} />
-                      Save Note
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleSaveAsNote}
+                    className="absolute bottom-3 right-3 flex items-center space-x-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-label-md font-bold shadow-soft hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">save</span>
+                    <span>Save Note</span>
+                  </button>
                 )}
               </div>
-            </div>
+            </section>
 
-            <div>
-              <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
-                All Notes
-              </h4>
-              <div className="space-y-4 max-h-[150px] overflow-y-auto pr-1">
-                {comments.filter(c => c.commentType === "note").length === 0 ? (
+            <section>
+              <h4 className="text-label-md text-outline uppercase tracking-wider mb-4">All Notes</h4>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                {comments.filter((c) => c.commentType === "note").length === 0 ? (
                   <p className="text-xs text-slate-400 italic">No notes saved yet.</p>
                 ) : (
-                  comments.filter(c => c.commentType === "note").map((note, index) => (
-                    <div
-                      key={note._id || note.id || index}
-                      className="flex gap-3"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-note-blue flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-blue-700">
-                        {note.author.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex-1">
-                        <p className="text-body-sm mb-1 text-on-surface font-semibold">
-                          {note.text}
-                        </p>
-                        <span className="text-[10px] text-slate-400">
-                          {note.createdAt
-                            ? new Date(note.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "Just now"}
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                  comments
+                    .filter((c) => c.commentType === "note")
+                    .map((note, index) => {
+                      const timeStr = note.createdAt
+                        ? new Date(note.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Just now";
+                      const dateStr = note.createdAt
+                        ? new Date(note.createdAt).toLocaleDateString()
+                        : "";
+                      
+                      const bulletColors = ["bg-primary", "bg-tertiary-container", "bg-error"];
+                      const bulletBg = bulletColors[index % bulletColors.length];
+
+                      return (
+                        <div
+                          key={note._id || note.id || index}
+                          className="p-4 bg-surface-container-low border border-outline-variant rounded-xl hover:shadow-soft transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className={`w-2 h-2 rounded-full ${bulletBg}`}></span>
+                            <h5 className="text-body-sm font-semibold text-on-surface truncate">
+                              {note.text.split("\n")[0] || "Note"}
+                            </h5>
+                          </div>
+                          <p className="text-[12px] text-on-surface-variant line-clamp-2 whitespace-pre-wrap">
+                            {note.text}
+                          </p>
+                          <div className="mt-2 flex justify-between items-center">
+                            <span className="text-[10px] text-outline font-medium">
+                              {timeStr} {dateStr && `• ${dateStr}`} • {note.author}
+                            </span>
+                            <span className="material-symbols-outlined text-[16px] text-outline hover:text-primary">
+                              arrow_forward
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
                 )}
               </div>
-            </div>
+            </section>
 
-            <div className="mt-4 pt-4 border-t border-outline-variant/50">
-              <h4 className="text-label-md font-bold uppercase text-slate-400 tracking-widest mb-4">
+            <section>
+              <h4 className="text-label-md text-outline uppercase tracking-wider mb-4">
                 Recent Comments
               </h4>
-              <div className="space-y-4 max-h-[150px] overflow-y-auto pr-1">
-                {comments.filter(c => c.commentType !== "note").length === 0 ? (
+              <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar pr-1">
+                {comments.filter((c) => c.commentType !== "note").length === 0 ? (
                   <p className="text-xs text-slate-400 italic">No comments yet.</p>
                 ) : (
-                  comments.filter(c => c.commentType !== "note").map((comment, index) => (
-                    <div
-                      key={comment._id || comment.id || index}
-                      className="flex gap-3"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-note-purple flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-purple-700">
-                        {comment.author.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-lg border border-outline-variant/30 flex-1">
-                        <p className="text-body-sm mb-1 text-on-surface font-semibold">
-                          {comment.text}
-                        </p>
-                        <span className="text-[10px] text-slate-400">
-                          {comment.createdAt
-                            ? new Date(comment.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "Just now"}
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                  comments
+                    .filter((c) => c.commentType !== "note")
+                    .map((comment, index) => {
+                      const timeStr = comment.createdAt
+                        ? new Date(comment.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Just now";
+                      
+                      return (
+                        <div
+                          key={comment._id || comment.id || index}
+                          className="p-3 bg-surface border border-outline-variant/30 rounded-xl flex gap-3 shadow-soft"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-surface-container-high flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-primary">
+                            {comment.author.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-body-sm text-on-surface font-medium whitespace-pre-wrap">
+                              {comment.text}
+                            </p>
+                            <span className="text-[9px] text-slate-400">
+                              {timeStr} • {comment.author}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
                 )}
               </div>
-            </div>
+            </section>
           </>
         )}
 
@@ -625,12 +639,12 @@ const NotesPanel = ({
                 >
                   {isLoadingActions ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
+                      <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
                       Extracting Action Items...
                     </>
                   ) : (
                     <>
-                      <Wand2 size={16} />
+                      <span className="material-symbols-outlined text-[16px]">bolt</span>
                       Extract Action Items
                     </>
                   )}
@@ -638,30 +652,30 @@ const NotesPanel = ({
                 {!isAddingItem ? (
                   <button
                     onClick={() => setIsAddingItem(true)}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer border border-slate-200"
+                    className="w-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer border border-outline-variant"
                   >
-                    <Plus size={14} />
+                    <span className="material-symbols-outlined text-[16px]">add</span>
                     Add Manual Task
                   </button>
                 ) : (
                   <form
                     onSubmit={handleCreateManualActionItem}
-                    className="bg-slate-50 p-4 border border-outline-variant/60 rounded-2xl space-y-3.5 animate-in slide-in-from-top-3 duration-200"
+                    className="bg-surface-container-low p-4 border border-outline-variant rounded-2xl space-y-3.5 animate-in slide-in-from-top-3 duration-200"
                   >
-                    <div className="flex justify-between items-center pb-2 border-b border-outline-variant/40">
+                    <div className="flex justify-between items-center pb-2 border-b border-outline-variant">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                         New Action Item
                       </span>
                       <button
                         type="button"
                         onClick={() => setIsAddingItem(false)}
-                        className="text-secondary hover:text-on-background"
+                        className="text-on-surface-variant hover:text-on-surface cursor-pointer"
                       >
-                        <X size={14} />
+                        <span className="material-symbols-outlined text-[16px]">close</span>
                       </button>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                      <label className="text-[9px] font-bold text-outline uppercase tracking-wider">
                         Task Description
                       </label>
                       <input
@@ -670,18 +684,18 @@ const NotesPanel = ({
                         placeholder="e.g. Implement payment integration"
                         value={newTaskText}
                         onChange={(e) => setNewTaskText(e.target.value)}
-                        className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800"
+                        className="w-full text-xs bg-surface border border-outline-variant rounded-lg p-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <label className="text-[9px] font-bold text-outline uppercase tracking-wider">
                           Assignee
                         </label>
                         <select
                           value={newAssigneeText}
                           onChange={(e) => setNewAssigneeText(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800 cursor-pointer"
+                          className="w-full text-xs bg-surface border border-outline-variant rounded-lg p-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface cursor-pointer"
                         >
                           <option value="Unassigned">Unassigned</option>
                           {workspaceMembers.map((m) => {
@@ -696,14 +710,14 @@ const NotesPanel = ({
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <label className="text-[9px] font-bold text-outline uppercase tracking-wider">
                           Due Date
                         </label>
                         <input
                           type="date"
                           value={newDueDateText}
                           onChange={(e) => setNewDueDateText(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-800 cursor-pointer"
+                          className="w-full text-xs bg-surface border border-outline-variant rounded-lg p-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface cursor-pointer"
                         />
                       </div>
                     </div>
@@ -711,23 +725,23 @@ const NotesPanel = ({
                       <button
                         type="button"
                         onClick={() => setIsAddingItem(false)}
-                        className="px-3 py-1.5 border border-slate-200 hover:bg-slate-100 text-[11px] font-bold rounded-lg text-slate-600 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 border border-outline-variant hover:bg-surface-container text-[11px] font-bold rounded-lg text-on-surface-variant transition-colors cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={isSubmittingItem}
-                        className="px-3 py-1.5 bg-primary text-white text-[11px] font-bold rounded-lg hover:bg-primary/95 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                        className="px-3 py-1.5 bg-primary text-on-primary text-[11px] font-bold rounded-lg hover:opacity-90 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
                       >
                         {isSubmittingItem ? (
                           <>
-                            <Loader2 size={12} className="animate-spin" />
+                            <span className="material-symbols-outlined text-[12px] animate-spin">sync</span>
                             <span>Adding...</span>
                           </>
                         ) : (
                           <>
-                            <Plus size={12} />
+                            <span className="material-symbols-outlined text-[12px]">add</span>
                             <span>Add Item</span>
                           </>
                         )}
@@ -737,28 +751,22 @@ const NotesPanel = ({
                 )}
               </div>
             ) : (
-              <div className="bg-surface-container-high border border-outline-variant/65 py-2.5 px-4 rounded-xl shadow-inner font-bold text-center text-xs text-on-surface-variant/70 flex items-center justify-center gap-2">
-                <Lock size={14} />
+              <div className="bg-surface-container border border-outline-variant py-2.5 px-4 rounded-xl shadow-inner font-bold text-center text-xs text-on-surface-variant flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-[14px]">lock</span>
                 <span>Viewer mode cannot trigger AI action extraction.</span>
               </div>
             )}
 
             {isLoadingActions ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl animate-pulse">
-                <Loader2
-                  className="mx-auto text-primary mb-3 animate-spin"
-                  size={36}
-                />
+              <div className="flex flex-col items-center justify-center py-12 px-4 bg-surface-container-low border border-dashed border-outline-variant rounded-2xl animate-pulse">
+                <span className="material-symbols-outlined text-[36px] text-primary mb-3 animate-spin">sync</span>
                 <p className="text-xs text-on-surface-variant font-bold">
                   Scanning meeting notes...
                 </p>
               </div>
             ) : actionItems.length === 0 ? (
-              <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                <ClipboardCheck
-                  className="mx-auto text-outline/50 mb-3 opacity-75"
-                  size={32}
-                />
+              <div className="text-center py-12 px-4 bg-surface-container-low border border-dashed border-outline-variant rounded-2xl">
+                <span className="material-symbols-outlined text-[32px] text-outline mb-3">assignment_turned_in</span>
                 <p className="text-xs text-on-surface-variant font-medium">
                   No action items extracted yet.
                 </p>
@@ -772,23 +780,23 @@ const NotesPanel = ({
                   {!isReadOnly && actionItems.length > 0 && (
                     <button
                       onClick={handleClearAllActionItems}
-                      className="text-[10px] text-outline hover:text-red-500 font-bold transition-colors cursor-pointer"
+                      className="text-[10px] text-outline hover:text-error font-bold transition-colors cursor-pointer"
                     >
                       Clear List
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-3 overflow-y-auto pr-1 flex-1">
+                <div className="space-y-3 overflow-y-auto pr-1 flex-1 custom-scrollbar">
                   {actionItems.map((item, idx) => {
                     const isCompleted = item.status === "COMPLETED";
                     return (
                       <div
                         key={item._id || idx}
-                        className={`p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5 bg-white shadow-sm hover:shadow-md ${
+                        className={`p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5 bg-surface shadow-sm hover:shadow-md ${
                           isCompleted
                             ? "border-outline-variant/30 opacity-70"
-                            : "border-outline-variant/60"
+                            : "border-outline-variant"
                         }`}
                       >
                         <div className="flex items-start gap-2.5">
@@ -809,14 +817,14 @@ const NotesPanel = ({
 
                         <div className="flex flex-wrap items-center gap-2">
                           {item.assignee && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/5">
-                              <User size={10} />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-container/10 text-primary border border-primary/5">
+                              <span className="material-symbols-outlined text-[10px]">person</span>
                               {item.assignee}
                             </span>
                           )}
                           {item.dueDate && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary/10 text-secondary border border-secondary/5">
-                              <Calendar size={10} />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/10 text-secondary border border-secondary/5">
+                              <span className="material-symbols-outlined text-[10px]">calendar_today</span>
                               {item.dueDate}
                             </span>
                           )}
@@ -837,12 +845,12 @@ const NotesPanel = ({
                 onClick={() => setIsSnapshotModalOpen(true)}
                 className="w-full bg-primary hover:bg-primary/95 text-on-primary font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-md"
               >
-                <Plus size={16} />
+                <span className="material-symbols-outlined text-[16px]">add</span>
                 Save Current Version
               </button>
             )}
 
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-label-md text-xs text-outline uppercase font-bold tracking-wider">
                   Saved Versions ({snapshots.length})
@@ -850,11 +858,8 @@ const NotesPanel = ({
               </div>
 
               {snapshots.length === 0 ? (
-                <div className="text-center py-12 px-4 bg-surface-container/30 border border-dashed border-outline-variant/80 rounded-2xl">
-                  <History
-                    className="mx-auto text-outline/50 mb-3 opacity-70"
-                    size={32}
-                  />
+                <div className="text-center py-12 px-4 bg-surface-container-low border border-dashed border-outline-variant rounded-2xl">
+                  <span className="material-symbols-outlined text-[32px] text-outline mb-3">history</span>
                   <p className="text-xs text-on-surface-variant font-medium">
                     No snapshots saved yet.
                   </p>
@@ -872,10 +877,10 @@ const NotesPanel = ({
                   return (
                     <div
                       key={snap._id || snap.version}
-                      className={`p-4 rounded-2xl border transition-all relative flex flex-col gap-3.5 bg-white shadow-sm hover:shadow-md ${
+                      className={`p-4 rounded-2xl border transition-all relative flex flex-col gap-3.5 bg-surface shadow-sm hover:shadow-md ${
                         isCurrentlyPreviewed
                           ? "border-amber-400 bg-amber-50/10 shadow-amber-100/20"
-                          : "border-outline-variant/60"
+                          : "border-outline-variant"
                       }`}
                     >
                       <div className="flex flex-col text-left">
@@ -884,7 +889,7 @@ const NotesPanel = ({
                             `Revision - ${new Date(snap.createdAt || snap.version).toLocaleDateString()}`}
                         </h4>
                         <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-on-surface-variant opacity-75">
-                          <Clock size={11} />
+                          <span className="material-symbols-outlined text-[11px]">schedule</span>
                           <span>{dateStr}</span>
                         </div>
                         <div className="text-[10px] text-primary/80 font-bold mt-1">
@@ -892,7 +897,7 @@ const NotesPanel = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 w-full mt-1 border-t border-outline-variant/30 pt-2.5">
+                      <div className="flex items-center gap-2 w-full mt-1 border-t border-outline-variant pt-2.5">
                         <button
                           onClick={() =>
                             setPreviewSnapshot(
@@ -902,7 +907,7 @@ const NotesPanel = ({
                           className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all active:scale-95 cursor-pointer text-center ${
                             isCurrentlyPreviewed
                               ? "bg-amber-500 text-white hover:bg-amber-600"
-                              : "bg-slate-100 hover:bg-slate-200 text-on-surface-variant"
+                              : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
                           }`}
                         >
                           {isCurrentlyPreviewed
@@ -912,9 +917,9 @@ const NotesPanel = ({
                         {!isReadOnly && (
                           <button
                             onClick={() => handleRestoreSnapshot(snap)}
-                            className="py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all bg-primary/10 hover:bg-primary/20 text-primary active:scale-95 cursor-pointer text-center flex items-center gap-1"
+                            className="py-1.5 px-3 rounded-lg text-[10px] font-black tracking-wide uppercase transition-all bg-primary-container/10 hover:bg-primary-container/20 text-primary active:scale-95 cursor-pointer text-center flex items-center gap-1 justify-center"
                           >
-                            <RotateCcw size={12} />
+                            <span className="material-symbols-outlined text-[12px]">restore</span>
                             Restore
                           </button>
                         )}
@@ -929,29 +934,29 @@ const NotesPanel = ({
       </div>
 
       {activeRightTab === "notes" && (
-        <div className="p-4 border-t border-outline-variant bg-slate-50">
+        <div className="p-4 border-t border-outline-variant bg-surface-container-lowest">
           {!isReadOnly ? (
             <form onSubmit={handleCommentSubmit} className="relative">
               <input
-                className="w-full pl-10 pr-16 py-3 border border-outline-variant rounded-xl focus:ring-primary focus:border-primary font-body-sm bg-white"
+                className="w-full bg-surface-container-low border-none rounded-xl py-3 pl-10 pr-12 text-body-sm focus:ring-1 focus:ring-primary outline-none"
                 placeholder="Write a comment..."
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <MessageSquare size={16} />
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
+                chat_bubble_outline
               </span>
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary font-label-md hover:underline font-bold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary font-bold text-label-md hover:underline cursor-pointer"
               >
                 Send
               </button>
             </form>
           ) : (
-            <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant/70 bg-surface-container-high border border-outline-variant/65 py-2.5 rounded-full shadow-inner font-bold text-center">
-              <Lock size={14} />
+            <div className="flex items-center justify-center gap-2 text-xs text-on-surface-variant/70 bg-surface-container-low border border-outline-variant py-2.5 rounded-xl shadow-inner font-bold text-center">
+              <span className="material-symbols-outlined text-[14px]">lock</span>
               <span>Viewer mode is read-only.</span>
             </div>
           )}

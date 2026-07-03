@@ -1,13 +1,3 @@
-import {
-  AlertTriangle,
-  CheckCircle,
-  ChevronDown,
-  Download,
-  Menu,
-  Share2,
-  Video,
-} from "lucide-react";
-
 export const WhiteboardHeader = ({
   isEditingTitle,
   boardTitle,
@@ -30,19 +20,19 @@ export const WhiteboardHeader = ({
 }) => {
   return (
     <header
-      className={`fixed top-0 right-0 ${isSidebarOpen ? "lg:left-[280px]" : "left-0"} z-50 flex justify-between items-center h-14 px-6 bg-white border-b border-outline-variant/30 shadow-sm shadow-primary/5 transition-all duration-300`}
+      className={`fixed top-0 right-0 ${isSidebarOpen ? "lg:left-[280px]" : "left-0"} z-50 flex justify-between items-center h-14 px-6 bg-background border-b border-outline-variant shrink-0 transition-all duration-300`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center space-x-4">
         {!isSidebarOpen && (
           <button
             onClick={onToggleSidebar}
-            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 transition-colors text-slate-600 cursor-pointer mr-1"
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant cursor-pointer"
             title="Expand Sidebar"
           >
-            <Menu size={20} />
+            <span className="material-symbols-outlined">menu</span>
           </button>
         )}
-        <h2 className="font-headline-sm text-sm font-bold text-slate-800 flex items-center gap-2 select-text">
+        <h1 className="text-title-md sm:text-headline-sm font-semibold text-on-background truncate max-w-[120px] sm:max-w-none">
           {isEditingTitle ? (
             <input
               type="text"
@@ -50,149 +40,136 @@ export const WhiteboardHeader = ({
               onChange={(e) => setBoardTitle(e.target.value)}
               onBlur={handleSaveTitle}
               onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-              className="bg-surface-container-low border border-primary/40 rounded-lg px-2.5 py-0.5 text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[200px]"
+              className="bg-surface border border-primary rounded-lg px-2 py-0.5 text-xs text-on-background focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary max-w-[100px] sm:max-w-[200px]"
               autoFocus
             />
           ) : (
             <span
               onClick={() => !isReadOnly && setIsEditingTitle(true)}
-              className={
-                !isReadOnly
-                  ? "cursor-pointer hover:underline decoration-dashed decoration-primary decoration-2 underline-offset-4"
-                  : ""
-              }
-              title={!isReadOnly ? "Click to rename board" : ""}
+              className={!isReadOnly ? "cursor-pointer hover:underline truncate" : "truncate"}
             >
               Board: {boardTitle}
             </span>
           )}
-        </h2>
-
-        <div className="flex items-center -space-x-2">
-          {(workspace?.members || []).slice(0, 4).map((member, mIdx) => {
+        </h1>
+        <div className="flex -space-x-2">
+          {(workspace?.members || []).slice(0, 3).map((member, mIdx) => {
             const username = member.user?.username || "?";
             const firstChar = username.charAt(0).toUpperCase();
-            const palettes = [
-              { bg: "#dbeafe", text: "#1d4ed8" },
-              { bg: "#ede9fe", text: "#7c3aed" },
-              { bg: "#d1fae5", text: "#065f46" },
-              { bg: "#fef3c7", text: "#92400e" },
-            ];
-            const palette = palettes[mIdx % palettes.length];
+            const bgClasses = ["bg-blue-100 text-blue-600", "bg-purple-100 text-purple-600", "bg-emerald-100 text-emerald-600"];
+            const colorClass = bgClasses[mIdx % bgClasses.length];
             return (
               <div
                 key={member._id || mIdx}
-                style={{ backgroundColor: palette.bg, color: palette.text }}
-                className="w-8 h-8 rounded-full ring-2 ring-white flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0 select-none"
+                className={`w-8 h-8 rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold ${colorClass}`}
                 title={username}
               >
                 {firstChar}
               </div>
             );
           })}
-          {(workspace?.members || []).length > 4 && (
+          {(workspace?.members || []).length > 3 && (
             <div
-              className="w-8 h-8 rounded-full ring-2 ring-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-sm flex-shrink-0"
-              title={`+${(workspace?.members || []).length - 4} more`}
+              className="w-8 h-8 rounded-full border-2 border-background bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant"
+              title={`+${(workspace?.members || []).length - 3} more`}
             >
-              +{(workspace?.members || []).length - 4}
+              +{(workspace?.members || []).length - 3}
             </div>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
+
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-1 font-label-md">
           {saveStatus === "saved" && (
-            <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
-              <CheckCircle size={15} />
-              Saved
+            <span className="flex items-center space-x-1 text-tertiary">
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+              <span className="hidden md:inline">Saved</span>
             </span>
           )}
           {saveStatus === "saving" && (
-            <span className="flex items-center gap-1.5 text-primary font-semibold text-xs animate-pulse">
-              <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              Saving...
+            <span className="flex items-center space-x-1 text-primary animate-pulse">
+              <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+              <span className="hidden md:inline">Saving...</span>
             </span>
           )}
           {saveStatus === "unsaved" && (
-            <span className="flex items-center gap-1.5 text-amber-500 font-semibold text-xs">
-              <AlertTriangle size={15} />
-              Unsaved
+            <span className="flex items-center space-x-1 text-error">
+              <span className="material-symbols-outlined text-[18px]">warning</span>
+              <span className="hidden md:inline">Unsaved</span>
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 border-l border-outline-variant/40 pl-6">
+        <div className="h-6 w-[1px] bg-outline-variant"></div>
+        <div className="flex items-center space-x-2 relative">
           <button
             onClick={() => setIsVideoCallActive(!isVideoCallActive)}
-            className={`flex items-center gap-2 px-4 py-1.5 font-bold rounded-lg transition-all cursor-pointer text-xs select-none active:scale-95 ${
+            className={`flex items-center space-x-1 sm:space-x-2 px-2.5 sm:px-4 py-2 rounded-lg text-label-md font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer ${
               isVideoCallActive
-                ? "bg-red-500 hover:bg-red-600 text-white"
-                : "bg-primary text-white hover:bg-primary/95"
+                ? "bg-error text-on-error"
+                : "bg-primary-container text-on-primary-container"
             }`}
           >
-            <Video size={15} />
-            {isVideoCallActive ? "LEAVE MEET" : "VIDEO MEET"}
+            <span className="material-symbols-outlined text-[18px]">{isVideoCallActive ? "videocam_off" : "videocam"}</span>
+            <span className="hidden sm:inline">{isVideoCallActive ? "LEAVE MEET" : "VIDEO MEET"}</span>
           </button>
           {!publicShareToken && (
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-1.5 border border-primary text-primary font-bold rounded-lg hover:bg-primary-fixed-dim transition-all cursor-pointer text-xs"
+              className="flex items-center space-x-1 sm:space-x-2 px-2.5 sm:px-4 py-2 border border-primary text-primary rounded-lg text-label-md font-bold hover:bg-surface-container transition-all cursor-pointer"
             >
-              <Share2 size={15} />
-              SHARE
+              <span className="material-symbols-outlined text-[18px]">share</span>
+              <span className="hidden sm:inline">SHARE</span>
             </button>
           )}
-          <div className="relative">
-            <button
-              onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition-all cursor-pointer text-xs"
-            >
-              <Download size={15} />
-              EXPORT
-              <ChevronDown size={14} />
-            </button>
-            {isExportDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-outline-variant/60 rounded-xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-3 py-2 text-[10px] font-bold text-outline uppercase tracking-wider border-b border-outline-variant/40 mb-1">
-                  Export Options
-                </div>
-                <button
-                  onClick={() => {
-                    setIsExportDropdownOpen(false);
-                    handleExportPNG();
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-note-blue flex items-center justify-center text-primary">
-                    <Download size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span>Export Board (PNG)</span>
-                    <span className="text-[9px] text-outline font-medium normal-case">
-                      Server-rendered whiteboard image
-                    </span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setIsExportDropdownOpen(false);
-                    handleExportPDF();
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-note-purple flex items-center justify-center text-purple-600">
-                    <Download size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span>Export Notes (PDF)</span>
-                    <span className="text-[9px] text-outline font-medium normal-case">
-                      Server-generated meeting summary
-                    </span>
-                  </div>
-                </button>
+          
+          <button
+            onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+            className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined">export_notes</span>
+          </button>
+          {isExportDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-64 bg-surface border border-outline-variant rounded-xl shadow-float p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="px-3 py-2 text-[10px] font-bold text-outline uppercase tracking-wider border-b border-outline-variant mb-1">
+                Export Options
               </div>
-            )}
-          </div>
+              <button
+                onClick={() => {
+                  setIsExportDropdownOpen(false);
+                  handleExportPNG();
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-primary-fixed-dim flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-[18px]">image</span>
+                </div>
+                <div className="flex flex-col">
+                  <span>Export Board (PNG)</span>
+                  <span className="text-[9px] text-outline font-medium normal-case">
+                    Server-rendered whiteboard image
+                  </span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setIsExportDropdownOpen(false);
+                  handleExportPDF();
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary">
+                  <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                </div>
+                <div className="flex flex-col">
+                  <span>Export Notes (PDF)</span>
+                  <span className="text-[9px] text-outline font-medium normal-case">
+                    Server-generated meeting summary
+                  </span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
