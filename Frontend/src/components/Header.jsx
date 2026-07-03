@@ -37,7 +37,7 @@ const Header = ({ onToggleSidebar, onNavigate }) => {
 
     const socket = io(socketUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
     });
 
     socketRef.current = socket;

@@ -72,7 +72,7 @@ const GetWorkSpace = ({
 
     const socket = io(socketUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
     });
 
     socket.on("connect", () => {

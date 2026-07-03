@@ -193,7 +193,7 @@ export const useWhiteboardSocket = ({
     console.log("Connecting to socket server at:", socketUrl);
     const socket = io(socketUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
     });
 
     socketRef.current = socket;
